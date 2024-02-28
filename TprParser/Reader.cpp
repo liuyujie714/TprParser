@@ -14,8 +14,8 @@ bool TprReader::tpr_header()
 
 	// read precision int
 	if (!tpr_.do_int(&tempint)) return TPR_FAILED;
-	msg("gmx precision: %s\n", tempint == 4 ? "float" : "double");
-	if (tempint != 4)
+	msg("gmx precision: %s\n", tempint == sizeof(float) ? "float" : "double");
+	if (tempint != sizeof(float))
 	{
 		throw std::runtime_error("TpxSerializer unsupports double precision! Sorry");
 	}
@@ -23,10 +23,18 @@ bool TprReader::tpr_header()
 	return TPR_SUCCESS;
 }
 
+static void print_box(const char *name, float *arr)
+{
+#ifdef DEBUG
+    msg(name);
+    for (int i = 0; i < 9; i++) printf("%f ", arr[i]);
+    puts("");
+#endif // DEBUG
+}
+
 bool TprReader::tpr_body()
 {
-	data_ = new TprData;
-	memset(data_, 0, sizeof(TprData));
+	data_ = new TprData; // 不能用memset清零含有模板类的结构体
 
 	// read file foramt version of tpr
 	if (!tpr_.do_int(&data_->filever)) return TPR_FAILED;
@@ -107,26 +115,20 @@ bool TprReader::tpr_body()
 	if (data_->bBox)
 	{
 		tpr_.do_vector(data_->box, 9);
-		msg("box= ");
-		for (int i = 0; i < 9; i++) printf("%f ", data_->box[i]);
-		puts("");
+        print_box("box= ", data_->box);
 
 		// Relative box vectors characteristic of the box shape, used to to preserve that box shape
 		if (data_->filever >= 51)
 		{
 			float box_rel[9] = { 0 };
 			tpr_.do_vector(box_rel, 9);
-			msg("box_rel= ");
-			for (int i = 0; i < 9; i++) printf("%f ", box_rel[i]);
-			puts("");
+            print_box("box_rel= ", box_rel);
 		}
 
 		// Box velocities for Parrinello-Rahman P-coupling
 		float boxv[9] = { 0 };
 		tpr_.do_vector(boxv, 9);
-		msg("boxv= ");
-		for (int i = 0; i < 9; i++) printf("%f ", boxv[i]);
-		puts("");
+        print_box("boxv= ", boxv);
 
 		if (data_->filever < 56)
 		{

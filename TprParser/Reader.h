@@ -12,6 +12,14 @@ using vecU2D = std::vector<std::vector<unsigned short>>;
 
 struct TprData
 {
+	// clear zero
+	TprData() : symtab(nullptr), lambda(0.0f)
+	{
+		prec = filever = vergen = natoms = ngtc = fep_state = 0;
+		symtablen = nmoltypes = nmolblock = 0;
+		bIr = bTop = bX = bV = bF = bBox = false;
+	}
+
 	int					prec; //< the precision of tpr, 4 or 8
 	int					filever; //< the version of file format, fver
 	int					vergen; //< the verions of generation code, fgen
@@ -25,9 +33,10 @@ struct TprData
 	bool				bV; //< if has velocity
 	bool				bF; //< if has force
 	bool				bBox; //< if has box 
-	float				box[DIM * DIM]; //< box size
+	float				box[DIM * DIM] = {0}; //< box size
 	char				* symtab;//< symb name, truncate to 8 characters
 	int					symtablen, nmoltypes, nmolblock;
+
 	std::vector<int>	atomsinmol;
 	std::vector<int>	resinmol;
 	std::vector<int>	molnames;

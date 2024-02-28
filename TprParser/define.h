@@ -382,10 +382,16 @@ typedef union t_iparams
 
 
 #define MAX_LEN 4096
+#define DEBUG
+#ifdef DEBUG
 #define msg(...) \
 do { \
     fprintf(stderr, "INFO) "); \
     fprintf(stderr, __VA_ARGS__); \
 } while(0)
+#else
+#define msg(...) 
+#endif // DEBUG
+
 
 #endif // !DEFINE_H

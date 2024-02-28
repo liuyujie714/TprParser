@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 	}
 	catch (const std::exception&e)
 	{
-		printf("%s\n", e.what());
+		msg("%s\n", e.what());
 	}
 
 	return 0;

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdexcept>
 #include "endianswap.h"
-#include <typeinfo>
+#include <type_traits>
 
 #define TPR_SUCCESS true
 #define TPR_FAILED  false
