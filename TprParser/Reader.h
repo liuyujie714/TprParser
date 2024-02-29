@@ -10,6 +10,12 @@ using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;
 using vecU2D = std::vector<std::vector<unsigned short>>;
 
+// angles
+struct t_angle {
+	t_angle(int a_, int b_, int c_) : a(a_), b(b_), c(c_) {}
+	int a, b, c;
+};
+
 struct TprData
 {
 	// clear zero
@@ -80,6 +86,11 @@ struct TprData
 		std::vector<float>			mass;
 		std::vector<float>			charge;
 	} atoms;
+
+	// bonds
+	std::vector<std::pair<int, int>> bonds;
+	// angles
+	std::vector<t_angle>			angles;
 };
 
 class TprReader

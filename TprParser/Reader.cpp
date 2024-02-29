@@ -297,7 +297,6 @@ bool TprReader::tpr_bonds()
     };
     constexpr int nBonds = asize(interactions);
 
-    std::vector<std::pair<int, int>> bonds;
     int aoffset = 0;
     for (int i = 0; i < data_->nmolblock; i++)
     {
@@ -314,9 +313,9 @@ bool TprReader::tpr_bonds()
                     for (int m = 0; m < data_->ilist.nr[type][mtype] / 2; m++)
                     {
                         // OW-HW1
-                        bonds.push_back(std::make_pair<int, int>(1 + aoffset, 2 + aoffset));
+                        data_->bonds.push_back(std::make_pair<int, int>(1 + aoffset, 2 + aoffset));
                         // OW-HW2
-                        bonds.push_back(std::make_pair<int, int>(1 + aoffset, 3 + aoffset));
+                        data_->bonds.push_back(std::make_pair<int, int>(1 + aoffset, 3 + aoffset));
                     }
                 }
                 else
@@ -325,7 +324,7 @@ bool TprReader::tpr_bonds()
                     {
                         int a = 3 * m + 1;
                         int b = 3 * m + 2;
-                        bonds.push_back(std::make_pair<int, int>(
+                        data_->bonds.push_back(std::make_pair<int, int>(
                             1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][b] + aoffset)
                         );
@@ -344,7 +343,7 @@ bool TprReader::tpr_bonds()
         {
             int a = 3 * m + 1;
             int b = 3 * m + 2;
-            bonds.push_back(std::make_pair<int, int>(
+            data_->bonds.push_back(std::make_pair<int, int>(
                 1 + data_->inter_molecular_ilist.interactionlist[F_HARMONIC][0][a],
                 1 + data_->inter_molecular_ilist.interactionlist[F_HARMONIC][0][b])
             );
@@ -354,7 +353,7 @@ bool TprReader::tpr_bonds()
 
     // write a mol2 format
     FILE* fp = fopen("dump.mol2", "w");
-    fprintf(fp, "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n", data_->natoms, (int)(bonds.size()));
+    fprintf(fp, "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n", data_->natoms, (int)(data_->bonds.size()));
     for (int i = 0; i < data_->natoms; i++)
     {
         fprintf(fp, "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
@@ -364,7 +363,7 @@ bool TprReader::tpr_bonds()
     }
     fprintf(fp, "@<TRIPOS>BOND\n");
     int i = 1;
-    for (auto& bond : bonds)
+    for (auto& bond : data_->bonds)
     {
         fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.first, bond.second, 1);
     }
@@ -382,11 +381,6 @@ bool TprReader::tpr_angles()
     };
     constexpr int nAngles = asize(interactions);
 
-    struct t_angle {
-        t_angle(int a_, int b_, int c_) : a(a_), b(b_), c(c_) {}
-        int a, b, c;
-    };
-    std::vector<t_angle> angles;
     int aoffset = 0;
     for (int i = 0; i < data_->nmolblock; i++)
     {
@@ -403,7 +397,7 @@ bool TprReader::tpr_angles()
                     for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
                     {
                         // HW1 - OW - HW2
-                        angles.push_back(t_angle(2 + aoffset, 1 + aoffset, 3 + aoffset));
+                        data_->angles.push_back(t_angle(2 + aoffset, 1 + aoffset, 3 + aoffset));
                     }
                 }
                 else
@@ -413,7 +407,7 @@ bool TprReader::tpr_angles()
                         int a = 4 * m + 1;
                         int b = 4 * m + 2;
                         int c = 4 * m + 3;
-                        angles.push_back(
+                        data_->angles.push_back(
                             t_angle(
                                 1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                                 1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
@@ -426,6 +420,10 @@ bool TprReader::tpr_angles()
             aoffset += data_->atomsinmol[mtype];
         }
     }
+
+    // TODO
+    // 1. dihedrals, impdihedral...
+    // 2. inter-molecular angles, dihedrals, imp...
 
     return TPR_SUCCESS;
 }
