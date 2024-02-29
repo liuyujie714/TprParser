@@ -336,6 +336,22 @@ bool TprReader::tpr_bonds()
         }
     }
 
+    // inter-molecular bonds
+    if (data_->bInter)
+    {
+        // use global atom index
+        for (int m = 0; m < data_->inter_molecular_ilist.nr[F_HARMONIC][0] / 3; m++)
+        {
+            int a = 3 * m + 1;
+            int b = 3 * m + 2;
+            bonds.push_back(std::make_pair<int, int>(
+                1 + data_->inter_molecular_ilist.interactionlist[F_HARMONIC][0][a],
+                1 + data_->inter_molecular_ilist.interactionlist[F_HARMONIC][0][b])
+            );
+        }
+    }
+
+
     // write a mol2 format
     FILE* fp = fopen("dump.mol2", "w");
     fprintf(fp, "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n", data_->natoms, (int)(bonds.size()));
@@ -344,7 +360,7 @@ bool TprReader::tpr_bonds()
         fprintf(fp, "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
             i + 1, data_->atoms.atomname[i].c_str(),
             data_->atoms.x[3L * i + 0] * 10.0, data_->atoms.x[3L * i + 1] * 10.0, data_->atoms.x[3L * i + 2] * 10.0,
-            data_->atoms.atomname[i].c_str()[0], 1, "UNK", data_->atoms.charge[i]);
+            data_->atoms.atomname[i].c_str()[0], 1, data_->atoms.resname[i].c_str(), data_->atoms.charge[i]);
     }
     fprintf(fp, "@<TRIPOS>BOND\n");
     int i = 1;
@@ -353,6 +369,63 @@ bool TprReader::tpr_bonds()
         fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.first, bond.second, 1);
     }
     fclose(fp);
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::tpr_angles()
+{
+    // angles type
+    const int interactions[] = {
+        F_ANGLES, F_G96ANGLES, F_CROSS_BOND_BONDS, F_CROSS_BOND_ANGLES, F_UREY_BRADLEY,
+        F_QUARTIC_ANGLES, F_RESTRANGLES, F_TABANGLES, F_SETTLE
+    };
+    constexpr int nAngles = asize(interactions);
+
+    struct t_angle {
+        t_angle(int a_, int b_, int c_) : a(a_), b(b_), c(c_) {}
+        int a, b, c;
+    };
+    std::vector<t_angle> angles;
+    int aoffset = 0;
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int mtype = data_->molbtype[i];
+        for (int j = 0; j < data_->molbnmol[i]; j++)
+        {
+            for (int k = 0; k < nAngles; k++)
+            {
+                int type = interactions[k];
+                // settle 
+                if (type == F_SETTLE)
+                {
+                    // settle algorithm for water molecules
+                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
+                    {
+                        // HW1 - OW - HW2
+                        angles.push_back(t_angle(2 + aoffset, 1 + aoffset, 3 + aoffset));
+                    }
+                }
+                else
+                {
+                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
+                    {
+                        int a = 4 * m + 1;
+                        int b = 4 * m + 2;
+                        int c = 4 * m + 2;
+                        angles.push_back(
+                            t_angle(
+                                1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
+                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
+                                1 + data_->ilist.interactionlist[type][mtype][c] + aoffset
+                            )
+                        );
+                    }
+                }
+            }
+            aoffset += data_->atomsinmol[mtype];
+        }
+    }
 
     return TPR_SUCCESS;
 }
@@ -860,11 +933,10 @@ bool TprReader::do_atoms()
     // inter-molecularbonds
     if (data_->filever >= tpxv_IntermolecularBondeds)
     {
-        bool bInter = false;
         // for gmx>=2020, read 1 byte
-        if (!tpr_.do_bool(&bInter, data_->vergen))  return TPR_FAILED;
-        msg("bInter= %d\n", bInter ? 1 : 0);
-        if (bInter)
+        if (!tpr_.do_bool(&data_->bInter, data_->vergen))  return TPR_FAILED;
+        msg("bInter= %d\n", data_->bInter ? 1 : 0);
+        if (data_->bInter)
         {
             // allocated
             for (int i = 0; i < F_NRE; i++)

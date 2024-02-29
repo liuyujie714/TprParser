@@ -17,7 +17,7 @@ struct TprData
 	{
 		prec = filever = vergen = natoms = ngtc = fep_state = 0;
 		symtablen = nmoltypes = nmolblock = 0;
-		bIr = bTop = bX = bV = bF = bBox = false;
+		bIr = bTop = bX = bV = bF = bBox = bInter = false;
 	}
 
 	int					prec; //< the precision of tpr, 4 or 8
@@ -33,6 +33,7 @@ struct TprData
 	bool				bV; //< if has velocity
 	bool				bF; //< if has force
 	bool				bBox; //< if has box 
+	bool				bInter; //< if has inter-molecular bonds
 	float				box[DIM * DIM] = {0}; //< box size
 	char				* symtab;//< symb name, truncate to 8 characters
 	int					symtablen, nmoltypes, nmolblock;
@@ -110,6 +111,10 @@ public:
 		{
 			msg("error for tpr_bonds()\n");
 		}
+		if (tpr_angles() != TPR_SUCCESS)
+		{
+			msg("error for tpr_angles()\n");
+		}
 	}
 
 	~TprReader()
@@ -137,6 +142,9 @@ public:
 
 	//< dump bonds of tpr
 	bool tpr_bonds();
+
+	//< dump angles of tpr
+	bool tpr_angles();
 
 private:
 	//< read forcefield parameters
