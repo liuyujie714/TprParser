@@ -412,7 +412,7 @@ bool TprReader::tpr_angles()
                     {
                         int a = 4 * m + 1;
                         int b = 4 * m + 2;
-                        int c = 4 * m + 2;
+                        int c = 4 * m + 3;
                         angles.push_back(
                             t_angle(
                                 1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
