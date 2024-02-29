@@ -1,5 +1,6 @@
 #include "Reader.h"
 #include <set>
+#include <algorithm>
 
 bool TprReader::tpr_header()
 {
@@ -246,7 +247,7 @@ bool TprReader::tpr_xvf()
         if (!tpr_.do_vector(data_->atoms.f.data(), data_->natoms * DIM)) return TPR_FAILED;
     }
 
-    // write a xyz
+    // write a gro
     if (data_->bX)
     {
         FILE* fp = fopen("dump.gro", "w");
@@ -281,6 +282,75 @@ bool TprReader::tpr_chargemass()
     {
         fprintf(fp, "%5s %10.6f %10.6f\n", data_->atoms.atomname[i].c_str(),
             data_->atoms.charge[i], data_->atoms.mass[i]);
+    }
+    fclose(fp);
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::tpr_bonds()
+{
+    // bonds type
+    const int interactions[] = {
+        F_BONDS, F_G96BONDS, F_MORSE, F_CUBICBONDS, F_CONNBONDS, F_HARMONIC, F_FENEBONDS,
+        F_CONSTR, F_CONSTRNC, F_TABBONDS, F_TABBONDSNC, F_SETTLE
+    };
+    constexpr int nBonds = asize(interactions);
+
+    std::vector<std::pair<int, int>> bonds;
+    int aoffset = 0;
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int mtype = data_->molbtype[i];
+        for (int j = 0; j < data_->molbnmol[i]; j++)
+        {
+            for (int k = 0; k < nBonds; k++)
+            {
+                int type = interactions[k];
+                // settle 
+                if (type == F_SETTLE)
+                {
+                    // settle algorithm for water molecules
+                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 2; m++)
+                    {
+                        // OW-HW1
+                        bonds.push_back(std::make_pair<int, int>(1 + aoffset, 2 + aoffset));
+                        // OW-HW2
+                        bonds.push_back(std::make_pair<int, int>(1 + aoffset, 3 + aoffset));
+                    }
+                }
+                else
+                {
+                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 3; m++)
+                    {
+                        int a = 3 * m + 1;
+                        int b = 3 * m + 2;
+                        bonds.push_back(std::make_pair<int, int>(
+                            1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[type][mtype][b] + aoffset)
+                        );
+                    }
+                }
+            }
+            aoffset += data_->atomsinmol[mtype];
+        }
+    }
+
+    // write a mol2 format
+    FILE* fp = fopen("dump.mol2", "w");
+    fprintf(fp, "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n", data_->natoms, (int)(bonds.size()));
+    for (int i = 0; i < data_->natoms; i++)
+    {
+        fprintf(fp, "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
+            i + 1, data_->atoms.atomname[i].c_str(),
+            data_->atoms.x[3L * i + 0] * 10.0, data_->atoms.x[3L * i + 1] * 10.0, data_->atoms.x[3L * i + 2] * 10.0,
+            data_->atoms.atomname[i].c_str()[0], 1, "UNK", data_->atoms.charge[i]);
+    }
+    fprintf(fp, "@<TRIPOS>BOND\n");
+    int i = 1;
+    for (auto& bond : bonds)
+    {
+        fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.first, bond.second, 1);
     }
     fclose(fp);
 
@@ -684,11 +754,9 @@ bool TprReader::do_atoms()
             if (!tpr_.do_float(&rdum)) return TPR_FAILED; //mB
             if (!tpr_.do_float(&rdum)) return TPR_FAILED; //qB
 
-            // types也会出问题，但是后面没用
-            if (!tpr_.do_ushort(&data_->types[i][j])) return TPR_FAILED;
-            if (!tpr_.do_ushort(&usdum)) return TPR_FAILED;
-            // for gmx>=2020，short只读2字节，因此回多读的两个字节
-            if (data_->vergen >= 27) tpr_.fseek_(-4L, SEEK_CUR);
+            // for gmx>=2020，short只读2字节
+            if (!tpr_.do_ushort(&data_->types[i][j], data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_ushort(&usdum, data_->vergen)) return TPR_FAILED;
 
             if (!tpr_.do_int(&data_->ptypes[i][j])) return TPR_FAILED;
             if (!tpr_.do_int(&data_->resids[i][j])) return TPR_FAILED;
@@ -726,17 +794,8 @@ bool TprReader::do_atoms()
                 if (!tpr_.do_int(&idum)) return TPR_FAILED;
                 data_->trueresids.push_back(idum);
 
-                // gmx >= 2020
-                if (data_->vergen >= 27)
-                {
-                    // uchar只读一字节
-                    tpr_.fseek_(1L, SEEK_CUR);
-                }
-                else
-                {
-                    // 实际读4字节
-                    if (!tpr_.do_uchar(&ucdum)) return TPR_FAILED;
-                }
+                // gmx >= 2020, 只读一字节
+                if (!tpr_.do_uchar(&ucdum, data_->vergen)) return TPR_FAILED;
             }
             else
             {
@@ -802,7 +861,8 @@ bool TprReader::do_atoms()
     if (data_->filever >= tpxv_IntermolecularBondeds)
     {
         bool bInter = false;
-        if (!tpr_.do_bool(&bInter))  return TPR_FAILED;
+        // for gmx>=2020, read 1 byte
+        if (!tpr_.do_bool(&bInter, data_->vergen))  return TPR_FAILED;
         msg("bInter= %d\n", bInter ? 1 : 0);
         if (bInter)
         {
@@ -813,11 +873,6 @@ bool TprReader::do_atoms()
                 data_->inter_molecular_ilist.nr[i].resize(1);
             }
             do_ilists(0, data_->inter_molecular_ilist.nr, data_->inter_molecular_ilist.interactionlist);
-        }
-        // for gmx>=2020
-        if (data_->vergen >= 27)
-        {
-            tpr_.fseek_(-3L, SEEK_CUR);
         }
     }
 
@@ -915,15 +970,8 @@ bool TprReader::do_groups()
         if (idum != 0)
         {
             // for gmx >= 2020，uchar只读1字节
-            if (data_->vergen >= 27)
-            {
-                tpr_.fseek_(idum, SEEK_CUR); // 直接移动
-            }
-            else
-            {
-                std::vector<unsigned char> temp(idum);
-                tpr_.do_vector(temp.data(), idum);
-            }
+            std::vector<unsigned char> temp(idum);
+            tpr_.do_vector(temp.data(), idum, data_->vergen);
         }
     }
 

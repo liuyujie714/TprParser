@@ -58,64 +58,114 @@ public:
 	}
 
 	// read/write bool, return TPR_SUCCESS if succeed
-	bool do_bool(bool* val) const
+	bool do_bool(bool* val, int vergen = 26) const
 	{
 		if (m_read)
 		{
-			int tempint = 0;
-			if (fread(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
-			if (m_rev) swap4_aligned(&tempint, 1);
-			*val = (tempint != 0); // return bool
+			// read 1 byte
+			if (vergen >= 27)
+			{
+				if (fread(val, 1, 1, fp) != 1) return TPR_FAILED;
+			}
+			else
+			{
+				int tempint = 0;
+				if (fread(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
+				if (m_rev) swap4_aligned(&tempint, 1);
+				*val = (tempint != 0); // return bool
+			}
 		}
 		else
 		{
-			// bool to int
-			int tempint = static_cast<int>(*val);
-			if (m_rev) swap4_aligned(&tempint, 1);
-			if (fwrite(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
+			// write 1 byte
+			if (vergen >= 27)
+			{
+				if (fwrite(val, 1, 1, fp) != 1) return TPR_FAILED;
+			}
+			else
+			{
+				// bool to int
+				int tempint = static_cast<int>(*val);
+				if (m_rev) swap4_aligned(&tempint, 1);
+				if (fwrite(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
+			}
 		}
 		return TPR_SUCCESS;
 	}
 
 	// read/write unsigned short, return TPR_SUCCESS if succeed
-	// actually read int and convert to unsigned short
-	bool do_ushort(unsigned short * val) const
+	// actually read int if vergen < 27 and convert to unsigned short
+	bool do_ushort(unsigned short * val, int vergen = 26) const
 	{
 		static_assert(sizeof(unsigned short) == 2, "sizeof unsigned short must be 2");
 		if (m_read)
 		{
-			int temp;
-			if (fread(&temp, 4, 1, fp) != 1) return TPR_FAILED;
-			if (m_rev) swap4_aligned(&temp, 1);
-			*val = static_cast<unsigned short>(temp);
+			// for gmx2020
+			if (vergen >= 27)
+			{
+				if (fread(val, 2, 1, fp) != 1) return TPR_FAILED;
+				if (m_rev) swap2_aligned(val, 1);
+			}
+			else
+			{
+				int temp;
+				if (fread(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+				if (m_rev) swap4_aligned(&temp, 1);
+				*val = static_cast<unsigned short>(temp);
+			}
 		}
 		else
 		{
-			int temp = static_cast<int>(*val);
-			if (m_rev) swap4_aligned(&temp, 1);
-			if (fwrite(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+			// for gmx2020
+			if (vergen >= 27)
+			{
+				if (m_rev) swap2_aligned(val, 1);
+				if (fwrite(val, 2, 1, fp) != 1) return TPR_FAILED;
+			}
+			else
+			{
+				int temp = static_cast<int>(*val);
+				if (m_rev) swap4_aligned(&temp, 1);
+				if (fwrite(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+			}
 		}
 
 		return TPR_SUCCESS;
 	}
 
 	// read/write unsigned char, return TPR_SUCCESS if succeed
-	// actually read unsigned int and convert to unsigned short
-	bool do_uchar(unsigned char * val) const
+	// actually read unsigned int if vergen < 27 and convert to unsigned short
+	bool do_uchar(unsigned char * val, int vergen = 26) const
 	{
 		static_assert(sizeof(unsigned char) == 1, "sizeof unsigned char must be 1");
 		if (m_read)
 		{
-			int temp;
-			if (fread(&temp, 4, 1, fp) != 1) return TPR_FAILED;
-			if (m_rev) swap4_aligned(&temp, 1);
-			*val = static_cast<unsigned char>(temp);
+			// for gmx>=2020, only read 1 byte
+			if (vergen >= 27)
+			{
+				if (fread(val, 1, 1, fp) != 1) return TPR_FAILED;
+			}
+			else
+			{
+				int temp;
+				if (fread(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+				if (m_rev) swap4_aligned(&temp, 1);
+				*val = static_cast<unsigned char>(temp);
+			}
 		}
 		else
 		{
-			int temp = static_cast<int>(*val);
-			if (m_rev) swap4_aligned(&temp, 1);
-			if (fwrite(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+			// for gmx>=2020, only write 1 byte
+			if (vergen >= 27)
+			{
+				if (fwrite(val, 1, 1, fp) != 1) return TPR_FAILED;
+			}
+			else
+			{
+				int temp = static_cast<int>(*val);
+				if (m_rev) swap4_aligned(&temp, 1);
+				if (fwrite(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+			}
 		}
 
 		return TPR_SUCCESS;
@@ -191,13 +241,13 @@ public:
 
 	//< read float in len vector
 	template<typename T>
-	bool do_vector(T* arr, int len) const
+	bool do_vector(T* arr, int len, int vergen = 26) const
 	{
 		for (int i = 0; i < len; i++)
 		{
 			if constexpr (std::is_same_v<T, unsigned char>)
 			{
-				if (!do_uchar(&arr[i])) return TPR_FAILED;
+				if (!do_uchar(&arr[i], vergen)) return TPR_FAILED;
 			}
 			else if constexpr (std::is_same_v<T, int>)
 			{
@@ -264,21 +314,33 @@ public:
 	bool tpr_save_string(char* saveloc, int genversion) 
 	{
 		int			i;
-		int64_t		len;
 		char		buf[MAX_LEN];
 
-		if (!do_int64(&len)) return TPR_FAILED;
-		if (fread(buf, 1, int(len), fp) != int(len)) return TPR_FAILED;
-		// GROMACS is weird. Before writer version 27, the reads were always aligned to 4 bytes.
-		// In subsequent versions, they are not. So to maintain backwards compatability, add an
-		// extra seek.
-		if (genversion < 27 && len % 4) {
-    		fseek(fp, 4 - (len % 4), SEEK_CUR);
+		// for gmx>=2020
+		if (genversion >= 27)
+		{
+			int64_t len;
+			if (!do_int64(&len)) return TPR_FAILED;
+			if (fread(buf, 1, (size_t)(len), fp) != (size_t)(len)) return TPR_FAILED;
+			for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
+				saveloc[i] = buf[i];
+			}
+			saveloc[i] = '\0';
 		}
-		for (i = 0; i < MIN(int(len), (SAVELEN-1)); i++) {
-			saveloc[i] = buf[i];
+		else
+		{
+			int len;
+			// first byte not used
+			if (!do_int(&len)) return TPR_FAILED;
+			// actually len
+			if (!do_int(&len)) return TPR_FAILED;
+			if (len % 4) len += 4 - len % 4; // ×Ö½Ú¶ÔÆë
+			if (fread(buf, 1, len, fp) != len) return TPR_FAILED;
+			for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
+				saveloc[i] = buf[i];
+			}
+			saveloc[i] = '\0';
 		}
-		saveloc[i] = '\0';
 
 		return TPR_SUCCESS;
 	}

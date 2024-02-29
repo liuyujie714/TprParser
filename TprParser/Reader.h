@@ -106,6 +106,10 @@ public:
 		{
 			msg("error for tpr_chargemass()\n");
 		}
+		if (tpr_bonds() != TPR_SUCCESS)
+		{
+			msg("error for tpr_bonds()\n");
+		}
 	}
 
 	~TprReader()
@@ -130,6 +134,9 @@ public:
 
 	//< dump charges and mass
 	bool tpr_chargemass();
+
+	//< dump bonds of tpr
+	bool tpr_bonds();
 
 private:
 	//< read forcefield parameters
