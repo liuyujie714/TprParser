@@ -162,7 +162,7 @@ private:
 	bool tpr_readff();
 
 	//< read parameters
-	bool do_iparams(int ftype, t_iparams * iparams, int filever);
+	bool do_iparams(int ftype, t_iparams * iparams, int filever, int prec);
 
 	//< moltype dump
 	bool do_atoms();

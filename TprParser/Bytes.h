@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include "endianswap.h"
 #include <type_traits>
+#include <string>
 
 #define TPR_SUCCESS true
 #define TPR_FAILED  false
@@ -239,9 +240,32 @@ public:
 		return TPR_SUCCESS;
 	}
 
+	//< only read float/double according to given prec (4/8)
+	bool do_real(void * val, int prec) const
+	{
+		float	f;
+		double	d;
+		switch (prec)
+		{
+			case sizeof(float) :
+			{
+				if (!do_float(&f)) return TPR_FAILED;
+				*(static_cast<float*>(val)) = f;
+				break;
+			}
+			case sizeof(double):
+				if (!do_double(&d)) return TPR_FAILED;
+				*(static_cast<float*>(val)) = static_cast<float>(d); // double to float
+				break;
+			default:
+				throw std::runtime_error("Can not support precision= " + std::to_string(prec));
+			}
+		return TPR_SUCCESS;
+	}
+
 	//< read float in len vector
 	template<typename T>
-	bool do_vector(T* arr, int len, int vergen = 26) const
+	bool do_vector(T* arr, int len, int prec = 4, int vergen = 26) const
 	{
 		for (int i = 0; i < len; i++)
 		{
@@ -259,7 +283,7 @@ public:
 			}
 			else if constexpr (std::is_same_v <T, float>)
 			{
-				if (!do_float(&arr[i])) return TPR_FAILED;
+				if (!do_real(&arr[i], prec)) return TPR_FAILED;
 			}
 			else if constexpr (std::is_same_v <T, double>)
 			{

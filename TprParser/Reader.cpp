@@ -4,6 +4,8 @@
 
 bool TprReader::tpr_header()
 {
+    data_ = new TprData; // 不能用memset清零含有模板类的结构体
+
 	// read the first int at the first of tpr
 	int tempint;
 	if (!tpr_.do_int(&tempint)) return TPR_FAILED;
@@ -14,11 +16,11 @@ bool TprReader::tpr_header()
 	msg("gmx version: %s\n", filever);
 
 	// read precision int
-	if (!tpr_.do_int(&tempint)) return TPR_FAILED;
-	msg("gmx precision: %s\n", tempint == sizeof(float) ? "float" : "double");
-	if (tempint != sizeof(float))
+	if (!tpr_.do_int(&data_->prec)) return TPR_FAILED;
+	msg("gmx precision: %s\n", data_->prec == sizeof(float) ? "float" : "double");
+	if (data_->prec != sizeof(float) && data_->prec != sizeof(double))
 	{
-		throw std::runtime_error("TpxSerializer unsupports double precision! Sorry");
+        throw std::runtime_error("TpxSerializer unsupports precision: " + std::to_string(data_->prec));
 	}
 	
 	return TPR_SUCCESS;
@@ -35,8 +37,6 @@ static void print_box(const char *name, float *arr)
 
 bool TprReader::tpr_body()
 {
-	data_ = new TprData; // 不能用memset清零含有模板类的结构体
-
 	// read file foramt version of tpr
 	if (!tpr_.do_int(&data_->filever)) return TPR_FAILED;
 	msg("File Format Version: %d\n", data_->filever);
@@ -77,7 +77,7 @@ bool TprReader::tpr_body()
 		int tempint;
 		float tempreal;
 		if (!tpr_.do_int(&tempint)) return TPR_FAILED;
-		if (!tpr_.do_float(&tempreal)) return TPR_FAILED;
+		if (!tpr_.do_real(&tempreal, data_->prec)) return TPR_FAILED;
 	}
 	if (data_->filever >= 79)
 	{
@@ -86,7 +86,7 @@ bool TprReader::tpr_body()
 		msg("fep_state= %d\n", data_->fep_state);
 	}
 	// lambda 
-	if (!tpr_.do_float(&data_->lambda)) return TPR_FAILED;
+	if (!tpr_.do_real(&data_->lambda, data_->prec)) return TPR_FAILED;
 	msg("lambda= %f\n", data_->lambda);
 	// bool type
 	if (!tpr_.do_bool(&data_->bIr)) return TPR_FAILED;
@@ -115,26 +115,26 @@ bool TprReader::tpr_body()
 	// read box size
 	if (data_->bBox)
 	{
-		tpr_.do_vector(data_->box, 9);
+		tpr_.do_vector(data_->box, 9, data_->prec);
         print_box("box= ", data_->box);
 
 		// Relative box vectors characteristic of the box shape, used to to preserve that box shape
 		if (data_->filever >= 51)
 		{
 			float box_rel[9] = { 0 };
-			tpr_.do_vector(box_rel, 9);
+			tpr_.do_vector(box_rel, 9, data_->prec);
             print_box("box_rel= ", box_rel);
 		}
 
 		// Box velocities for Parrinello-Rahman P-coupling
 		float boxv[9] = { 0 };
-		tpr_.do_vector(boxv, 9);
+		tpr_.do_vector(boxv, 9, data_->prec);
         print_box("boxv= ", boxv);
 
 		if (data_->filever < 56)
 		{
 			float dump[9] = { 0 };
-			tpr_.do_vector(dump, 9);
+			tpr_.do_vector(dump, 9, data_->prec);
 		}
 	}
 
@@ -144,10 +144,10 @@ bool TprReader::tpr_body()
 		float* temparr = new float[data_->ngtc];
 		if (data_->filever < 69)
 		{
-			if (!tpr_.do_vector(temparr, data_->ngtc)) return TPR_FAILED;
+			if (!tpr_.do_vector(temparr, data_->ngtc, data_->prec)) return TPR_FAILED;
 		}
 		//These used to be the Berendsen tcoupl_lambda's
-		if(!tpr_.do_vector(temparr, data_->ngtc)) return TPR_FAILED;
+		if(!tpr_.do_vector(temparr, data_->ngtc, data_->prec)) return TPR_FAILED;
 		delete temparr;
 	}
 
@@ -234,17 +234,17 @@ bool TprReader::tpr_xvf()
     if (data_->bX)
     {
         data_->atoms.x.resize(data_->natoms * DIM);// 3N 
-        if (!tpr_.do_vector(data_->atoms.x.data(), data_->natoms * DIM)) return TPR_FAILED;
+        if (!tpr_.do_vector(data_->atoms.x.data(), data_->natoms * DIM, data_->prec)) return TPR_FAILED;
     }
     if (data_->bV)
     {
         data_->atoms.v.resize(data_->natoms * DIM);// 3N 
-        if (!tpr_.do_vector(data_->atoms.v.data(), data_->natoms * DIM)) return TPR_FAILED;
+        if (!tpr_.do_vector(data_->atoms.v.data(), data_->natoms * DIM, data_->prec)) return TPR_FAILED;
     }
     if (data_->bF)
     {
         data_->atoms.f.resize(data_->natoms * DIM);// 3N 
-        if (!tpr_.do_vector(data_->atoms.f.data(), data_->natoms * DIM)) return TPR_FAILED;
+        if (!tpr_.do_vector(data_->atoms.f.data(), data_->natoms * DIM, data_->prec)) return TPR_FAILED;
     }
 
     // write a gro
@@ -446,7 +446,7 @@ bool TprReader::tpr_readff()
 		if (!tpr_.do_int(&functype[i])) return TPR_FAILED;
 	}
 	if (data_->filever >= 66) if (!tpr_.do_double(&reppow)) return TPR_FAILED;
-	if (!tpr_.do_float(&fudge)) return TPR_FAILED;
+	if (!tpr_.do_real(&fudge, data_->prec)) return TPR_FAILED;
 	msg("fudge= %f\n", fudge);
 	
 	// 调整所有函数类型
@@ -461,13 +461,13 @@ bool TprReader::tpr_readff()
 			}
 		}
 		// 读力场参数
-		if (!do_iparams(functype[i], &iparams_[i], data_->filever)) return TPR_FAILED;
+		if (!do_iparams(functype[i], &iparams_[i], data_->filever, data_->prec)) return TPR_FAILED;
 	}
 
 	return TPR_SUCCESS;
 }
 
-bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
+bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
 {
     int         idum;
     float       rdum;
@@ -480,10 +480,10 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
     case F_G96BONDS:
     case F_HARMONIC:
     case F_IDIHS:
-        tpr_.do_float(&iparams->harmonic.rA);
-        tpr_.do_float(&iparams->harmonic.krA);
-        tpr_.do_float(&iparams->harmonic.rB);
-        tpr_.do_float(&iparams->harmonic.krB);
+        tpr_.do_real(&iparams->harmonic.rA, prec);
+        tpr_.do_real(&iparams->harmonic.krA, prec);
+        tpr_.do_real(&iparams->harmonic.rB, prec);
+        tpr_.do_real(&iparams->harmonic.krB, prec);
         if ((ftype == F_ANGRES || ftype == F_ANGRESZ))
         {
             /* Correct incorrect storage of parameters */
@@ -492,60 +492,60 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
         }
         break;
     case F_RESTRANGLES:
-        tpr_.do_float(&iparams->harmonic.rA);
-        tpr_.do_float(&iparams->harmonic.krA);
+        tpr_.do_real(&iparams->harmonic.rA, prec);
+        tpr_.do_real(&iparams->harmonic.krA, prec);
         break;
     case F_LINEAR_ANGLES:
-        tpr_.do_float(&iparams->linangle.klinA);
-        tpr_.do_float(&iparams->linangle.aA);
-        tpr_.do_float(&iparams->linangle.klinB);
-        tpr_.do_float(&iparams->linangle.aB);
+        tpr_.do_real(&iparams->linangle.klinA, prec);
+        tpr_.do_real(&iparams->linangle.aA, prec);
+        tpr_.do_real(&iparams->linangle.klinB, prec);
+        tpr_.do_real(&iparams->linangle.aB, prec);
         break;
     case F_FENEBONDS:
-        tpr_.do_float(&iparams->fene.bm);
-        tpr_.do_float(&iparams->fene.kb);
+        tpr_.do_real(&iparams->fene.bm, prec);
+        tpr_.do_real(&iparams->fene.kb, prec);
         break;
 
     case F_RESTRBONDS:
-        tpr_.do_float(&iparams->restraint.lowA);
-        tpr_.do_float(&iparams->restraint.up1A);
-        tpr_.do_float(&iparams->restraint.up2A);
-        tpr_.do_float(&iparams->restraint.kA);
-        tpr_.do_float(&iparams->restraint.lowB);
-        tpr_.do_float(&iparams->restraint.up1B);
-        tpr_.do_float(&iparams->restraint.up2B);
-        tpr_.do_float(&iparams->restraint.kB);
+        tpr_.do_real(&iparams->restraint.lowA, prec);
+        tpr_.do_real(&iparams->restraint.up1A, prec);
+        tpr_.do_real(&iparams->restraint.up2A, prec);
+        tpr_.do_real(&iparams->restraint.kA, prec);
+        tpr_.do_real(&iparams->restraint.lowB, prec);
+        tpr_.do_real(&iparams->restraint.up1B, prec);
+        tpr_.do_real(&iparams->restraint.up2B, prec);
+        tpr_.do_real(&iparams->restraint.kB, prec);
         break;
     case F_TABBONDS:
     case F_TABBONDSNC:
     case F_TABANGLES:
     case F_TABDIHS:
-        tpr_.do_float(&iparams->tab.kA);
+        tpr_.do_real(&iparams->tab.kA, prec);
         tpr_.do_int(&iparams->tab.table);
-        tpr_.do_float(&iparams->tab.kB);
+        tpr_.do_real(&iparams->tab.kB, prec);
         break;
     case F_CROSS_BOND_BONDS:
-        tpr_.do_float(&iparams->cross_bb.r1e);
-        tpr_.do_float(&iparams->cross_bb.r2e);
-        tpr_.do_float(&iparams->cross_bb.krr);
+        tpr_.do_real(&iparams->cross_bb.r1e, prec);
+        tpr_.do_real(&iparams->cross_bb.r2e, prec);
+        tpr_.do_real(&iparams->cross_bb.krr, prec);
         break;
     case F_CROSS_BOND_ANGLES:
-        tpr_.do_float(&iparams->cross_ba.r1e);
-        tpr_.do_float(&iparams->cross_ba.r2e);
-        tpr_.do_float(&iparams->cross_ba.r3e);
-        tpr_.do_float(&iparams->cross_ba.krt);
+        tpr_.do_real(&iparams->cross_ba.r1e, prec);
+        tpr_.do_real(&iparams->cross_ba.r2e, prec);
+        tpr_.do_real(&iparams->cross_ba.r3e, prec);
+        tpr_.do_real(&iparams->cross_ba.krt, prec);
         break;
     case F_UREY_BRADLEY:
-        tpr_.do_float(&iparams->u_b.thetaA);
-        tpr_.do_float(&iparams->u_b.kthetaA);
-        tpr_.do_float(&iparams->u_b.r13A);
-        tpr_.do_float(&iparams->u_b.kUBA);
+        tpr_.do_real(&iparams->u_b.thetaA, prec);
+        tpr_.do_real(&iparams->u_b.kthetaA, prec);
+        tpr_.do_real(&iparams->u_b.r13A, prec);
+        tpr_.do_real(&iparams->u_b.kUBA, prec);
         if (filever >= 79)
         {
-            tpr_.do_float(&iparams->u_b.thetaB);
-            tpr_.do_float(&iparams->u_b.kthetaB);
-            tpr_.do_float(&iparams->u_b.r13B);
-            tpr_.do_float(&iparams->u_b.kUBB);
+            tpr_.do_real(&iparams->u_b.thetaB, prec);
+            tpr_.do_real(&iparams->u_b.kthetaB, prec);
+            tpr_.do_real(&iparams->u_b.r13B, prec);
+            tpr_.do_real(&iparams->u_b.kUBB, prec);
         }
         else
         {
@@ -556,23 +556,23 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
         }
         break;
     case F_QUARTIC_ANGLES:
-        tpr_.do_float(&iparams->qangle.theta);
-        tpr_.do_vector(iparams->qangle.c, 5);
+        tpr_.do_real(&iparams->qangle.theta, prec);
+        tpr_.do_vector(iparams->qangle.c, 5, data_->prec);
         break;
     case F_BHAM:
-        tpr_.do_float(&iparams->bham.a);
-        tpr_.do_float(&iparams->bham.b);
-        tpr_.do_float(&iparams->bham.c);
+        tpr_.do_real(&iparams->bham.a, prec);
+        tpr_.do_real(&iparams->bham.b, prec);
+        tpr_.do_real(&iparams->bham.c, prec);
         break;
     case F_MORSE:
-        tpr_.do_float(&iparams->morse.b0A);
-        tpr_.do_float(&iparams->morse.cbA);
-        tpr_.do_float(&iparams->morse.betaA);
+        tpr_.do_real(&iparams->morse.b0A, prec);
+        tpr_.do_real(&iparams->morse.cbA, prec);
+        tpr_.do_real(&iparams->morse.betaA, prec);
         if (filever >= 79)
         {
-            tpr_.do_float(&iparams->morse.b0B);
-            tpr_.do_float(&iparams->morse.cbB);
-            tpr_.do_float(&iparams->morse.betaB);
+            tpr_.do_real(&iparams->morse.b0B, prec);
+            tpr_.do_real(&iparams->morse.cbB, prec);
+            tpr_.do_real(&iparams->morse.betaB, prec);
         }
         else
         {
@@ -582,88 +582,90 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
         }
         break;
     case F_CUBICBONDS:
-        tpr_.do_float(&iparams->cubic.b0);
-        tpr_.do_float(&iparams->cubic.kb);
-        tpr_.do_float(&iparams->cubic.kcub);
+        tpr_.do_real(&iparams->cubic.b0, prec);
+        tpr_.do_real(&iparams->cubic.kb, prec);
+        tpr_.do_real(&iparams->cubic.kcub, prec);
         break;
     case F_CONNBONDS: break;
-    case F_POLARIZATION: tpr_.do_float(&iparams->polarize.alpha); break;
+    case F_POLARIZATION: 
+        tpr_.do_real(&iparams->polarize.alpha, prec); 
+        break;
     case F_ANHARM_POL:
-        tpr_.do_float(&iparams->anharm_polarize.alpha);
-        tpr_.do_float(&iparams->anharm_polarize.drcut);
-        tpr_.do_float(&iparams->anharm_polarize.khyp);
+        tpr_.do_real(&iparams->anharm_polarize.alpha, prec);
+        tpr_.do_real(&iparams->anharm_polarize.drcut, prec);
+        tpr_.do_real(&iparams->anharm_polarize.khyp, prec);
         break;
     case F_WATER_POL:
-        tpr_.do_float(&iparams->wpol.al_x);
-        tpr_.do_float(&iparams->wpol.al_y);
-        tpr_.do_float(&iparams->wpol.al_z);
-        tpr_.do_float(&iparams->wpol.rOH);
-        tpr_.do_float(&iparams->wpol.rHH);
-        tpr_.do_float(&iparams->wpol.rOD);
+        tpr_.do_real(&iparams->wpol.al_x, prec);
+        tpr_.do_real(&iparams->wpol.al_y, prec);
+        tpr_.do_real(&iparams->wpol.al_z, prec);
+        tpr_.do_real(&iparams->wpol.rOH, prec);
+        tpr_.do_real(&iparams->wpol.rHH, prec);
+        tpr_.do_real(&iparams->wpol.rOD, prec);
         break;
     case F_THOLE_POL:
-        tpr_.do_float(&iparams->thole.a);
-        tpr_.do_float(&iparams->thole.alpha1);
-        tpr_.do_float(&iparams->thole.alpha2);
+        tpr_.do_real(&iparams->thole.a, prec);
+        tpr_.do_real(&iparams->thole.alpha1, prec);
+        tpr_.do_real(&iparams->thole.alpha2, prec);
         if (filever < tpxv_RemoveTholeRfac)
         {
             float noRfac = 0;
-            tpr_.do_float(&noRfac);
+            tpr_.do_real(&noRfac, prec);
         }
 
         break;
     case F_LJ:
-        tpr_.do_float(&iparams->lj.c6);
-        tpr_.do_float(&iparams->lj.c12);
+        tpr_.do_real(&iparams->lj.c6, prec);
+        tpr_.do_real(&iparams->lj.c12, prec);
         break;
     case F_LJ14:
-        tpr_.do_float(&iparams->lj14.c6A);
-        tpr_.do_float(&iparams->lj14.c12A);
-        tpr_.do_float(&iparams->lj14.c6B);
-        tpr_.do_float(&iparams->lj14.c12B);
+        tpr_.do_real(&iparams->lj14.c6A, prec);
+        tpr_.do_real(&iparams->lj14.c12A, prec);
+        tpr_.do_real(&iparams->lj14.c6B, prec);
+        tpr_.do_real(&iparams->lj14.c12B, prec);
         break;
     case F_LJC14_Q:
-        tpr_.do_float(&iparams->ljc14.fqq);
-        tpr_.do_float(&iparams->ljc14.qi);
-        tpr_.do_float(&iparams->ljc14.qj);
-        tpr_.do_float(&iparams->ljc14.c6);
-        tpr_.do_float(&iparams->ljc14.c12);
+        tpr_.do_real(&iparams->ljc14.fqq, prec);
+        tpr_.do_real(&iparams->ljc14.qi, prec);
+        tpr_.do_real(&iparams->ljc14.qj, prec);
+        tpr_.do_real(&iparams->ljc14.c6, prec);
+        tpr_.do_real(&iparams->ljc14.c12, prec);
         break;
     case F_LJC_PAIRS_NB:
-        tpr_.do_float(&iparams->ljcnb.qi);
-        tpr_.do_float(&iparams->ljcnb.qj);
-        tpr_.do_float(&iparams->ljcnb.c6);
-        tpr_.do_float(&iparams->ljcnb.c12);
+        tpr_.do_real(&iparams->ljcnb.qi, prec);
+        tpr_.do_real(&iparams->ljcnb.qj, prec);
+        tpr_.do_real(&iparams->ljcnb.c6, prec);
+        tpr_.do_real(&iparams->ljcnb.c12, prec);
         break;
     case F_PDIHS:
     case F_PIDIHS:
     case F_ANGRES:
     case F_ANGRESZ:
-        tpr_.do_float(&iparams->pdihs.phiA);
-        tpr_.do_float(&iparams->pdihs.cpA);
-        tpr_.do_float(&iparams->pdihs.phiB);
-        tpr_.do_float(&iparams->pdihs.cpB);
+        tpr_.do_real(&iparams->pdihs.phiA, prec);
+        tpr_.do_real(&iparams->pdihs.cpA, prec);
+        tpr_.do_real(&iparams->pdihs.phiB, prec);
+        tpr_.do_real(&iparams->pdihs.cpB, prec);
         tpr_.do_int(&iparams->pdihs.mult);
         break;
     case F_RESTRDIHS:
-        tpr_.do_float(&iparams->pdihs.phiA);
-        tpr_.do_float(&iparams->pdihs.cpA);
+        tpr_.do_real(&iparams->pdihs.phiA, prec);
+        tpr_.do_real(&iparams->pdihs.cpA, prec);
         break;
     case F_DISRES:
         tpr_.do_int(&iparams->disres.label);
         tpr_.do_int(&iparams->disres.type);
-        tpr_.do_float(&iparams->disres.low);
-        tpr_.do_float(&iparams->disres.up1);
-        tpr_.do_float(&iparams->disres.up2);
-        tpr_.do_float(&iparams->disres.kfac);
+        tpr_.do_real(&iparams->disres.low, prec);
+        tpr_.do_real(&iparams->disres.up1, prec);
+        tpr_.do_real(&iparams->disres.up2, prec);
+        tpr_.do_real(&iparams->disres.kfac, prec);
         break;
     case F_ORIRES:
         tpr_.do_int(&iparams->orires.ex);
         tpr_.do_int(&iparams->orires.label);
         tpr_.do_int(&iparams->orires.power);
-        tpr_.do_float(&iparams->orires.c);
-        tpr_.do_float(&iparams->orires.obs);
-        tpr_.do_float(&iparams->orires.kfac);
+        tpr_.do_real(&iparams->orires.c, prec);
+        tpr_.do_real(&iparams->orires.obs, prec);
+        tpr_.do_real(&iparams->orires.kfac, prec);
         break;
     case F_DIHRES:
         if (filever < 82)
@@ -671,14 +673,14 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
             tpr_.do_int(&idum);
             tpr_.do_int(&idum);
         }
-        tpr_.do_float(&iparams->dihres.phiA);
-        tpr_.do_float(&iparams->dihres.dphiA);
-        tpr_.do_float(&iparams->dihres.kfacA);
+        tpr_.do_real(&iparams->dihres.phiA, prec);
+        tpr_.do_real(&iparams->dihres.dphiA, prec);
+        tpr_.do_real(&iparams->dihres.kfacA, prec);
         if (filever >= 82)
         {
-            tpr_.do_float(&iparams->dihres.phiB);
-            tpr_.do_float(&iparams->dihres.dphiB);
-            tpr_.do_float(&iparams->dihres.kfacB);
+            tpr_.do_real(&iparams->dihres.phiB, prec);
+            tpr_.do_real(&iparams->dihres.dphiB, prec);
+            tpr_.do_real(&iparams->dihres.kfacB, prec);
         }
         else
         {
@@ -688,55 +690,60 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
         }
         break;
     case F_POSRES:
-        tpr_.do_vector(iparams->posres.pos0A, DIM);
-        tpr_.do_vector(iparams->posres.fcA, DIM);
-        tpr_.do_vector(iparams->posres.pos0B, DIM);
-        tpr_.do_vector(iparams->posres.fcB, DIM);
+        tpr_.do_vector(iparams->posres.pos0A, DIM, data_->prec);
+        tpr_.do_vector(iparams->posres.fcA, DIM, data_->prec);
+        tpr_.do_vector(iparams->posres.pos0B, DIM, data_->prec);
+        tpr_.do_vector(iparams->posres.fcB, DIM, data_->prec);
         break;
     case F_FBPOSRES:
         tpr_.do_int(&iparams->fbposres.geom);
-        tpr_.do_vector(iparams->fbposres.pos0, DIM);
-        tpr_.do_float(&iparams->fbposres.r);
-        tpr_.do_float(&iparams->fbposres.k);
+        tpr_.do_vector(iparams->fbposres.pos0, DIM, data_->prec);
+        tpr_.do_real(&iparams->fbposres.r, prec);
+        tpr_.do_real(&iparams->fbposres.k, prec);
         break;
-    case F_CBTDIHS: tpr_.do_vector(iparams->cbtdihs.cbtcA, NR_CBTDIHS); break;
+    case F_CBTDIHS: 
+        tpr_.do_vector(iparams->cbtdihs.cbtcA, NR_CBTDIHS, data_->prec);
+        break;
     case F_RBDIHS:
         // Fall-through intended
     case F_FOURDIHS:
         /* Fourier dihedrals are internally represented
          * as Ryckaert-Bellemans since those are faster to compute.
          */
-        tpr_.do_vector(iparams->rbdihs.rbcA, NR_RBDIHS);
-        tpr_.do_vector(iparams->rbdihs.rbcB, NR_RBDIHS);
+        tpr_.do_vector(iparams->rbdihs.rbcA, NR_RBDIHS, data_->prec);
+        tpr_.do_vector(iparams->rbdihs.rbcB, NR_RBDIHS, data_->prec);
         break;
     case F_CONSTR:
     case F_CONSTRNC:
-        tpr_.do_float(&iparams->constr.dA);
-        tpr_.do_float(&iparams->constr.dB);
+        tpr_.do_real(&iparams->constr.dA, prec);
+        tpr_.do_real(&iparams->constr.dB, prec);
         break;
     case F_SETTLE:
-        tpr_.do_float(&iparams->settle.doh);
-        tpr_.do_float(&iparams->settle.dhh);
+        tpr_.do_real(&iparams->settle.doh, prec);
+        tpr_.do_real(&iparams->settle.dhh, prec);
         break;
-    case F_VSITE1: break; // VSite1 has 0 parameters
+    case F_VSITE1: 
+        break; // VSite1 has 0 parameters
     case F_VSITE2:
-    case F_VSITE2FD: tpr_.do_float(&iparams->vsite.a); break;
+    case F_VSITE2FD:
+        tpr_.do_real(&iparams->vsite.a, prec); 
+        break;
     case F_VSITE3:
     case F_VSITE3FD:
     case F_VSITE3FAD:
-        tpr_.do_float(&iparams->vsite.a);
-        tpr_.do_float(&iparams->vsite.b);
+        tpr_.do_real(&iparams->vsite.a, prec);
+        tpr_.do_real(&iparams->vsite.b, prec);
         break;
     case F_VSITE3OUT:
     case F_VSITE4FD:
     case F_VSITE4FDN:
-        tpr_.do_float(&iparams->vsite.a);
-        tpr_.do_float(&iparams->vsite.b);
-        tpr_.do_float(&iparams->vsite.c);
+        tpr_.do_real(&iparams->vsite.a, prec);
+        tpr_.do_real(&iparams->vsite.b, prec);
+        tpr_.do_real(&iparams->vsite.c, prec);
         break;
     case F_VSITEN:
         tpr_.do_int(&iparams->vsiten.n);
-        tpr_.do_float(&iparams->vsiten.a);
+        tpr_.do_real(&iparams->vsiten.a, prec);
         break;
     case F_GB12_NOLONGERUSED:
     case F_GB13_NOLONGERUSED:
@@ -746,18 +753,18 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever)
         {
             if (filever < 68)
             {
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
             }
             if (filever < tpxv_RemoveImplicitSolvation)
             {
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
-                tpr_.do_float(&rdum);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
             }
         }
         break;
@@ -820,10 +827,10 @@ bool TprReader::do_atoms()
         for (int j = 0; j < data_->atomsinmol[i]; j++)
         {
             // 读原子质量，电荷
-            if (!tpr_.do_float(&data_->masses[i][j])) return TPR_FAILED;
-            if (!tpr_.do_float(&data_->charges[i][j])) return TPR_FAILED;
-            if (!tpr_.do_float(&rdum)) return TPR_FAILED; //mB
-            if (!tpr_.do_float(&rdum)) return TPR_FAILED; //qB
+            if (!tpr_.do_real(&data_->masses[i][j], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&data_->charges[i][j], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; //mB
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; //qB
 
             // for gmx>=2020，short只读2字节
             if (!tpr_.do_ushort(&data_->types[i][j], data_->vergen)) return TPR_FAILED;
@@ -844,8 +851,8 @@ bool TprReader::do_atoms()
         // allocated for 2D vector
         data_->atomnameids[i].resize(data_->atomsinmol[i]);
         data_->atomtypeids[i].resize(data_->atomsinmol[i]);
-        if (!tpr_.do_vector(data_->atomnameids[i].data(), data_->atomsinmol[i])) return TPR_FAILED;
-        if (!tpr_.do_vector(data_->atomtypeids[i].data(), data_->atomsinmol[i])) return TPR_FAILED;
+        if (!tpr_.do_vector(data_->atomnameids[i].data(), data_->atomsinmol[i], data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(data_->atomtypeids[i].data(), data_->atomsinmol[i], data_->prec)) return TPR_FAILED;
         // typeB
         for (int j = 0; j < data_->atomsinmol[i]; j++)
         {
@@ -881,14 +888,14 @@ bool TprReader::do_atoms()
         // charge groups parts
         if (!tpr_.do_int(&idum)) return TPR_FAILED;
         std::vector<int> temp(idum + 1); // need +1
-        if (!tpr_.do_vector(temp.data(), idum + 1)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
         // doListOfLists
         if (!tpr_.do_int(&idum)) return TPR_FAILED;
         if (!tpr_.do_int(&idum2)) return TPR_FAILED;
         temp.resize(idum + 1); // need +1
-        if (!tpr_.do_vector(temp.data(), idum + 1)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
         temp.resize(idum2); // not need +1
-        if (!tpr_.do_vector(temp.data(), idum2)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum2, data_->prec)) return TPR_FAILED;
     } 
 
 
@@ -913,7 +920,7 @@ bool TprReader::do_atoms()
         if (idum > 0)
         {
             std::vector<float> temp(idum * DIM);
-            if (!tpr_.do_vector(temp.data(), idum * DIM)) return TPR_FAILED;
+            if (!tpr_.do_vector(temp.data(), idum * DIM, data_->prec)) return TPR_FAILED;
         }
 
         if (!tpr_.do_int(&idum)) return TPR_FAILED;  //posres_xB
@@ -921,7 +928,7 @@ bool TprReader::do_atoms()
         if (idum > 0)
         {
             std::vector<float> temp(idum * DIM);
-            if (!tpr_.do_vector(temp.data(), idum * DIM)) return TPR_FAILED;
+            if (!tpr_.do_vector(temp.data(), idum * DIM, data_->prec)) return TPR_FAILED;
         }
     }
     // 体系全局原子数
@@ -962,7 +969,7 @@ bool TprReader::do_atoms()
     {
         int64_t intermolecularExclusionGroupSize;
         if (!tpr_.do_int64(&intermolecularExclusionGroupSize)) return TPR_FAILED;
-        std::vector<int64_t> temp(intermolecularExclusionGroupSize);
+        std::vector<int> temp(intermolecularExclusionGroupSize);
         if (!tpr_.do_vector(temp.data(), static_cast<int>(intermolecularExclusionGroupSize))) return TPR_FAILED;
     }
 
@@ -977,18 +984,18 @@ bool TprReader::do_atomtypes()
     if (data_->filever < tpxv_RemoveImplicitSolvation)
     {
         std::vector<float> temp(nr);
-        if (!tpr_.do_vector(temp.data(), nr)) return TPR_FAILED;
-        if (!tpr_.do_vector(temp.data(), nr)) return TPR_FAILED;
-        if (!tpr_.do_vector(temp.data(), nr)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
     }
     std::vector<int> atomnumbers(nr);
-    if (!tpr_.do_vector(atomnumbers.data(), nr)) return TPR_FAILED;
+    if (!tpr_.do_vector(atomnumbers.data(), nr, data_->prec)) return TPR_FAILED;
 
     if (data_->filever >= 60 && data_->filever < tpxv_RemoveImplicitSolvation)
     {
         std::vector<float> temp(nr);
-        if (!tpr_.do_vector(temp.data(), nr)) return TPR_FAILED;
-        if (!tpr_.do_vector(temp.data(), nr)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -1005,10 +1012,10 @@ bool TprReader::do_cmap()
 
     for (int i = 0; i < ngrid * gridspace * gridspace; i++)
     {
-        if (!tpr_.do_float(&rdum)) return TPR_FAILED;
-        if (!tpr_.do_float(&rdum)) return TPR_FAILED;
-        if (!tpr_.do_float(&rdum)) return TPR_FAILED;
-        if (!tpr_.do_float(&rdum)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -1023,7 +1030,7 @@ bool TprReader::do_groups()
         if (!tpr_.do_int(&idum)) return TPR_FAILED;
 
         std::vector<int> temp(idum);
-        if (!tpr_.do_vector(temp.data(), idum)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum, data_->prec)) return TPR_FAILED;
     }
 
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
@@ -1041,7 +1048,7 @@ bool TprReader::do_groups()
         {
             // for gmx >= 2020，uchar只读1字节
             std::vector<unsigned char> temp(idum);
-            tpr_.do_vector(temp.data(), idum, data_->vergen);
+            tpr_.do_vector(temp.data(), idum, data_->prec, data_->vergen);
         }
     }
 
@@ -1074,7 +1081,7 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
 
             // allocated memory
             interactionlist[i][ntype].resize(nr[i][ntype]);
-            if (!tpr_.do_vector(interactionlist[i][ntype].data(), nr[i][ntype])) return TPR_FAILED;
+            if (!tpr_.do_vector(interactionlist[i][ntype].data(), nr[i][ntype], data_->prec)) return TPR_FAILED;
 
             if constexpr (0)
             {
