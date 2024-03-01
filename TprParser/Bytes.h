@@ -253,10 +253,12 @@ public:
 				*(static_cast<float*>(val)) = f;
 				break;
 			}
-			case sizeof(double):
+			case sizeof(double) :
+			{
 				if (!do_double(&d)) return TPR_FAILED;
 				*(static_cast<float*>(val)) = static_cast<float>(d); // double to float
 				break;
+			}
 			default:
 				throw std::runtime_error("Can not support precision= " + std::to_string(prec));
 			}
