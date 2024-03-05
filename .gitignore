@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# have not yet finished
+CptParser/
+EdrParser/
+
+
 # User-specific files
 *.rsuser
 *.suo

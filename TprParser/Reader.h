@@ -96,35 +96,36 @@ struct TprData
 class TprReader
 {
 public:
-	TprReader(const char *fname) : tpr_(fname, "rb")
+	// data_ 不能用memset清零含有模板类的结构体
+	TprReader(const char *fname) : tpr_(fname, "rb"), data_(new TprData)
 	{
 		if (tpr_header() != TPR_SUCCESS)
 		{
-			msg("error for tpr_header()\n");
+			throw std::runtime_error("error for tpr_header()");
 		}
 		if (tpr_body() != TPR_SUCCESS)
 		{
-			msg("error for tpr_body()\n");
+			throw std::runtime_error("error for tpr_body()");
 		}
 		if (tpr_mtop() != TPR_SUCCESS)
 		{
-			msg("error for tpr_mtop()\n");
+			throw std::runtime_error("error for tpr_mtop()");
 		}
 		if (tpr_xvf() != TPR_SUCCESS)
 		{
-			msg("error for tpr_xvf()\n");
+			throw std::runtime_error("error for tpr_xvf()");
 		}
 		if (tpr_chargemass() != TPR_SUCCESS)
 		{
-			msg("error for tpr_chargemass()\n");
+			throw std::runtime_error("error for tpr_chargemass()");
 		}
 		if (tpr_bonds() != TPR_SUCCESS)
 		{
-			msg("error for tpr_bonds()\n");
+			throw std::runtime_error("error for tpr_bonds()");
 		}
 		if (tpr_angles() != TPR_SUCCESS)
 		{
-			msg("error for tpr_angles()\n");
+			throw std::runtime_error("error for tpr_angles()");
 		}
 	}
 
@@ -180,7 +181,7 @@ private:
 	bool do_ilists(int ntype, std::vector<int>(&nr)[F_NRE], vecI2D(&interactionlist)[F_NRE]);
 
 private:
-	TpxSerializer			tpr_;
+	FileSerializer			tpr_;
 	TprData					*data_;
 	std::vector<t_iparams>  iparams_; // 力场参数
 };

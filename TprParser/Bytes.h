@@ -8,14 +8,20 @@
 #include <string>
 
 #define TPR_SUCCESS true
+#define CPT_SUCCESS true
+#define EDR_SUCCESS true
 #define TPR_FAILED  false
+#define CPT_FAILED  false
+#define EDR_FAILED  false
 #define MIN(a, b) ((a)<(b)? (a):(b))
 #define SAVELEN 512
+#define CPT_MAGIC1 171817
+#define CPT_MAGIC2 171819
 
-class TpxSerializer
+class FileSerializer
 {
 public:
-	TpxSerializer(const char *fname, const char *mode)
+	FileSerializer(const char *fname, const char *mode)
 	{
 		fp = fopen(fname, mode);
 		if (!fp)
@@ -41,7 +47,7 @@ public:
 		}
 	}
 
-	~TpxSerializer()
+	~FileSerializer()
 	{
 		if (fp) fclose(fp);
 	}
@@ -303,7 +309,7 @@ public:
 	// string's length, then reading in the string itself and storing
 	// it in str. If the length is greater than max, it is truncated
 	// and the rest of the string is skipped in the file
-	bool tpr_string(char* str, int max) const
+	bool xdr_string(char* str, int max) const
 	{
 		int size;
 		if (do_int(&size) == TPR_FAILED) return TPR_FAILED;

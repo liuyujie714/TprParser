@@ -4,15 +4,13 @@
 
 bool TprReader::tpr_header()
 {
-    data_ = new TprData; // 不能用memset清零含有模板类的结构体
-
 	// read the first int at the first of tpr
 	int tempint;
 	if (!tpr_.do_int(&tempint)) return TPR_FAILED;
 
 	// read string contains gmx version
 	char filever[MAX_LEN];
-	if (!tpr_.tpr_string(filever, MAX_LEN)) return TPR_FAILED;
+	if (!tpr_.xdr_string(filever, MAX_LEN)) return TPR_FAILED;
 	msg("gmx version: %s\n", filever);
 
 	// read precision int
@@ -48,7 +46,7 @@ bool TprReader::tpr_body()
 	if (data_->filever >= 77 && data_->filever <= 79)
 	{
 		char release[MAX_LEN];
-		if (!tpr_.tpr_string(release, MAX_LEN)) return TPR_FAILED;
+		if (!tpr_.xdr_string(release, MAX_LEN)) return TPR_FAILED;
 		msg("%s\n", release);
 	}
 	if (!tpr_.do_int(&data_->vergen)) return TPR_FAILED;
@@ -62,7 +60,7 @@ bool TprReader::tpr_body()
 		// 前4个字节未使用
 		if (!tpr_.do_int(&tempint)) return TPR_FAILED;
 
-		if (!tpr_.tpr_string(buf, MAX_LEN)) return TPR_FAILED;
+		if (!tpr_.xdr_string(buf, MAX_LEN)) return TPR_FAILED;
 		msg("%s\n", buf);
 	}
 
