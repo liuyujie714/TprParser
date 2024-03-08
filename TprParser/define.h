@@ -382,7 +382,7 @@ typedef union t_iparams
 
 
 #define MAX_LEN 4096
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define msg(...) \
 do { \

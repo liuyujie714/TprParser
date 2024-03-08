@@ -4,19 +4,36 @@ int main(int argc, char *argv[])
 {
 	try
 	{
-		TprReader reader1("test/em.tpr");
-		//TprReader reader1("test/large_2021_aa_posres.tpr");
-		//TprReader reader2("test/double_2023.tpr");
-		//TprReader reader3("test/benchMEM.tpr");
-		//TprReader reader4("test/md_cg.tpr");
-		//TprReader reader5("test/2lyz_gmx_4.0.tpr");
-		//TprReader reader6("test/inter-md.tpr");
-		//TprReader reader7("test/md2024.tpr");
-		//TprReader reader8("test/2023demo.tpr");
-		//TprReader reader9("test/2022.tpr");
-		//TprReader reader10("test/2lyz_gmx_2021.tpr");
-		//TprReader reader11("test/2020.4_gra.tpr");
-		//TprReader reader12("test/2lyz_gmx_2021_double.tpr");
+		//TprReader reader("test/em.tpr");
+		//TprReader reader("test/large_2021_aa_posres.tpr");
+		//TprReader reader("test/double_2023.tpr");
+		//TprReader reader("test/benchMEM.tpr");
+		//TprReader reader("test/md_cg.tpr");
+		//TprReader reader("test/2lyz_gmx_4.0.tpr");
+		//TprReader reader("test/inter-md.tpr");
+		//TprReader reader("test/md2024.tpr");
+		//TprReader reader("test/2023demo.tpr");
+		//TprReader reader("test/2022.tpr");
+		//TprReader reader("test/2lyz_gmx_2021.tpr");
+		//TprReader reader("test/2020.4_gra.tpr");
+		//TprReader reader("test/annealing.tpr");
+
+		// 修改MD总步数(模拟时长)
+		{
+			//TprReader reader("test/md.tpr");
+			//reader.set_nsteps(10000000);
+		}
+
+		// 修改原子坐标
+		{
+			TprReader reader("test/oneWater.tpr");
+			std::vector<float> newCoords = {
+				1.901f,   2.939f,   2.362f,
+				2.000f,   2.928f,   2.353f,
+				1.861f,   2.853f,   2.394f
+			};
+			reader.set_coordinates(newCoords);
+		}
 	}
 	catch (const std::exception&e)
 	{

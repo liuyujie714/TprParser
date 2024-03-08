@@ -21,7 +21,7 @@
 class FileSerializer
 {
 public:
-	FileSerializer(const char *fname, const char *mode)
+	FileSerializer(const char *fname, const char *mode) : m_fname(fname)
 	{
 		fp = fopen(fname, mode);
 		if (!fp)
@@ -39,17 +39,29 @@ public:
 			break;
 		}
 
+		// note
+		fprintf(stderr, "NOTE) Open file %s to %s\n", fname, m_read ? "read" : "write");
+
 		// need endianism swap?
 		m_rev = is_litendian();
-		if (m_rev)
-		{
-			msg("is_litendian\n");
-		}
+		msg("data endian= %s\n", m_rev ? "little" : "big");
+
+		// get all buffer
+		if (m_read) get_buffer();
 	}
 
 	~FileSerializer()
 	{
+		if (m_buffer) delete [] m_buffer;
 		if (fp) fclose(fp);
+		fprintf(stderr, "NOTE) End of %s to %s\n", m_fname, m_read ? "read" : "write");
+	}
+
+	//< get a pointer to file char *buffer
+	const char* get_file_buffer(long *fsize) const
+	{
+		*fsize = m_fsize;
+		return m_buffer;
 	}
 
 	// if is little endian
@@ -232,7 +244,7 @@ public:
 	// read/write double
 	bool do_double(double* val) const
 	{
-		static_assert(sizeof(double) == 8, "sizeof double must be 4");
+		static_assert(sizeof(double) == 8, "sizeof double must be 8");
 		if (m_read)
 		{
 			if (fread(val, 8, 1, fp) != 1) return TPR_FAILED;
@@ -246,7 +258,7 @@ public:
 		return TPR_SUCCESS;
 	}
 
-	//< only read float/double according to given prec (4/8)
+	//< read/write float/double according to given prec (4/8)
 	bool do_real(void * val, int prec) const
 	{
 		float	f;
@@ -255,14 +267,32 @@ public:
 		{
 			case sizeof(float) :
 			{
-				if (!do_float(&f)) return TPR_FAILED;
-				*(static_cast<float*>(val)) = f;
+				if (m_read)
+				{
+					if (!do_float(&f)) return TPR_FAILED;
+					*(static_cast<float*>(val)) = f;
+				}
+				else
+				{
+					f = *(static_cast<float*>(val));
+					if (!do_float(&f)) return TPR_FAILED;
+				}
+
 				break;
 			}
 			case sizeof(double) :
 			{
-				if (!do_double(&d)) return TPR_FAILED;
-				*(static_cast<float*>(val)) = static_cast<float>(d); // double to float
+				if (m_read)
+				{
+					if (!do_double(&d)) return TPR_FAILED;
+					*(static_cast<float*>(val)) = static_cast<float>(d); // double to float
+				}
+				else
+				{
+					d = *(static_cast<double*>(val));
+					if (!do_double(&d)) return TPR_FAILED;
+				}
+
 				break;
 			}
 			default:
@@ -271,7 +301,7 @@ public:
 		return TPR_SUCCESS;
 	}
 
-	//< read float in len vector
+	//< read/write us, int, int64_t, float, double, ... in vector with len
 	template<typename T>
 	bool do_vector(T* arr, int len, int prec = 4, int vergen = 26) const
 	{
@@ -382,10 +412,46 @@ public:
 		return fseek(fp, offset, orig);
 	}
 
+	//< report file pointer position
+	long ftell_() const
+	{
+		return ftell(fp);
+	}
+
+	//< fwrite
+	size_t fwrite_(const void* buffer, size_t elementsize, size_t count)
+	{
+		return fwrite(buffer, elementsize, count, fp);
+	}
+
+private:
+	//< get all binary file buffer
+	void get_buffer()
+	{
+		fseek_(0, SEEK_SET); // file start
+		fseek_(0, SEEK_END); // file end
+		long fsize = ftell_();
+		m_buffer = new char[fsize];
+
+		fseek_(0, SEEK_SET); // file start
+		if (fread(m_buffer, fsize, 1, fp) != 1)
+		{
+			throw std::runtime_error("Can not read all binary stream to m_buffer");
+		}
+		// restore
+		fseek_(0, SEEK_SET);
+
+		// filesize
+		m_fsize = fsize;
+	}
+
 private:
 	FILE		*fp = nullptr; //< file pointer
+	const char	* m_fname = nullptr; //< file name
 	bool		m_read = true; //< if read mode
 	bool		m_rev = false; //< if Reverse endiannism?
+	char		* m_buffer = nullptr; //< all file binary data in char *
+	long		m_fsize = 0; // the file size in char
 };
 
 

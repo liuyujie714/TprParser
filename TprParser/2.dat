@@ -1,0 +1,107 @@
+
+
+
+
+
+
+
+
+INFO) Open file test/oneWater.tpr to read
+INFO) is_litendian
+INFO) gmx version: VERSION 2019.6
+INFO) gmx precision: float
+INFO) File Format Version: 116
+INFO) file generator: 26
+INFO) release
+INFO) natoms= 3, ngtc= 1
+INFO) fep_state= 0
+INFO) lambda= 0.000000
+INFO) bIr= 1, bTop= 1, bX= 1, bV= 1, bF= 0, bBox= 1
+INFO) box= 3.000000 0.000000 0.000000 0.000000 3.000000 0.000000 0.000000 0.000000 3.000000 INFO) box_rel= 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 INFO) boxv= 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 INFO) symtablen= 78
+INFO) tempint= 74
+INFO) ntypes= 5
+INFO) fudge= 0.833300
+INFO) nmoltypes= 1
+INFO) data_->molnames[i]= 65
+INFO) do_ilists
+INFO) nmolblock= 1
+INFO) data_->molbtype[i]= 0
+INFO) data_->molbnmol[i]= 1
+INFO) data_->molbnatoms[i]= 3
+INFO) posres_xA= 0
+INFO) posres_xB= 0
+INFO) The number of atoms= 3
+INFO) bInter= 0
+INFO) ngrid= 0, gridspace= 0
+INFO) number of group names= 4
+INFO) ------------------------------
+INFO) pbcType= 0
+INFO) pbcmol= 0
+INFO) integration method= 0
+INFO) nsteps= 50000
+INFO) init_step= 0
+INFO) simulation_part= 1
+INFO) nstcalcenergy= 100
+INFO) cutoff_scheme= 0
+INFO) ns_type= 0
+INFO) nstlist= 10
+INFO) ndelta= 0
+INFO) rtpi= 0.050000
+INFO) nstcomm= 100
+INFO) comm_mode= 0
+INFO) nstcgsteep= 1000
+INFO) nbfgscorr= 10
+INFO) nstlog= 1000
+INFO) nstxout= 0
+INFO) nstvout= 0
+INFO) nstfout= 0
+INFO) nstenergy= 1000
+INFO) nstxout_compressed= 1000
+INFO) init_t= 0
+INFO) delta_t= 0.002 (ps)
+INFO) xtc prec= 1000
+INFO) tolerance of verlet buffer= 0.005
+INFO) verletBufferPressureTolerancer= -1
+INFO) rlist= 1.2
+INFO) dummy_nstcalclr= -1
+INFO) coulombtype= 3
+INFO) coulomb_modifier= 1
+INFO) rcoulomb_switch= 0
+INFO) rcoulomb= 1.2
+INFO) vdwtype= 0
+INFO) vdw_modifier= 1
+INFO) rvdw_switch= 0
+INFO) rvdw= 1.2
+INFO) eDispCorr= 1
+INFO) epsilon_r= 1
+INFO) epsilon_rf= 0
+INFO) tabext= 1
+INFO) ewald_geometry= 3D
+INFO) epsilon_surface= 0
+INFO) ljpme_combination_rule= Geom
+INFO) Continuation= 1
+INFO) etc= 6
+INFO) nsttcouple= 10
+INFO) epc= 0
+INFO) epct= 0
+INFO) nstpcouple= -1
+INFO) tau_p= 1
+INFO) ref_p= 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 INFO) compress= 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 INFO) refcoord_scaling= 0
+INFO) posres_com= 0.000000 0.000000 0.000000 INFO) posres_comB= 0.000000 0.000000 0.000000 INFO) shake_tol= 0.0001
+INFO) n_lambda= 0
+INFO) sc_alpha= 0
+INFO) sc_power= 1
+INFO) sc_r_power= 6
+INFO) sc_sigma= 0.3
+INFO) bScCoul= 1
+INFO) nstdhdl= 50
+INFO) bSimTemp= 0
+INFO) em_stepsize= 0.01
+INFO) em_tol= 10
+INFO) ld_seed= 669042377
+INFO) deform= 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 INFO) cos_accel= 0
+INFO) userint= 0 0 0 0
+INFO) userreal= 0 0 0 0
+INFO) Open file new.tpr to write
+INFO) is_litendian
+INFO) End of reading
