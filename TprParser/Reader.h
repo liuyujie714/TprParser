@@ -281,14 +281,14 @@ public:
 
 public:
 	//< change tpr file nsteps
-	void set_nsteps(int64_t nsteps);
+	bool set_nsteps(int64_t nsteps);
 
 	//< change tpr file dt (ps)
-	void set_dt(double dt);
+	bool set_dt(double dt);
 
 	//< change tpr atomic coordinates
 	template<typename T>
-	void set_coordinates(std::vector<T> &coords)
+	bool set_coordinates(std::vector<T> &coords)
 	{
 		// check if has coordinates of tpr
 		if (!data_->bX)
@@ -308,12 +308,13 @@ public:
 			throw std::runtime_error("Input data type is not equal to data_->precision: " + std::to_string(data_->prec));
 		}
 
-		FileSerializer  newtpr(fout_, "wb");
 		long            fsize = 0;
 		const char* buffer = tpr_.get_file_buffer(&fsize);
 		// 原始位置不为0
 		if (fsize && data_->property.x)
 		{
+			FileSerializer  newtpr(fout_, "wb");
+
 			// write nsteps before 
 			if (newtpr.fwrite_(buffer, data_->property.x * sizeof(char), 1) != 1)
 			{
@@ -330,7 +331,11 @@ public:
 			{
 				throw std::runtime_error("fwrite_ error in set_coordinates after");
 			}
+			
+			return TPR_SUCCESS;
 		}
+
+		return TPR_FAILED;
 	}
 
 private:

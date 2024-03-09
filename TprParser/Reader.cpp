@@ -1792,14 +1792,15 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
 }
 
 
-void TprReader::set_nsteps(int64_t nsteps)
+bool TprReader::set_nsteps(int64_t nsteps)
 {
-    FileSerializer  newtpr(fout_, "wb");
     long            fsize = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     // 原始位置不为0
     if (fsize && data_->property.nsteps)
     {
+        FileSerializer  newtpr(fout_, "wb");
+
         // write nsteps before 
         if (newtpr.fwrite_(buffer, data_->property.nsteps * sizeof(char), 1) != 1)
         {
@@ -1809,13 +1810,13 @@ void TprReader::set_nsteps(int64_t nsteps)
         // write new nsteps
         if (data_->filever >= 62)
         {
-            newtpr.do_int64(&nsteps);
+            if (!newtpr.do_int64(&nsteps)) return TPR_FAILED;
         }
         else
         {
             // old tpr use int type
             int idum = static_cast<int>(nsteps);
-            newtpr.do_int(&idum);
+            if (!newtpr.do_int(&idum)) return TPR_FAILED;
         }
 
         // write nsteps after
@@ -1824,18 +1825,22 @@ void TprReader::set_nsteps(int64_t nsteps)
         {
             throw std::runtime_error("fwrite_ error in set_nsteps after");
         }
+
+        return TPR_SUCCESS;
     }
+    return TPR_FAILED;
 }
 
-void TprReader::set_dt(double dt)
+bool TprReader::set_dt(double dt)
 {
-    FileSerializer  newtpr(fout_, "wb");
     long            fsize = 0;
     int             realsize = 8;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     // 原始位置不为0
     if (fsize && data_->property.dt)
     {
+        FileSerializer  newtpr(fout_, "wb");
+
         // write dt before 
         if (newtpr.fwrite_(buffer, data_->property.dt * sizeof(char), 1) != 1)
         {
@@ -1845,7 +1850,7 @@ void TprReader::set_dt(double dt)
         // write new dt 
         if (data_->filever >= 59)
         {
-            newtpr.do_double(&dt);
+            if (!newtpr.do_double(&dt)) return TPR_FAILED;
             realsize = 8;
         }
         else
@@ -1853,7 +1858,7 @@ void TprReader::set_dt(double dt)
             // old tpr use real type
             realsize = data_->prec;
             float rdum = static_cast<float>(dt);
-            newtpr.do_real(&rdum, data_->prec);
+            if (!newtpr.do_real(&rdum, data_->prec)) return TPR_FAILED;
         }
 
         // write dt after
@@ -1862,5 +1867,8 @@ void TprReader::set_dt(double dt)
         {
             throw std::runtime_error("fwrite_ error in set_dt after");
         }
+
+        return TPR_SUCCESS;
     }
+    return TPR_FAILED;
 }
