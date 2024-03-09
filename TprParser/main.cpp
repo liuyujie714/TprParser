@@ -24,20 +24,26 @@ int main(int argc, char *argv[])
 			//reader.set_nsteps(10000000);
 		}
 
+		// 修改MD步长（dt, ps）
+		{
+			TprReader reader("test/md.tpr");
+			reader.set_dt(0.001); // 0.001 ps
+		}
+
 		// 修改原子坐标
 		{
-			TprReader reader("test/oneWater.tpr");
-			std::vector<float> newCoords = {
-				1.901f,   2.939f,   2.362f,
-				2.000f,   2.928f,   2.353f,
-				1.861f,   2.853f,   2.394f
-			};
-			reader.set_coordinates(newCoords);
+			//TprReader reader("test/oneWater.tpr");
+			//std::vector<float> newCoords = {
+			//	1.901f,   2.939f,   2.362f,
+			//	2.000f,   2.928f,   2.353f,
+			//	1.861f,   2.853f,   2.394f
+			//};
+			//reader.set_coordinates(newCoords);
 		}
 	}
 	catch (const std::exception&e)
 	{
-		msg("%s\n", e.what());
+		fprintf(stderr, "%s\n", e.what());
 	}
 
 	return 0;

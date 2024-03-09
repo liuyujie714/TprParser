@@ -191,16 +191,27 @@ struct TprData
 	// mdp属性位置, 所有变量都必须初始化为0
 	struct
 	{
-		long		nsteps = 0; //< the started nsteps postions in tpr
-		long		x = 0; //< the started atom coordinates 
+		long		nsteps = 0; //< the started nsteps position in tpr
+		long		dt = 0; //< the started dt position in tpr
+		long		x = 0; //< the started atom coordinates position in tpr
 	} property;
 };
 
 class TprReader
 {
 public:
+	const char* fout_ = nullptr;
+
+public:
 	// data_ 不能用memset清零含有模板类的结构体
-	TprReader(const char *fname) : tpr_(fname, "rb"), data_(new TprData), fout_("new.tpr")
+	TprReader(
+		const char *fname, 
+		bool bGRO = false, 
+		bool bMol2 = false, 
+		bool bCharge = false
+	) 
+		: tpr_(fname, "rb"), data_(new TprData), fout_("new.tpr"), 
+		bGRO_(bGRO), bMol2_(bMol2), bCharge_(bCharge)
 	{
 		if (tpr_header() != TPR_SUCCESS)
 		{
@@ -271,6 +282,9 @@ public:
 public:
 	//< change tpr file nsteps
 	void set_nsteps(int64_t nsteps);
+
+	//< change tpr file dt (ps)
+	void set_dt(double dt);
 
 	//< change tpr atomic coordinates
 	template<typename T>
@@ -344,13 +358,13 @@ private:
 	//< do_fepvals
 	bool do_fepvals();
 
-public:
-	const char* fout_ = nullptr;
-
 private:
 	FileSerializer			tpr_;
 	TprData					*data_;
 	std::vector<t_iparams>  iparams_; // 力场参数
+	bool					bGRO_ = false; //< if write a gro
+	bool					bMol2_ = false; //< if write a mol2 whith bonds
+	bool					bCharge_ = false; //< if write atomic charge and mass to file
 };
 
 #endif // !READER_H

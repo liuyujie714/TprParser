@@ -248,7 +248,7 @@ bool TprReader::tpr_xvf()
     }
 
     // write a gro
-    if (data_->bX)
+    if (bGRO_ && data_->bX)
     {
         FILE* fp = fopen("dump.gro", "w");
 
@@ -277,14 +277,16 @@ bool TprReader::tpr_xvf()
 
 bool TprReader::tpr_chargemass()
 {
-    FILE* fp = fopen("chgmass.dat", "w");
-    for (int i = 0; i < data_->atoms.atomname.size(); i++)
+    if (bCharge_)
     {
-        fprintf(fp, "%5s %10.6f %10.6f\n", data_->atoms.atomname[i].c_str(),
-            data_->atoms.charge[i], data_->atoms.mass[i]);
+        FILE* fp = fopen("chgmass.dat", "w");
+        for (int i = 0; i < data_->atoms.atomname.size(); i++)
+        {
+            fprintf(fp, "%5s %10.6f %10.6f\n", data_->atoms.atomname[i].c_str(),
+                data_->atoms.charge[i], data_->atoms.mass[i]);
+        }
+        fclose(fp);
     }
-    fclose(fp);
-
     return TPR_SUCCESS;
 }
 
@@ -326,7 +328,7 @@ bool TprReader::tpr_bonds()
                         int b = 3 * m + 2;
                         data_->bonds.push_back(
                             {
-                                1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][b] + aoffset 
                             }
                         );
@@ -355,23 +357,34 @@ bool TprReader::tpr_bonds()
     }
 
 
+    // 可能需要去除重复的键
+    for (auto& bond : data_->bonds) {
+        std::sort(bond.begin(), bond.end());
+    }
+    std::sort(data_->bonds.begin(), data_->bonds.end());
+    data_->bonds.erase(std::unique(data_->bonds.begin(), data_->bonds.end()), data_->bonds.end());
+
+
     // write a mol2 format
-    FILE* fp = fopen("dump.mol2", "w");
-    fprintf(fp, "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n", data_->natoms, (int)(data_->bonds.size()));
-    for (int i = 0; i < data_->natoms; i++)
+    if (bMol2_)
     {
-        fprintf(fp, "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
-            i + 1, data_->atoms.atomname[i].c_str(),
-            data_->atoms.x[3L * i + 0] * 10.0, data_->atoms.x[3L * i + 1] * 10.0, data_->atoms.x[3L * i + 2] * 10.0,
-            data_->atoms.atomname[i].c_str()[0], 1, data_->atoms.resname[i].c_str(), data_->atoms.charge[i]);
+        FILE* fp = fopen("dump.mol2", "w");
+        fprintf(fp, "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n", data_->natoms, (int)(data_->bonds.size()));
+        for (int i = 0; i < data_->natoms; i++)
+        {
+            fprintf(fp, "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
+                i + 1, data_->atoms.atomname[i].c_str(),
+                data_->atoms.x[3L * i + 0] * 10.0, data_->atoms.x[3L * i + 1] * 10.0, data_->atoms.x[3L * i + 2] * 10.0,
+                data_->atoms.atomname[i].c_str()[0], 1, data_->atoms.resname[i].c_str(), data_->atoms.charge[i]);
+        }
+        fprintf(fp, "@<TRIPOS>BOND\n");
+        int i = 1;
+        for (auto& bond : data_->bonds)
+        {
+            fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.at(0), bond.at(1), 1);
+        }
+        fclose(fp);
     }
-    fprintf(fp, "@<TRIPOS>BOND\n");
-    int i = 1;
-    for (auto& bond : data_->bonds)
-    {
-        fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.at(0), bond.at(1), 1);
-    }
-    fclose(fp);
 
     return TPR_SUCCESS;
 }
@@ -424,6 +437,8 @@ bool TprReader::tpr_angles()
             aoffset += data_->atomsinmol[mtype];
         }
     }
+
+    // 可能需要去除重复的键
     //for (auto& angle : data_->angles)
     //{
     //    msg("%d %d %d\n", angle.at(0), angle.at(1), angle.at(2));
@@ -1175,12 +1190,16 @@ bool TprReader::do_ir()
     if (data_->filever >= 59)
     {
         if (!tpr_.do_double(&ir->init_t)) return TPR_FAILED;
+
+        data_->property.dt = tpr_.ftell_(); // get dt position
         if (!tpr_.do_double(&ir->dt)) return TPR_FAILED;
     }
     else
     {
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->init_t = static_cast<double>(rdum);
+
+        data_->property.dt = tpr_.ftell_(); // get dt position
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->dt = static_cast<double>(rdum);
     }
@@ -1784,17 +1803,64 @@ void TprReader::set_nsteps(int64_t nsteps)
         // write nsteps before 
         if (newtpr.fwrite_(buffer, data_->property.nsteps * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in change_nsteps before");
+            throw std::runtime_error("fwrite_ error in set_nsteps before");
         }
 
         // write new nsteps
-        newtpr.do_int64(&nsteps);
+        if (data_->filever >= 62)
+        {
+            newtpr.do_int64(&nsteps);
+        }
+        else
+        {
+            // old tpr use int type
+            int idum = static_cast<int>(nsteps);
+            newtpr.do_int(&idum);
+        }
 
         // write nsteps after
         long len = fsize - data_->property.nsteps - sizeof(int64_t);
         if (newtpr.fwrite_(&buffer[data_->property.nsteps + sizeof(int64_t)], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in change_nsteps after");
+            throw std::runtime_error("fwrite_ error in set_nsteps after");
+        }
+    }
+}
+
+void TprReader::set_dt(double dt)
+{
+    FileSerializer  newtpr(fout_, "wb");
+    long            fsize = 0;
+    int             realsize = 8;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+    // 原始位置不为0
+    if (fsize && data_->property.dt)
+    {
+        // write dt before 
+        if (newtpr.fwrite_(buffer, data_->property.dt * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in set_dt before");
+        }
+
+        // write new dt 
+        if (data_->filever >= 59)
+        {
+            newtpr.do_double(&dt);
+            realsize = 8;
+        }
+        else
+        {
+            // old tpr use real type
+            realsize = data_->prec;
+            float rdum = static_cast<float>(dt);
+            newtpr.do_real(&rdum, data_->prec);
+        }
+
+        // write dt after
+        long len = fsize - data_->property.dt - realsize;
+        if (newtpr.fwrite_(&buffer[data_->property.dt + realsize], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in set_dt after");
         }
     }
 }

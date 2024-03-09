@@ -15,25 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Reader.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Reader.h">
+    <ClInclude Include="Bytes.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="define.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Bytes.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="endianswap.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Reader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Reader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
