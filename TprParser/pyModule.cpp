@@ -1,4 +1,5 @@
-#include "C:/Users/liuyujie714/AppData/Local/Programs/Python/Python38/include/Python.h"
+#include "Python.h"
+#include "numpy/arrayobject.h"
 #include "Reader.h"
 #include <string.h>
 
@@ -95,39 +96,72 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 	Py_RETURN_TRUE;
 }
 
+
 static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwargs)
 {
 	PyObject* capsule = nullptr;
 	PyObject* coords_obj = nullptr;
 
 	static const char* keywords[] = { "capsule", "coords", nullptr };
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", (char**)keywords, &capsule, &coords_obj)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", (char**)keywords, &capsule, &coords_obj))
+	{
 		return nullptr;
 	}
 
 	std::vector<float> coords;
-	PyObject* coords_iter = PyObject_GetIter(coords_obj);
-	if (!coords_iter) {
-		PyErr_SetString(PyExc_RuntimeError, "Failed to get iterator for coords");
+	// if is numpy
+	import_array() // 使用nymoy相关的函数时候必须先调用这个
+	if (PyArray_Check(coords_obj))
+	{
+		// numpy to C array
+		PyArrayObject* arr = (PyArrayObject*)(coords_obj);
+
+		// 比较数据类型代码
+		if (PyArray_TYPE(arr) != NPY_FLOAT32) {
+			PyErr_SetString(PyExc_RuntimeError, "Only support np.float32 array");
+			return nullptr;
+		}
+
+		npy_intp* dims = PyArray_DIMS(arr);
+		int ndim = PyArray_NDIM(arr);
+		if (ndim != 1)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Input numoy dimension is not equal 1");
+			return nullptr;
+		}
+		float* data = (float*)PyArray_DATA(coords_obj);
+		coords.assign(data, data + dims[0]);
+	}
+	// if is list
+	else if (PyList_Check(coords_obj))
+	{
+		Py_ssize_t size = PyList_Size(coords_obj);
+		for (Py_ssize_t i = 0; i < size; i++)
+		{
+			PyObject* item = PyList_GetItem(coords_obj, i);
+			if (!PyFloat_Check(item))
+			{
+				PyErr_SetString(PyExc_RuntimeError, "List must be float type");
+				return nullptr;
+			}
+			coords.push_back((float)(PyFloat_AsDouble(item)));
+		}
+	}
+	else
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Input coords must be numpy array or list");
+		return nullptr;
+	}
+	// check array size
+	if (coords.empty())
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Empty input coords");
 		return nullptr;
 	}
 
-	PyObject* item;
-	while ((item = PyIter_Next(coords_iter))) {
-		float coord = (float)PyFloat_AsDouble(item);
-		if (PyErr_Occurred()) {
-			PyErr_SetString(PyExc_RuntimeError, "Failed to convert coordinate to float");
-			Py_DECREF(item);
-			Py_DECREF(coords_iter);
-			return nullptr;
-		}
-		coords.push_back(coord);
-		Py_DECREF(item);
-	}
-	Py_DECREF(coords_iter);
-
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
-	if (!reader) {
+	if (!reader) 
+	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
 		return nullptr;
 	}
