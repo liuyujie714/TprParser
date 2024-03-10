@@ -52,9 +52,9 @@ public:
 
 	~FileSerializer()
 	{
-		fprintf(stderr, "NOTE) End of %s to %s\n", m_fname.c_str(), m_read ? "read" : "write");
 		if (m_buffer) delete [] m_buffer;
 		if (fp) fclose(fp);
+		fprintf(stderr, "NOTE) End of %s to %s\n", m_fname.c_str(), m_read ? "read" : "write");
 	}
 
 	//< get a pointer to file char *buffer
