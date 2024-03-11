@@ -118,7 +118,7 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 
 		// 比较数据类型代码
 		if (PyArray_TYPE(arr) != NPY_FLOAT32) {
-			PyErr_SetString(PyExc_RuntimeError, "Only support np.float32 array");
+			PyErr_SetString(PyExc_RuntimeError, "Python API Only support np.float32 array");
 			return nullptr;
 		}
 
@@ -126,7 +126,7 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 		int ndim = PyArray_NDIM(arr);
 		if (ndim != 1)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "Input numoy dimension is not equal 1");
+			PyErr_SetString(PyExc_RuntimeError, "Input numpy dimension is not equal 1");
 			return nullptr;
 		}
 		float* data = (float*)PyArray_DATA(coords_obj);
@@ -179,22 +179,81 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 	Py_RETURN_TRUE;
 }
 
+static PyObject* get_coordinates(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = nullptr;
+
+	// get object handle
+	if (!PyArg_ParseTuple(args, "O", &capsule))
+	{
+		return nullptr;
+	}
+
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return nullptr;
+	}
+
+	std::vector<float> coords;
+	try
+	{
+		coords = reader->get_coordinates();
+	}
+	catch (const std::exception& e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return nullptr;
+	}
+	if (coords.empty())
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not find coords in tpr");
+		return nullptr;
+	}
+
+	// coords to python list
+	PyObject* list = PyList_New(coords.size());
+	if (!list)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not new list for coords");
+		return nullptr;
+	}
+	Py_ssize_t i = 0;
+	for (const auto& coord : coords)
+	{
+		PyObject* value = PyFloat_FromDouble(static_cast<double>(coord));
+		if (!value)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Can not convert coords to list");
+			Py_DECREF(list); // free list
+			return nullptr;
+		}
+		PyList_SET_ITEM(list, i++, value);
+	}
+
+	return list;
+}
+
 static PyMethodDef methods[] =
 {
 	{"load", reader_new, METH_VARARGS, "Create a new TprReader instance"},
 	{"set_nsteps", set_nsteps, METH_VARARGS, "Set up nsteps"},
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
+	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
 	{"set_coordinates", (PyCFunction)set_coordinates, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates"},
+
+	{"get_coordinates", get_coordinates, METH_VARARGS, "Get coords from tpr"}, 
 	{NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef tpr_module = 
 {
 	PyModuleDef_HEAD_INIT,
-	"TprParser",
-	NULL,
-	-1,
-	methods
+	"TprParser",		//m_name
+	NULL,				//m_doc
+	-1,					//m_size
+	methods				//m_methods
 };
 
 PyMODINIT_FUNC PyInit_TprParser(void) 

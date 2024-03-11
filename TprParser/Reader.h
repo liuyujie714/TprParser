@@ -205,12 +205,12 @@ public:
 public:
 	// data_ 不能用memset清零含有模板类的结构体
 	TprReader(
-		const char *fname, 
-		bool bGRO = false, 
-		bool bMol2 = false, 
+		const char* fname,
+		bool bGRO = false,
+		bool bMol2 = false,
 		bool bCharge = false
-	) 
-		: tpr_(fname, "rb"), data_(new TprData), fout_("new.tpr"), 
+	)
+		: tpr_(fname, "rb"), data_(new TprData), fout_("new.tpr"),
 		bGRO_(bGRO), bMol2_(bMol2), bCharge_(bCharge)
 	{
 		if (tpr_header() != TPR_SUCCESS)
@@ -249,7 +249,7 @@ public:
 
 	~TprReader()
 	{
-		if (data_->symtab) delete [] data_->symtab;
+		if (data_->symtab) delete[] data_->symtab;
 		if (data_) delete data_;
 
 		msg("End of TprReader\n");
@@ -288,7 +288,7 @@ public:
 
 	//< change tpr atomic coordinates
 	template<typename T>
-	bool set_coordinates(std::vector<T> &coords)
+	bool set_coordinates(std::vector<T>& coords)
 	{
 		// check if has coordinates of tpr
 		if (!data_->bX)
@@ -331,11 +331,23 @@ public:
 			{
 				throw std::runtime_error("fwrite_ error in set_coordinates after");
 			}
-			
+
 			return TPR_SUCCESS;
 		}
 
 		return TPR_FAILED;
+	}
+
+	//< get coords
+	const std::vector<float> &get_coordinates() const
+	{
+		// check if has coordinates of tpr
+		if (!data_->bX)
+		{
+			throw std::runtime_error("Input tpr has not coordinates information");
+		}
+
+		return data_->atoms.x;
 	}
 
 private:
