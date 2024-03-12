@@ -120,6 +120,7 @@ bool TprReader::tpr_body()
 		// Relative box vectors characteristic of the box shape, used to to preserve that box shape
 		if (data_->filever >= 51)
 		{
+            INSERT_POS(press.box_rel);
 			float box_rel[9] = { 0 };
 			tpr_.do_vector(box_rel, 9, data_->prec);
             print_vec("box_rel= ", box_rel);
@@ -232,7 +233,7 @@ bool TprReader::tpr_xvf()
 {
     if (data_->bX)
     {
-        data_->property.x = tpr_.ftell_();
+        INSERT_POS(x);
         data_->atoms.x.resize(data_->natoms * DIM);// 3N 
         if (!tpr_.do_vector(data_->atoms.x.data(), data_->natoms * DIM, data_->prec)) return TPR_FAILED;
     }
@@ -1067,7 +1068,7 @@ bool TprReader::do_ir()
     msg("integration method= %d\n", idum);
     
     // nsteps
-    data_->property.nsteps = tpr_.ftell_();
+    INSERT_POS(nsteps);
     if (data_->filever >= 62)
     {
         if (!tpr_.do_int64(&data_->ir.nsteps)) return TPR_FAILED;
@@ -1191,7 +1192,7 @@ bool TprReader::do_ir()
     {
         if (!tpr_.do_double(&ir->init_t)) return TPR_FAILED;
 
-        data_->property.dt = tpr_.ftell_(); // get dt position
+        INSERT_POS(dt); // get dt position
         if (!tpr_.do_double(&ir->dt)) return TPR_FAILED;
     }
     else
@@ -1199,7 +1200,7 @@ bool TprReader::do_ir()
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->init_t = static_cast<double>(rdum);
 
-        data_->property.dt = tpr_.ftell_(); // get dt position
+        INSERT_POS(dt); // get dt position
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->dt = static_cast<double>(rdum);
     }
@@ -1379,8 +1380,10 @@ bool TprReader::do_ir()
     }
     msg("nsttcouple= %d\n", ir->nsttcouple);
 
+    INSERT_POS(press.epc);
     if (!tpr_.do_int(&ir->epc)) return TPR_FAILED;
     msg("epc= %d\n", ir->epc);
+    INSERT_POS(press.epct);
     if (!tpr_.do_int(&ir->epct)) return TPR_FAILED;
     msg("epct= %d\n", ir->epct);
 
@@ -1394,12 +1397,15 @@ bool TprReader::do_ir()
     }
     msg("nstpcouple= %d\n", ir->nstpcouple);
 
+    INSERT_POS(press.tau_p);
     if (!tpr_.do_real(&ir->tau_p, data_->prec)) return TPR_FAILED;
     msg("tau_p= %g\n", ir->tau_p);
 
     // pressure
+    INSERT_POS(press.ref_p);
     if (!tpr_.do_vector(ir->ref_p, 9, data_->prec)) return TPR_FAILED;
     print_vec("ref_p= ", ir->ref_p);
+    INSERT_POS(press.compress);
     if (!tpr_.do_vector(ir->compress, 9, data_->prec)) return TPR_FAILED;
     print_vec("compress= ", ir->compress);
     if (!tpr_.do_int(&ir->refcoord_scaling)) return TPR_FAILED;
@@ -1566,6 +1572,7 @@ bool TprReader::do_ir()
     msg("userint= %d %d %d %d\n", ir->userint1, ir->userint2, ir->userint3, ir->userint4);
     msg("userreal= %g %g %g %g\n", ir->userreal1, ir->userreal2, ir->userreal3, ir->userreal4);
 
+#if 0
     // AdResS is removed, but we need to be able to read old files,
     if (data_->filever >= 77 && data_->filever < tpxv_RemoveAdress)
     {
@@ -1574,8 +1581,134 @@ bool TprReader::do_ir()
         if (bAdress)
         {
             // TODO
+            throw std::runtime_error("Unsupport read Adress");
         }
     }
+
+    // pull code
+    bool bPull = false;
+    if (data_->filever >= tpxv_PullCoordTypeGeom)
+    {
+        if (!tpr_.do_bool(&bPull, data_->vergen)) return TPR_FAILED;
+    }
+    else
+    {
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        bPull = (idum != 0);
+    }
+    if (bPull)
+    {
+        // TODO
+        throw std::runtime_error("Unsupport read pull code");
+    }
+
+    // read AWH
+    bool bDoAwh = false;
+    if (data_->filever >= tpxv_AcceleratedWeightHistogram)
+    {
+        if (!tpr_.do_bool(&bDoAwh, data_->vergen)) return TPR_FAILED;
+    }
+    if (bDoAwh)
+    {
+        throw std::runtime_error("Unsupport read AWH code");
+    }
+
+    // Enforced rotation
+    bool bRot = false;
+    if (data_->filever >= 74)
+    {
+        if (!tpr_.do_bool(&bRot, data_->vergen)) return TPR_FAILED;
+    }
+    if (bRot)
+    {
+        throw std::runtime_error("Unsupport read enforced rotation code");
+    }
+
+    // IMD
+    bool bIMD = false;
+    if (data_->filever >= tpxv_InteractiveMolecularDynamics)
+    {
+        if (!tpr_.do_bool(&bIMD, data_->vergen)) return TPR_FAILED;
+    }
+    if (bIMD)
+    {
+        throw std::runtime_error("Unsupport read IMD code");
+    }
+
+    // 控温部分
+    if (!tpr_.do_int(&ir->ngtc)) return TPR_FAILED;
+    if (data_->filever >= 69)
+    {
+        if (!tpr_.do_int(&ir->nhchainlength)) return TPR_FAILED;
+    }
+    else
+    {
+        ir->nhchainlength = 1;
+    }
+    // 是否移除加速组功能
+    if (data_->filever >= tpxv_RemovedConstantAcceleration &&
+        data_->filever < tpxv_ReaddedConstantAcceleration)
+    {
+        ir->ngacc = 0;
+    }
+    else
+    {
+        if (!tpr_.do_int(&ir->ngacc)) return TPR_FAILED;
+    }
+    if (!tpr_.do_int(&ir->ngfrz)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->ngener)) return TPR_FAILED;
+
+    // allocate
+    ir->nrdf.resize(ir->ngtc);
+    ir->ref_t.resize(ir->ngtc);
+    ir->annealing.resize(ir->ngtc);
+    ir->anneal_npoints.resize(ir->ngtc);
+    ir->anneal_time.resize(ir->ngtc);
+    ir->anneal_temp.resize(ir->ngtc);
+    ir->tau_t.resize(ir->ngtc);
+
+    ir->nFreeze.resize(ir->ngfrz);
+    ir->acceleration.resize(ir->ngacc);
+    ir->egp_flags.resize(ir->ngener*ir->ngener);
+
+    if (ir->ngtc > 0)
+    { 
+        if (!tpr_.do_vector(ir->nrdf.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_vector(ir->ref_t.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_vector(ir->tau_t.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+    }
+    if (ir->ngfrz > 0)
+    {
+        for (int i = 0; i < ir->ngfrz; i++)
+        {
+            if (!tpr_.do_vector(ir->nFreeze[i].data(), DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+        }
+    }
+    if (ir->ngacc > 0)
+    { 
+        for (int i = 0; i < ir->ngacc; i++)
+        {
+            if (!tpr_.do_vector(ir->acceleration[i].data(), DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+        }
+    }
+    // egp_flags
+    if (!tpr_.do_vector(ir->egp_flags.data(), ir->ngener * ir->ngener, data_->prec, data_->vergen)) return TPR_FAILED;
+
+    // First read the lists with annealing and npoints for each group
+    if (!tpr_.do_vector(ir->annealing.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+    if (!tpr_.do_vector(ir->anneal_npoints.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+    for (int i = 0; i < ir->ngtc; i++)
+    {
+        int k = ir->anneal_npoints[i]; // 每组点数
+        ir->anneal_time[i].resize(k);
+        ir->anneal_temp[i].resize(k);
+        if (!tpr_.do_vector(ir->anneal_time[i].data(), k, data_->prec, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_vector(ir->anneal_temp[i].data(), k, data_->prec, data_->vergen)) return TPR_FAILED;
+
+    }
+#endif // 0
+
+    // 墙, TODO
 
     return TPR_SUCCESS;
 }
@@ -1870,5 +2003,114 @@ bool TprReader::set_dt(double dt)
 
         return TPR_SUCCESS;
     }
+    return TPR_FAILED;
+}
+
+bool TprReader::set_pressure(const char* method, const char* type, float tau_p, std::vector<float>& ref_p, std::vector<float>& compress)
+{
+    // check data type float must be same as data_->prec
+    if (sizeof(float) != data_->prec)
+    {
+        throw std::runtime_error("set_pressure only support single precision tpr");
+    }
+
+    // check pressure coupling keywords
+    PressureCoupling epc;
+    PressureCouplingType epct;
+    if ((epc = check_string<PressureCoupling>(method, c_PressureCoupling)) == PressureCoupling::Count)
+    {
+        throw std::runtime_error(std::string("Unknown pressure coupling method: ") + method);
+    }
+    if ((epct = check_string<PressureCouplingType>(type, c_PressureCoupingType)) == PressureCouplingType::Count)
+    {
+        throw std::runtime_error(std::string("Unknown pressure coupling type: ") + type);
+    }
+    // ref_p and compress
+    if (ref_p.size() != DIM * DIM)
+    {
+        throw std::runtime_error("The size of ref_p must be 9");
+    }
+    if (compress.size() != DIM * DIM)
+    {
+        throw std::runtime_error("The size of compressibility must be 9");
+    }
+
+    // only for fileversion >= 51
+    if (data_->filever < 51)
+    {
+        throw std::runtime_error("Only support tpr file version >= 51 to write");
+    }
+
+    long            fsize = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+    if (fsize && !data_->property.press.empty())
+    {
+        // set pressure parameters
+        FileSerializer  newtpr(fout_, "wb");
+
+        // write box_rel before 
+        if (newtpr.fwrite_(buffer, data_->property.press.box_rel * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in box_rel before");
+        }
+
+        // write box_rel
+        float box_rel[DIM * DIM] = { 0 };
+        if (epc != PressureCoupling::No &&
+            data_->ir.deform[XX] == 0  &&
+            (epct == PressureCouplingType::Isotropic || epct == PressureCouplingType::SemiIsotropic))
+        {
+            const int ndim = (epct == PressureCouplingType::SemiIsotropic) ? 2 : 3;
+            do_box_rel(ndim,
+                (float(*)[DIM])data_->ir.deform,
+                (float(*)[DIM])box_rel,
+                (float(*)[DIM])data_->box,
+                true);
+        }
+        if (!newtpr.do_vector(box_rel, DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+
+
+        // write box_rel after and epc before
+        constexpr size_t box_relsize = DIM * DIM * sizeof(float);
+        long len = data_->property.press.epc - data_->property.press.box_rel - box_relsize;
+        if (newtpr.fwrite_(&buffer[data_->property.press.box_rel + box_relsize], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in set_pressure before");
+        }
+
+        // write epc as int enum
+        int enum_epc = static_cast<int>(epc);
+        if (!newtpr.do_int(&enum_epc)) return TPR_FAILED;
+
+        // write epct as int enum
+        int enum_epct = static_cast<int>(epct);
+        if (!newtpr.do_int(&enum_epct)) return TPR_FAILED;
+
+        // write old nstpcouple
+        if (data_->filever >= 71)
+        {
+            if (!newtpr.do_int(&data_->ir.nstpcouple)) return TPR_FAILED;
+        }
+
+        // write tau_p in float
+        if (!newtpr.do_real(&tau_p, data_->prec)) return TPR_FAILED;
+
+        // write ref_p in vector
+        if (!newtpr.do_vector(ref_p.data(), DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        // write compress in vector
+        if (!newtpr.do_vector(compress.data(), DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        // write compress after
+        constexpr size_t size = sizeof(float) * DIM * DIM;
+        len = fsize - data_->property.press.compress - size;
+        if (newtpr.fwrite_(&buffer[data_->property.press.compress + size], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in set_pressure after");
+        }
+
+        return TPR_SUCCESS;
+    }
+
     return TPR_FAILED;
 }

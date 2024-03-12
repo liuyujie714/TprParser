@@ -17,7 +17,7 @@ endif()
 add_executable(TprReader main.cpp Reader.cpp)
 
 # Ìí¼Ó¶¯Ì¬Á´½Ó¿â
-add_library(TprParser SHARED Reader.cpp pyModule.cpp)
+add_library(TprParser SHARED Reader.cpp Py_Module.cpp)
 
 # windows or linux 
 if(WIN32)

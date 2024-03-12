@@ -27,7 +27,8 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Reader.cpp" />
-    <ClCompile Include="pyModule.cpp" />
+    <ClCompile Include="Py_Module.cpp" />
+    <ClCompile Include="TprData.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

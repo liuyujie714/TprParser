@@ -96,25 +96,13 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 	Py_RETURN_TRUE;
 }
 
-
-static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwargs)
+//< get vector from given object, return nullptr if failed
+static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
 {
-	PyObject* capsule = nullptr;
-	PyObject* coords_obj = nullptr;
-
-	static const char* keywords[] = { "capsule", "coords", nullptr };
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", (char**)keywords, &capsule, &coords_obj))
-	{
-		return nullptr;
-	}
-
-	std::vector<float> coords;
-	// if is numpy
-	import_array() // 使用nymoy相关的函数时候必须先调用这个
-	if (PyArray_Check(coords_obj))
+	if (PyArray_Check(vec_obj))
 	{
 		// numpy to C array
-		PyArrayObject* arr = (PyArrayObject*)(coords_obj);
+		PyArrayObject* arr = (PyArrayObject*)(vec_obj);
 
 		// 比较数据类型代码
 		if (PyArray_TYPE(arr) != NPY_FLOAT32) {
@@ -129,33 +117,63 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 			PyErr_SetString(PyExc_RuntimeError, "Input numpy dimension is not equal 1");
 			return nullptr;
 		}
-		float* data = (float*)PyArray_DATA(coords_obj);
-		coords.assign(data, data + dims[0]);
+		float* data = (float*)PyArray_DATA(vec_obj);
+		vec.assign(data, data + dims[0]);
 	}
 	// if is list
-	else if (PyList_Check(coords_obj))
+	else if (PyList_Check(vec_obj))
 	{
-		Py_ssize_t size = PyList_Size(coords_obj);
+		Py_ssize_t size = PyList_Size(vec_obj);
 		for (Py_ssize_t i = 0; i < size; i++)
 		{
-			PyObject* item = PyList_GetItem(coords_obj, i);
-			if (!PyFloat_Check(item))
+			PyObject* item = PyList_GetItem(vec_obj, i);
+			//if (!PyFloat_Check(item))
+			//{
+			//	PyErr_SetString(PyExc_RuntimeError, "List must be float type");
+			//	return nullptr;
+			//}
+			double value = PyFloat_AsDouble(item);
+			if (PyErr_Occurred())
 			{
-				PyErr_SetString(PyExc_RuntimeError, "List must be float type");
+				PyErr_SetString(PyExc_RuntimeError, "Some value of input vector can not be converted");
 				return nullptr;
 			}
-			coords.push_back((float)(PyFloat_AsDouble(item)));
+			vec.push_back((float)(value)); // double to float
 		}
 	}
 	else
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Input coords must be numpy array or list");
+		PyErr_SetString(PyExc_RuntimeError, "Input vector must be numpy array or list");
 		return nullptr;
 	}
 	// check array size
-	if (coords.empty())
+	if (vec.empty())
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Empty input coords");
+		PyErr_SetString(PyExc_RuntimeError, "Empty input vector");
+		return nullptr;
+	}
+
+	return vec_obj;
+}
+
+static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+	PyObject* capsule = nullptr;
+	PyObject* coords_obj = nullptr;
+
+	static const char* keywords[] = { "capsule", "coords", nullptr };
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", (char**)keywords, &capsule, &coords_obj))
+	{
+		return nullptr;
+	}
+
+	// if is numpy
+	import_array() // 使用numpy相关的函数时候必须先调用这个
+
+	// get coords
+	std::vector<float> coords;
+	if (!get_vector(coords_obj, coords))
+	{
 		return nullptr;
 	}
 
@@ -171,6 +189,53 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 		reader->set_coordinates(coords);
 	}
 	catch (const std::exception&e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return nullptr;
+	}
+
+	Py_RETURN_TRUE;
+}
+
+static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+	PyObject		* capsule = nullptr;
+	const char		* epc = nullptr;
+	const char		* epct = nullptr;
+	float			tau_p;
+	PyObject		* ref_p = nullptr;
+	PyObject		* compress = nullptr;
+
+	static const char* keywords[] = { "capsule", "epc", "epct", "tau_p", "ref_p", "compress", nullptr };
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OssfOO",
+		(char**)keywords, &capsule, &epc, &epct, &tau_p, &ref_p, &compress))
+	{
+		return nullptr;
+	}
+
+	// if is numpy
+	import_array() // 使用numpy相关的函数时候必须先调用这个
+
+	// get pressure
+	std::vector<float> vec_press;
+	if (!get_vector(ref_p, vec_press)) return nullptr;
+
+	// get compress
+	std::vector<float> vec_compress;
+	if (!get_vector(compress, vec_compress)) return nullptr;
+
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return nullptr;
+	}
+
+	try
+	{
+		reader->set_pressure(epc, epct, tau_p, vec_press, vec_compress);
+	}
+	catch (const std::exception& e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
 		return nullptr;
@@ -242,6 +307,7 @@ static PyMethodDef methods[] =
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
 	{"set_coordinates", (PyCFunction)set_coordinates, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates"},
+	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 
 	{"get_coordinates", get_coordinates, METH_VARARGS, "Get coords from tpr"}, 
 	{NULL, NULL, 0, NULL}
