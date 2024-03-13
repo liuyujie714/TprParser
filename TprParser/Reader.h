@@ -157,6 +157,12 @@ public:
 		std::vector<float>& ref_p,
 		std::vector<float>& compress);
 
+	//< set temperature coupling parts. Have not yet set groups name
+	bool set_temperature(
+		const char* method,
+		std::vector<float>& tau_t,
+		std::vector<float>& ref_t);
+
 	//< get coords
 	const std::vector<float> &get_coordinates() const
 	{

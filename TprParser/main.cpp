@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
 
 		// 修改MD步长（dt, ps）
 		{
-			TprReader reader("test/md.tpr");
-			reader.set_dt(0.001); // 0.001 ps
+			//TprReader reader("test/md.tpr");
+			//reader.set_dt(0.001); // 0.001 ps
 		}
 
 		// 修改原子坐标
@@ -39,6 +39,14 @@ int main(int argc, char *argv[])
 			//	1.861f,   2.853f,   2.394f
 			//};
 			//reader.set_coordinates(newCoords);
+		}
+
+		// 分开控温
+		{
+			TprReader reader("test/nvt_WAT.tpr");
+			std::vector<float> ref_t = { 200.0f };
+			std::vector<float> tau_t = { 2.0f };
+			reader.set_temperature("NoseHoover", tau_t, ref_t);
 		}
 	}
 	catch (const std::exception&e)

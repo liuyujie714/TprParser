@@ -56,7 +56,12 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
 
 	try
 	{
-		reader->set_nsteps(nsteps);
+		bool ret = reader->set_nsteps(nsteps);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_nsteps faliled");
+			return nullptr;
+		}
 	}
 	catch (const std::exception&e)
 	{
@@ -85,7 +90,12 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 
 	try
 	{
-		reader->set_dt(dt);
+		bool ret = reader->set_dt(dt);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_dt faliled");
+			return nullptr;
+		}
 	}
 	catch (const std::exception&e)
 	{
@@ -167,9 +177,6 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 		return nullptr;
 	}
 
-	// if is numpy
-	import_array() // 使用numpy相关的函数时候必须先调用这个
-
 	// get coords
 	std::vector<float> coords;
 	if (!get_vector(coords_obj, coords))
@@ -186,7 +193,12 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 
 	try
 	{
-		reader->set_coordinates(coords);
+		bool ret = reader->set_coordinates(coords);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_coordinates faliled");
+			return nullptr;
+		}
 	}
 	catch (const std::exception&e)
 	{
@@ -213,9 +225,6 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 		return nullptr;
 	}
 
-	// if is numpy
-	import_array() // 使用numpy相关的函数时候必须先调用这个
-
 	// get pressure
 	std::vector<float> vec_press;
 	if (!get_vector(ref_p, vec_press)) return nullptr;
@@ -233,7 +242,60 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 
 	try
 	{
-		reader->set_pressure(epc, epct, tau_p, vec_press, vec_compress);
+		bool ret = reader->set_pressure(epc, epct, tau_p, vec_press, vec_compress);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_pressure faliled");
+			return nullptr;
+		}
+	}
+	catch (const std::exception& e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return nullptr;
+	}
+
+	Py_RETURN_TRUE;
+}
+
+static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+	PyObject* capsule = nullptr;
+	const char* etc = nullptr;
+	PyObject* ref_t = nullptr;
+	PyObject* tau_t = nullptr;
+
+	static const char* keywords[] = { "capsule", "etc", "tau_t", "ref_t", nullptr };
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OsOO",
+		(char**)keywords, &capsule, &etc, &tau_t, &ref_t))
+	{
+		return nullptr;
+	}
+
+	// get tau_t
+	std::vector<float> vec_tau;
+	if (!get_vector(tau_t, vec_tau)) return nullptr;
+
+	// get ref_t
+	std::vector<float> vec_t;
+	if (!get_vector(ref_t, vec_t)) return nullptr;
+
+	// get handle
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return nullptr;
+	}
+
+	try
+	{
+		bool ret = reader->set_temperature(etc, vec_tau, vec_t);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_temperature faliled");
+			return nullptr;
+		}
 	}
 	catch (const std::exception& e)
 	{
@@ -305,9 +367,9 @@ static PyMethodDef methods[] =
 	{"load", reader_new, METH_VARARGS, "Create a new TprReader instance"},
 	{"set_nsteps", set_nsteps, METH_VARARGS, "Set up nsteps"},
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
-	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
 	{"set_coordinates", (PyCFunction)set_coordinates, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates"},
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
+	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
 	{"get_coordinates", get_coordinates, METH_VARARGS, "Get coords from tpr"}, 
 	{NULL, NULL, 0, NULL}
@@ -324,5 +386,8 @@ static struct PyModuleDef tpr_module =
 
 PyMODINIT_FUNC PyInit_TprParser(void) 
 {
+	// if is numpy
+	import_array() // 使用numpy相关的函数时候必须先调用这个
+
 	return PyModule_Create(&tpr_module);
 }

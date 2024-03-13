@@ -67,6 +67,7 @@ bool TprReader::tpr_body()
 
 	// natoms and ngtc
 	if (!tpr_.do_int(&data_->natoms)) return TPR_FAILED;
+    INSERT_POS(temperature.g_ngtc); // 温度耦合组数目
 	if (!tpr_.do_int(&data_->ngtc)) return TPR_FAILED;
 	msg("natoms= %d, ngtc= %d\n", data_->natoms, data_->ngtc);
 
@@ -1362,6 +1363,7 @@ bool TprReader::do_ir()
     msg("Continuation= %d\n", ir->bContinuation ? 1 : 0);
 
     // 温度耦合
+    INSERT_POS(temperature.etc);
     if (!tpr_.do_int(&ir->etc)) return TPR_FAILED;
     msg("etc= %d\n", ir->etc);
 
@@ -1572,20 +1574,45 @@ bool TprReader::do_ir()
     msg("userint= %d %d %d %d\n", ir->userint1, ir->userint2, ir->userint3, ir->userint4);
     msg("userreal= %g %g %g %g\n", ir->userreal1, ir->userreal2, ir->userreal3, ir->userreal4);
 
-#if 0
+
+#if 1
     // AdResS is removed, but we need to be able to read old files,
+    bool bAdress = false;
     if (data_->filever >= 77 && data_->filever < tpxv_RemoveAdress)
     {
-        bool bAdress;
         if (!tpr_.do_bool(&bAdress, data_->vergen)) return TPR_FAILED;
         if (bAdress)
         {
-            // TODO
-            throw std::runtime_error("Unsupport read Adress");
+            int numThermoForceGroups, numEnergyGroups;
+            float rvec[DIM];
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_vector(rvec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_int(&numThermoForceGroups)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_int(&numEnergyGroups)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+
+            if (numThermoForceGroups > 0)
+            {
+                std::vector<int> idumn(numThermoForceGroups);
+                if (!tpr_.do_vector(idumn.data(), numThermoForceGroups, data_->prec, data_->vergen)) return TPR_FAILED;
+            }
+            if (numEnergyGroups > 0)
+            {
+                std::vector<int> idumn(numEnergyGroups);
+                if (!tpr_.do_vector(idumn.data(), numEnergyGroups, data_->prec, data_->vergen)) return TPR_FAILED;
+            }
         }
     }
+    msg("bAdress= %d\n", bAdress ? 1 : 0);
 
-    // pull code
+    // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
+    // TODO pull code
     bool bPull = false;
     if (data_->filever >= tpxv_PullCoordTypeGeom)
     {
@@ -1598,6 +1625,7 @@ bool TprReader::do_ir()
     }
     if (bPull)
     {
+        return TPR_SUCCESS;
         // TODO
         throw std::runtime_error("Unsupport read pull code");
     }
@@ -1610,6 +1638,7 @@ bool TprReader::do_ir()
     }
     if (bDoAwh)
     {
+        return TPR_SUCCESS;
         throw std::runtime_error("Unsupport read AWH code");
     }
 
@@ -1621,6 +1650,7 @@ bool TprReader::do_ir()
     }
     if (bRot)
     {
+        return TPR_SUCCESS;
         throw std::runtime_error("Unsupport read enforced rotation code");
     }
 
@@ -1632,13 +1662,17 @@ bool TprReader::do_ir()
     }
     if (bIMD)
     {
+        return TPR_SUCCESS;
         throw std::runtime_error("Unsupport read IMD code");
     }
 
     // 控温部分
+    INSERT_POS(temperature.ngtc);
     if (!tpr_.do_int(&ir->ngtc)) return TPR_FAILED;
+    msg("ir->ngtc= %d\n", ir->ngtc);
     if (data_->filever >= 69)
     {
+        INSERT_POS(temperature.nhchainlength);
         if (!tpr_.do_int(&ir->nhchainlength)) return TPR_FAILED;
     }
     else
@@ -1674,7 +1708,11 @@ bool TprReader::do_ir()
     if (ir->ngtc > 0)
     { 
         if (!tpr_.do_vector(ir->nrdf.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        INSERT_POS(temperature.ref_t);
         if (!tpr_.do_vector(ir->ref_t.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        INSERT_POS(temperature.tau_t);
         if (!tpr_.do_vector(ir->tau_t.data(), ir->ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
     }
     if (ir->ngfrz > 0)
@@ -1850,21 +1888,25 @@ bool TprReader::do_fepvals()
 bool TprReader::do_groups()
 {
     //do_grps
-    int     idum;
+    int                 idum, nr;
+    vecI2D              gid(egcNR); // 每个类型中的原子组编号
+    std::vector<int>    gpos; //每个原子组字符串的起始位置
     for (int i = 0; i < egcNR; i++)
     {
-        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        // i=0时，温度耦合组数目 grp[T-Coupling  ] 
+        if (!tpr_.do_int(&nr)) return TPR_FAILED;
 
-        std::vector<int> temp(idum);
-        if (!tpr_.do_vector(temp.data(), idum, data_->prec)) return TPR_FAILED;
+        gid[i].resize(nr); // allocated memory for this type
+        if (!tpr_.do_vector(gid[i].data(), nr, data_->prec)) return TPR_FAILED;
     }
 
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("number of group names= %d\n", idum);
+    // 每个原子组字符串的起始位置
+    gpos.resize(idum);
     for (int i = 0; i < idum; i++)
     {
-        int j;
-        if (!tpr_.do_int(&j)) return TPR_FAILED;
+        if (!tpr_.do_int(&gpos[i])) return TPR_FAILED;
     }
 
     for (int i = 0; i < egcNR; i++)
@@ -1876,6 +1918,22 @@ bool TprReader::do_groups()
             std::vector<unsigned char> temp(idum);
             tpr_.do_vector(temp.data(), idum, data_->prec, data_->vergen);
         }
+    }
+
+    // 输出每种类型组数目和组名称
+    for (int i = 0; i < egcNR; i++)
+    {
+        msg("grp[%-12s] nr= %zu, name= [", c_groups[i], gid[i].size());
+        for (const auto& id : gid[i])
+        {
+            const char* gpname = &data_->symtab[SAVELEN * gpos[id]];
+#ifdef DEBUG
+            fprintf(stderr, " %s", gpname);
+        }
+        fprintf(stderr, "]\n");
+#else
+        }
+#endif // DEBUG
     }
 
     return TPR_SUCCESS;
@@ -2021,7 +2079,7 @@ bool TprReader::set_pressure(const char* method, const char* type, float tau_p, 
     {
         throw std::runtime_error(std::string("Unknown pressure coupling method: ") + method);
     }
-    if ((epct = check_string<PressureCouplingType>(type, c_PressureCoupingType)) == PressureCouplingType::Count)
+    if ((epct = check_string<PressureCouplingType>(type, c_PressureCouplingType)) == PressureCouplingType::Count)
     {
         throw std::runtime_error(std::string("Unknown pressure coupling type: ") + type);
     }
@@ -2107,6 +2165,102 @@ bool TprReader::set_pressure(const char* method, const char* type, float tau_p, 
         if (newtpr.fwrite_(&buffer[data_->property.press.compress + size], len * sizeof(char), 1) != 1)
         {
             throw std::runtime_error("fwrite_ error in set_pressure after");
+        }
+
+        return TPR_SUCCESS;
+    }
+
+    return TPR_FAILED;
+}
+
+bool TprReader::set_temperature(
+    const char* method,
+    std::vector<float>& tau_t,
+    std::vector<float>& ref_t
+)
+{
+    // check data type float must be same as data_->prec
+    if (sizeof(float) != data_->prec)
+    {
+        throw std::runtime_error("set_temperature only support single precision tpr");
+    }
+
+    // check temperature coupling keywords
+    TemperatureCoupling etc;
+    if ((etc = check_string<TemperatureCoupling>(method, c_TemperatureCoupling)) == TemperatureCoupling::Count)
+    {
+        throw std::runtime_error(std::string("Unknown temperature coupling method: ") + method);
+    }
+    // ref_p and compress
+    if (ref_t.size() != tau_t.size())
+    {
+        throw std::runtime_error("The size of ref_t and tau_t must be same");
+    }
+    if (ref_t.size() != data_->ir.ngtc)
+    {
+        throw std::runtime_error(std::string("The size of ref_t must be same as old tpr: ") + std::to_string(data_->ir.ngtc));
+    }
+
+    long            fsize = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+    if (fsize && !data_->property.temperature.empty())
+    {
+        // set pressure parameters
+        FileSerializer  newtpr(fout_, "wb");
+
+        // write etc before 
+        if (newtpr.fwrite_(buffer, data_->property.temperature.etc * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in ir->etc before");
+        }
+
+        // write etc type as enum
+        int enum_etc = static_cast<int>(etc);
+        if (!newtpr.do_int(&enum_etc)) return TPR_FAILED;
+
+        // write etc after and ngtc before
+        constexpr int sizeInt = (int)sizeof(int); // etc size
+        long len = data_->property.temperature.ngtc - data_->property.temperature.etc - sizeInt;
+        if (newtpr.fwrite_(&buffer[data_->property.temperature.etc + sizeInt], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in etc after and ir->ngtc before");
+        }
+
+        // write ir->ngtc 
+        if (!newtpr.do_int(&data_->ir.ngtc)) return TPR_FAILED;
+
+        // write nhchainlength
+        if (data_->filever >= 69)
+        {
+            int nhchainlength = data_->ir.nhchainlength;
+            if (etc == TemperatureCoupling::NoseHoover)
+            {
+                nhchainlength = 1; // use default value 1
+            }
+            if (!newtpr.do_int(&nhchainlength)) return TPR_FAILED;
+        }
+
+        // write nhchainlength after and ref_t before
+        // if has nhchainlength position
+        long started = data_->filever >= 69 ? data_->property.temperature.nhchainlength : data_->property.temperature.ngtc;
+        len = data_->property.temperature.ref_t - started - sizeInt;
+        if (newtpr.fwrite_(&buffer[started + sizeInt], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in nhchainlength after and ref_t before");
+        }
+
+        // write ref_t vector
+        if (!newtpr.do_vector(ref_t.data(), data_->ir.ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        // write tau_t vector
+        if (!newtpr.do_vector(tau_t.data(), data_->ir.ngtc, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        // write tau_t after
+        const int size = (int)sizeof(float) * data_->ir.ngtc;
+        len = fsize - data_->property.temperature.tau_t - size;
+        if (newtpr.fwrite_(&buffer[data_->property.temperature.tau_t + size], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in ir->tau_t after");
         }
 
         return TPR_SUCCESS;

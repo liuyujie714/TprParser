@@ -6,11 +6,11 @@
 #include <string>
 #include <array>
 
-#ifndef _WIN32
+#if defined(_MSC_VER) || defined(_WIN32)
+#define mystricmp _stricmp
+#else
 #include <strings.h>
 #define mystricmp strcasecmp
-#else
-#define mystricmp _stricmp
 #endif
 
 
@@ -52,10 +52,28 @@ enum class PressureCouplingType : int
 	SemiIsotropic,
 	Count
 };
-static const char* c_PressureCoupingType[static_cast<int>(PressureCouplingType::Count)] =
+static const char* c_PressureCouplingType[static_cast<int>(PressureCouplingType::Count)] =
 {
 	"Isotropic", "SemiIsotropic"
 };
+
+//< temperature coupling methods
+enum class TemperatureCoupling : int
+{
+	No,
+	Berendsen,
+	NoseHoover,
+	Yes,
+	Andersen,
+	AndersenMassive,
+	VRescale,
+	Count,
+};
+static const char* c_TemperatureCoupling[static_cast<int>(TemperatureCoupling::Count)] =
+{
+	"No", "Berendsen", "NoseHoover", "Yes", "Andersen", "AndersenMassive", "VRescale"
+};
+
 
 
 //< check key words in a c_string ignore case, return enum value if find, else return ENUM::Count
@@ -125,7 +143,7 @@ struct TprData
 	bool				bBox; //< if has box 
 	bool				bInter; //< if has inter-molecular bonds
 	float				box[DIM * DIM] = { 0 }; //< box size
-	char* symtab;//< symb name, truncate to 8 characters
+	char				* symtab;//< symb name, truncate to 8 characters
 	int					symtablen, nmoltypes, nmolblock;
 
 	std::vector<int>	atomsinmol;
@@ -146,7 +164,7 @@ struct TprData
 	vecI2D				atomicnumbers;
 
 	// mdp parameters
-	struct IR
+	struct
 	{
 		PbcType				pbc = PbcType::Unset; //< which pbc type
 		bool				pbcmol; //< periodic-molecules
@@ -308,6 +326,23 @@ struct TprData
 				return !(box_rel && epc && epct && tau_p && ref_p && compress);
 			}
 		} press;
+		
+		// 温度设置参数位置
+		struct 
+		{
+			long	g_ngtc = 0; //< the started number of temperature coupling group position in tpr header, g_ngtc==ir->ngtc
+			long	etc = 0; //< the started temperature coupling type position, enum to int, 0=No, 1=Berendsen,2=NoseHoover,6=VRescale
+			long	ngtc = 0; //< the started number of temperature coupling group position
+			long    nhchainlength = 0; //< the Nose-Hoover chain length if use Nose-Hoover temperature coupling
+			long	ref_t = 0; //< the started ref temperature position, is ir->ngtc vector
+			long	tau_t = 0; //< the started temperature coupling constant position, is ir->ngtc vector
+
+			//< return True if can not read temperature position due to pull code, AWH have not yet finish in tpr reader (TODO)
+			bool empty() const
+			{
+				return !(ref_t && tau_t && etc && ngtc && g_ngtc);
+			}
+		} temperature;
 	} property;
 };
 

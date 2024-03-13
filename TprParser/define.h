@@ -1,6 +1,18 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
+#define MAX_LEN 4096
+//#define DEBUG
+#ifdef DEBUG
+#define msg(...) \
+do { \
+    fprintf(stderr, "INFO) "); \
+    fprintf(stderr, __VA_ARGS__); \
+} while(0)
+#else
+#define msg(...) 
+#endif // DEBUG
+
 // enum type for input 
 enum
 {
@@ -8,6 +20,12 @@ enum
     egcUser1, egcUser2, egcVCM, egcCompressedX,
     egcORFIT, egcQMMM,
     egcNR
+};
+static const char* c_groups[egcNR] =
+{
+    "T-Coupling", "Energy Mon.", "Acceleration", "Freeze",
+    "User1", "User2", "VCM", "Compressed X",
+    "Or. Res. Fit", "QMMM"
 };
 
 // enum for interaction function from ifunc.h
@@ -379,19 +397,6 @@ typedef union t_iparams
         float buf[MAXFORCEPARAM];
     } generic; /* Conversion */
 } t_iparams;
-
-
-#define MAX_LEN 4096
-//#define DEBUG
-#ifdef DEBUG
-#define msg(...) \
-do { \
-    fprintf(stderr, "INFO) "); \
-    fprintf(stderr, __VA_ARGS__); \
-} while(0)
-#else
-#define msg(...) 
-#endif // DEBUG
 
 
 #endif // !DEFINE_H

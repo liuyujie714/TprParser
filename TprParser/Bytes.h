@@ -201,8 +201,9 @@ public:
 		}
 		else
 		{
-			if (m_rev) swap4_aligned(val, 1);
-			if (fwrite(val, 4, 1, fp) != 1) return TPR_FAILED;
+			int tempint = *val; // avoid change *val binary order
+			if (m_rev) swap4_aligned(&tempint, 1);
+			if (fwrite(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -218,8 +219,9 @@ public:
 		}
 		else
 		{
-			if (m_rev) swap8_aligned(val, 1);
-			if (fwrite(val, 8, 1, fp) != 1) return TPR_FAILED;
+			int64_t tempint64 = *val; // avoid change *val
+			if (m_rev) swap8_aligned(&tempint64, 1);
+			if (fwrite(&tempint64, 8, 1, fp) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -235,8 +237,9 @@ public:
 		}
 		else
 		{
-			if (m_rev) swap4_aligned(val, 1);
-			if (fwrite(val, 4, 1, fp) != 1) return TPR_FAILED;
+			float tempfloat = *val; // avoid change *val
+			if (m_rev) swap4_aligned(&tempfloat, 1);
+			if (fwrite(&tempfloat, 4, 1, fp) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -252,8 +255,9 @@ public:
 		}
 		else
 		{
-			if (m_rev) swap8_aligned(val, 1);
-			if (fwrite(val, 8, 1, fp) != 1) return TPR_FAILED;
+			double tempdouble = *val;
+			if (m_rev) swap8_aligned(&tempdouble, 1);
+			if (fwrite(&tempdouble, 8, 1, fp) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
