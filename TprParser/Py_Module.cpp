@@ -59,7 +59,7 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
 		bool ret = reader->set_nsteps(nsteps);
 		if (ret == TPR_FAILED)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "set_nsteps faliled");
+			PyErr_SetString(PyExc_RuntimeError, "set_nsteps failed");
 			return nullptr;
 		}
 	}
@@ -93,7 +93,7 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 		bool ret = reader->set_dt(dt);
 		if (ret == TPR_FAILED)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "set_dt faliled");
+			PyErr_SetString(PyExc_RuntimeError, "set_dt failed");
 			return nullptr;
 		}
 	}
@@ -196,7 +196,7 @@ static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwarg
 		bool ret = reader->set_coordinates(coords);
 		if (ret == TPR_FAILED)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "set_coordinates faliled");
+			PyErr_SetString(PyExc_RuntimeError, "set_coordinates failed");
 			return nullptr;
 		}
 	}
@@ -245,7 +245,7 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 		bool ret = reader->set_pressure(epc, epct, tau_p, vec_press, vec_compress);
 		if (ret == TPR_FAILED)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "set_pressure faliled");
+			PyErr_SetString(PyExc_RuntimeError, "set_pressure failed");
 			return nullptr;
 		}
 	}
@@ -293,7 +293,7 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 		bool ret = reader->set_temperature(etc, vec_tau, vec_t);
 		if (ret == TPR_FAILED)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "set_temperature faliled");
+			PyErr_SetString(PyExc_RuntimeError, "set_temperature failed");
 			return nullptr;
 		}
 	}
@@ -302,6 +302,44 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 		PyErr_SetString(PyExc_RuntimeError, e.what());
 		return nullptr;
 	}
+
+	Py_RETURN_TRUE;
+}
+
+// set integer props in mdp
+static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
+{
+	PyObject	* capsule = nullptr;
+	const char	* prop = nullptr;
+	int			val = 0;
+
+	if (!PyArg_ParseTuple(args, "Osi", &capsule, &prop, &val))
+	{
+		return nullptr;
+	}
+
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return nullptr;
+	}
+
+	try
+	{
+		bool ret = reader->set_mdp_integer(prop, val);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_mdp_integer failed");
+			return nullptr;
+		}
+	}
+	catch (const std::exception& e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return nullptr;
+	}
+
 
 	Py_RETURN_TRUE;
 }
@@ -367,6 +405,7 @@ static PyMethodDef methods[] =
 	{"load", reader_new, METH_VARARGS, "Create a new TprReader instance"},
 	{"set_nsteps", set_nsteps, METH_VARARGS, "Set up nsteps"},
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
+	{"set_mdp_integer", set_mdp_integer, METH_VARARGS, "Set up int keyword"},
 	{"set_coordinates", (PyCFunction)set_coordinates, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates"},
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},

@@ -75,6 +75,20 @@ static const char* c_TemperatureCoupling[static_cast<int>(TemperatureCoupling::C
 };
 
 
+// Integer mdp
+enum class ParamsInteger : int
+{
+	nstlog, nstxout, nstvout, nstfout,
+	nstenergy, nstxout_compressed,
+	nsttcouple, nstpcouple, nstcalcenergy,
+	Count,
+};
+static const char* c_mdp_integer[static_cast<int>(ParamsInteger::Count)] =
+{
+	"nstlog", "nstxout", "nstvout", "nstfout",
+	"nstenergy", "nstxout_compressed" ,
+	"nsttcouple", "nstpcouple", "nstcalcenergy"
+};
 
 //< check key words in a c_string ignore case, return enum value if find, else return ENUM::Count
 template<typename ENUM, const int count = static_cast<int>(ENUM::Count)>
@@ -284,7 +298,7 @@ struct TprData
 		std::vector<int>	nr[F_NRE];
 	}
 	ilist,					// 分子相互作用列表
-		inter_molecular_ilist;	// 全局指定的分子间相互作用
+	inter_molecular_ilist;	// 全局指定的分子间相互作用
 
 	// 原子属性
 	struct
@@ -343,6 +357,30 @@ struct TprData
 				return !(ref_t && tau_t && etc && ngtc && g_ngtc);
 			}
 		} temperature;
+		
+		// 单个整数属性mdp设置位置
+		struct
+		{
+			long			nstlog = 0; // started 
+			long			nstxout = 0;
+			long			nstvout = 0;
+			long			nstfout = 0;
+			long			nstenergy = 0;
+			long			nstxout_compressed = 0;
+
+			// must be data_->filever >= 71
+			long			nsttcouple = 0;
+			long			nstpcouple = 0;
+
+			//must be data_->filever >= 67
+			long			nstcalcenergy = 0;
+
+			//< return True if can not read any one position
+			bool empty() const
+			{
+				return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed && nsttcouple && nstpcouple && nstcalcenergy);
+			}
+		} integer;
 	} property;
 };
 

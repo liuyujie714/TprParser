@@ -163,6 +163,9 @@ public:
 		std::vector<float>& tau_t,
 		std::vector<float>& ref_t);
 
+	//< set integer mdp parameters
+	bool set_mdp_integer(const char* prop, int val);
+
 	//< get coords
 	const std::vector<float> &get_coordinates() const
 	{

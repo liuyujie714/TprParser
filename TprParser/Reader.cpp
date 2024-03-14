@@ -1133,6 +1133,7 @@ bool TprReader::do_ir()
     //nstcalcenergy
     if (data_->filever >= 67)
     {
+        INSERT_POS(integer.nstcalcenergy);
         if (!tpr_.do_int(&ir->nstcalcenergy)) return TPR_FAILED;
     }
     else
@@ -1176,16 +1177,28 @@ bool TprReader::do_ir()
     msg("nstcgsteep= %d\n", ir->nstcgsteep);
     if (!tpr_.do_int(&ir->nbfgscorr)) return TPR_FAILED;
     msg("nbfgscorr= %d\n", ir->nbfgscorr);
+
+    INSERT_POS(integer.nstlog);
     if (!tpr_.do_int(&ir->nstlog)) return TPR_FAILED;
     msg("nstlog= %d\n", ir->nstlog);
+
+    INSERT_POS(integer.nstxout);
     if (!tpr_.do_int(&ir->nstxout)) return TPR_FAILED;
     msg("nstxout= %d\n", ir->nstxout);
+
+    INSERT_POS(integer.nstvout);
     if (!tpr_.do_int(&ir->nstvout)) return TPR_FAILED;
     msg("nstvout= %d\n", ir->nstvout);
+
+    INSERT_POS(integer.nstfout);
     if (!tpr_.do_int(&ir->nstfout)) return TPR_FAILED;
     msg("nstfout= %d\n", ir->nstfout);
+
+    INSERT_POS(integer.nstenergy);
     if (!tpr_.do_int(&ir->nstenergy)) return TPR_FAILED;
     msg("nstenergy= %d\n", ir->nstenergy);
+
+    INSERT_POS(integer.nstxout_compressed);
     if (!tpr_.do_int(&ir->nstxout_compressed)) return TPR_FAILED;
     msg("nstxout_compressed= %d\n", ir->nstxout_compressed);
 
@@ -1374,6 +1387,7 @@ bool TprReader::do_ir()
     }
     if (data_->filever >= 71)
     {
+        INSERT_POS(integer.nsttcouple);
         if (!tpr_.do_int(&ir->nsttcouple)) return TPR_FAILED;
     }
     else
@@ -1391,6 +1405,7 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 71)
     {
+        INSERT_POS(integer.nstpcouple);
         if (!tpr_.do_int(&ir->nstpcouple)) return TPR_FAILED;
     }
     else
@@ -2205,7 +2220,7 @@ bool TprReader::set_temperature(
     const char* buffer = tpr_.get_file_buffer(&fsize);
     if (fsize && !data_->property.temperature.empty())
     {
-        // set pressure parameters
+        // set_temperature parameters
         FileSerializer  newtpr(fout_, "wb");
 
         // write etc before 
@@ -2261,6 +2276,53 @@ bool TprReader::set_temperature(
         if (newtpr.fwrite_(&buffer[data_->property.temperature.tau_t + size], len * sizeof(char), 1) != 1)
         {
             throw std::runtime_error("fwrite_ error in ir->tau_t after");
+        }
+
+        return TPR_SUCCESS;
+    }
+
+    return TPR_FAILED;
+}
+
+bool TprReader::set_mdp_integer(const char* prop, int val)
+{
+	ParamsInteger epi;
+	if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
+	{
+        throw std::runtime_error(std::string("Unknown mdp property: ") + prop);
+	}
+
+    // too old tpr unsupport
+    if (data_->filever < 71)
+    {
+        throw std::runtime_error(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
+    }
+
+    long            fsize = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+    if (fsize && !data_->property.integer.empty())
+    {
+        // set_mdp_integer parameters
+        FileSerializer  newtpr(fout_, "wb");
+
+        // write epi before 
+        int eIdx = static_cast<int>(epi);
+        const long* pos = &data_->property.integer.nstlog; // a pointer to struct start pos
+        long keypos = *(pos + eIdx);
+        if (newtpr.fwrite_(buffer, keypos * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in keyword before");
+        }
+
+        // write new epi in a int
+        if (!newtpr.do_int(&val)) return TPR_FAILED;
+
+        // write keyword after
+        constexpr int size = sizeof(int);
+        long len = fsize - keypos - size;
+        if (newtpr.fwrite_(&buffer[keypos + size], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in keyword after");
         }
 
         return TPR_SUCCESS;

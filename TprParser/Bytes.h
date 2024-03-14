@@ -138,8 +138,9 @@ public:
 			// for gmx2020
 			if (vergen >= 27)
 			{
-				if (m_rev) swap2_aligned(val, 1);
-				if (fwrite(val, 2, 1, fp) != 1) return TPR_FAILED;
+				unsigned short tempui = *val;
+				if (m_rev) swap2_aligned(&tempui, 1);
+				if (fwrite(&tempui, 2, 1, fp) != 1) return TPR_FAILED;
 			}
 			else
 			{
