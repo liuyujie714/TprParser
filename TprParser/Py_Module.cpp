@@ -344,12 +344,13 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 	Py_RETURN_TRUE;
 }
 
-static PyObject* get_coordinates(PyObject* self, PyObject* args)
+static PyObject* get_xvf(PyObject* self, PyObject* args)
 {
-	PyObject* capsule = nullptr;
+	PyObject		* capsule = nullptr;
+	const char		* type = nullptr;
 
 	// get object handle
-	if (!PyArg_ParseTuple(args, "O", &capsule))
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
 	{
 		return nullptr;
 	}
@@ -361,36 +362,36 @@ static PyObject* get_coordinates(PyObject* self, PyObject* args)
 		return nullptr;
 	}
 
-	std::vector<float> coords;
+	std::vector<float> vec;
 	try
 	{
-		coords = reader->get_coordinates();
+		vec = reader->get_xvf(type);
 	}
 	catch (const std::exception& e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
 		return nullptr;
 	}
-	if (coords.empty())
+	if (vec.empty())
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Can not find coords in tpr");
+		PyErr_SetString(PyExc_RuntimeError, "Can not find vector in tpr");
 		return nullptr;
 	}
 
 	// coords to python list
-	PyObject* list = PyList_New(coords.size());
+	PyObject* list = PyList_New(vec.size());
 	if (!list)
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Can not new list for coords");
+		PyErr_SetString(PyExc_RuntimeError, "Can not new list for vector");
 		return nullptr;
 	}
 	Py_ssize_t i = 0;
-	for (const auto& coord : coords)
+	for (const auto& it : vec)
 	{
-		PyObject* value = PyFloat_FromDouble(static_cast<double>(coord));
+		PyObject* value = PyFloat_FromDouble(static_cast<double>(it));
 		if (!value)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "Can not convert coords to list");
+			PyErr_SetString(PyExc_RuntimeError, "Can not convert vector to list");
 			Py_DECREF(list); // free list
 			return nullptr;
 		}
@@ -410,7 +411,7 @@ static PyMethodDef methods[] =
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
-	{"get_coordinates", get_coordinates, METH_VARARGS, "Get coords from tpr"}, 
+	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force from tpr"},
 	{NULL, NULL, 0, NULL}
 };
 

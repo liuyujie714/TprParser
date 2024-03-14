@@ -2,109 +2,16 @@
 #define TPRDATA_H
 
 #include "define.h"
+#include "Enum.h"
 #include <vector>
 #include <string>
 #include <array>
-
-#if defined(_MSC_VER) || defined(_WIN32)
-#define mystricmp _stricmp
-#else
-#include <strings.h>
-#define mystricmp strcasecmp
-#endif
-
 
 using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;
 using vecU2D = std::vector<std::vector<unsigned short>>;
 
-enum class PbcType : int
-{
-	Xyz = 0, //!< Periodic boundaries in all dimensions.
-	No = 1, //!< No periodic boundaries.
-	XY = 2, //!< Only two dimensions are periodic.
-	Screw = 3, //!< Screw.
-	Unset = 4, //!< The type of PBC is not set or invalid.
-	Count = 5,
-	Default = Xyz
-};
-
-//< pressure coupling methods
-enum class PressureCoupling : int
-{
-	No, 
-	Berendsen, 
-	ParrinelloRahman,
-	Isotropic,
-	Mttk,
-	CRescale,
-	Count
-};
-static const char* c_PressureCoupling[static_cast<int>(PressureCoupling::Count)] = 
-{
-	"No", "Berendsen", "ParrinelloRahman", "Isotropic", "Mttk", "CRescale"
-};
-
-//< pressure coupling type
-enum class PressureCouplingType : int
-{
-	Isotropic,
-	SemiIsotropic,
-	Count
-};
-static const char* c_PressureCouplingType[static_cast<int>(PressureCouplingType::Count)] =
-{
-	"Isotropic", "SemiIsotropic"
-};
-
-//< temperature coupling methods
-enum class TemperatureCoupling : int
-{
-	No,
-	Berendsen,
-	NoseHoover,
-	Yes,
-	Andersen,
-	AndersenMassive,
-	VRescale,
-	Count,
-};
-static const char* c_TemperatureCoupling[static_cast<int>(TemperatureCoupling::Count)] =
-{
-	"No", "Berendsen", "NoseHoover", "Yes", "Andersen", "AndersenMassive", "VRescale"
-};
-
-
-// Integer mdp
-enum class ParamsInteger : int
-{
-	nstlog, nstxout, nstvout, nstfout,
-	nstenergy, nstxout_compressed,
-	nsttcouple, nstpcouple, nstcalcenergy,
-	Count,
-};
-static const char* c_mdp_integer[static_cast<int>(ParamsInteger::Count)] =
-{
-	"nstlog", "nstxout", "nstvout", "nstfout",
-	"nstenergy", "nstxout_compressed" ,
-	"nsttcouple", "nstpcouple", "nstcalcenergy"
-};
-
-//< check key words in a c_string ignore case, return enum value if find, else return ENUM::Count
-template<typename ENUM, const int count = static_cast<int>(ENUM::Count)>
-static inline ENUM check_string(const char* str, const char *arr[])
-{
-	for (int i = 0; i < count; i++)
-	{
-		if (!mystricmp(str, arr[i])) return static_cast<ENUM>(i);
-	}
-	return ENUM::Count;
-}
-
 //< set up box rel
-#define XX 0
-#define YY 1
-#define ZZ 2
 static inline void do_box_rel(int ndim, const float deform[DIM][DIM], float box_rel[DIM][DIM], float b[DIM][DIM], bool bInit)
 {
 	for (int d = YY; d <= ZZ; ++d)

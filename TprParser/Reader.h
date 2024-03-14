@@ -166,17 +166,8 @@ public:
 	//< set integer mdp parameters
 	bool set_mdp_integer(const char* prop, int val);
 
-	//< get coords
-	const std::vector<float> &get_coordinates() const
-	{
-		// check if has coordinates of tpr
-		if (!data_->bX)
-		{
-			throw std::runtime_error("Input tpr has not coordinates information");
-		}
-
-		return data_->atoms.x;
-	}
+	//< get coords/velocity/force
+	const std::vector<float>& get_xvf(const char* type) const;
 
 private:
 	//< read forcefield parameters

@@ -23,6 +23,7 @@
     <ClInclude Include="define.h" />
     <ClInclude Include="endianswap.h" />
     <ClInclude Include="Reader.h" />
+    <ClInclude Include="Enum.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

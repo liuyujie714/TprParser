@@ -2330,3 +2330,49 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
 
     return TPR_FAILED;
 }
+
+const std::vector<float>& TprReader::get_xvf(const char* type) const
+{
+    // check input type, must X, or V or F
+    VecProps evec;
+    if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
+    {
+        throw std::runtime_error(std::string("Unknown vector property: ") + type);
+    }
+
+    switch (evec)
+    {
+    case VecProps::x:
+    {
+        // check if has coordinates of tpr
+        if (!data_->bX)
+        {
+            throw std::runtime_error("Input tpr has not coordinates information");
+        }
+        return data_->atoms.x;
+    }
+    case VecProps::v:
+    {
+        // check if has velocity of tpr
+        if (!data_->bV)
+        {
+            throw std::runtime_error("Input tpr has not velocity information");
+        }
+        return data_->atoms.v;
+    }
+    case VecProps::f:
+    {
+        // check if has force of tpr
+        if (!data_->bF)
+        {
+            throw std::runtime_error("Input tpr has not force information");
+        }
+        return data_->atoms.f;
+    }
+    default:
+        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        break;
+    }
+
+    return {};
+}

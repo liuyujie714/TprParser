@@ -2,6 +2,10 @@
 #define DEFINE_H
 
 #define MAX_LEN 4096
+#define XX 0
+#define YY 1
+#define ZZ 2
+
 //#define DEBUG
 #ifdef DEBUG
 #define msg(...) \
