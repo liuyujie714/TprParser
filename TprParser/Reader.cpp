@@ -240,11 +240,13 @@ bool TprReader::tpr_xvf()
     }
     if (data_->bV)
     {
+        INSERT_POS(v);
         data_->atoms.v.resize(data_->natoms * DIM);// 3N 
         if (!tpr_.do_vector(data_->atoms.v.data(), data_->natoms * DIM, data_->prec)) return TPR_FAILED;
     }
     if (data_->bF)
     {
+        INSERT_POS(f);
         data_->atoms.f.resize(data_->natoms * DIM);// 3N 
         if (!tpr_.do_vector(data_->atoms.f.data(), data_->natoms * DIM, data_->prec)) return TPR_FAILED;
     }
@@ -2079,6 +2081,8 @@ bool TprReader::set_dt(double dt)
     return TPR_FAILED;
 }
 
+
+
 bool TprReader::set_pressure(const char* method, const char* type, float tau_p, std::vector<float>& ref_p, std::vector<float>& compress)
 {
     // check data type float must be same as data_->prec
@@ -2375,4 +2379,98 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
     }
 
     return {};
+}
+
+
+bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
+{
+    long            fsize = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+    // 原始位置不为0
+    if (fsize && pos)
+    {
+        FileSerializer  newtpr(fout_, "wb");
+
+        // write nsteps before 
+        if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in write_xvf before");
+        }
+
+        // write new coordinates
+        if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_SUCCESS;
+
+        // write coordinates after
+        size_t size = vec.size() * sizeof(float);
+        long len = fsize - pos - (long)size;
+        if (newtpr.fwrite_(&buffer[pos + size], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in write_xvf after");
+        }
+        return TPR_SUCCESS;
+    }
+
+    return TPR_FAILED;
+}
+
+bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
+{
+    // check precision of tpr
+    if (data_->prec != sizeof(float))
+    {
+        throw std::runtime_error("Unsupport double precision of tpr in set_xvf");
+    }
+
+    // check vector size 
+    if ((int)vec.size() != data_->natoms * DIM)
+    {
+        throw std::runtime_error("Input vector size is not equal to natoms * 3");
+    }
+
+    // check input type, must X, or V or F
+    VecProps evec;
+    if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
+    {
+        throw std::runtime_error(std::string("Unknown set vector property: ") + type);
+    }
+
+    switch (evec)
+    {
+    case VecProps::x:
+    {
+        // check if has coordinates of tpr
+        if (!data_->bX)
+        {
+            throw std::runtime_error("Input tpr has not coordinates information");
+        }
+        // if succeed, return 
+        if (write_xvf(vec, data_->property.x, data_->prec)) return TPR_SUCCESS;
+        break;
+    }
+    case VecProps::v:
+    {
+        // check if has velocity of tpr
+        if (!data_->bV)
+        {
+            throw std::runtime_error("Input tpr has not velocity information");
+        }
+        if (write_xvf(vec, data_->property.v, data_->prec)) return TPR_SUCCESS;
+        break;
+    }
+    case VecProps::f:
+    {
+        // check if has force of tpr
+        if (!data_->bF)
+        {
+            throw std::runtime_error("Input tpr has not force information");
+        }
+        if (write_xvf(vec, data_->property.v, data_->prec)) return TPR_SUCCESS;
+        break;
+    }
+    default:
+        throw std::invalid_argument(std::string("Unknown set keyword: ") + type);
+        break;
+    }
+
+    return TPR_FAILED;
 }

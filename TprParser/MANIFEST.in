@@ -1,0 +1,2 @@
+global-include *.h
+include TprReader.py

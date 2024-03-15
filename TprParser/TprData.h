@@ -231,6 +231,10 @@ struct TprData
 		long		nsteps = 0; //< the started nsteps position in tpr
 		long		dt = 0; //< the started dt position in tpr
 		long		x = 0; //< the started atom coordinates position in tpr
+		long		v = 0; //< the started atom velocity position in tpr
+		long		f = 0; //< the started atom force position in tpr
+
+
 		// 压力设置参数位置
 		struct
 		{
@@ -268,6 +272,7 @@ struct TprData
 		// 单个整数属性mdp设置位置
 		struct
 		{
+			//! 定义变量顺序和类型必须和枚举顺序完全一致
 			long			nstlog = 0; // started 
 			long			nstxout = 0;
 			long			nstvout = 0;

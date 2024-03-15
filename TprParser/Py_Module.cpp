@@ -3,6 +3,8 @@
 #include "Reader.h"
 #include <string.h>
 
+//< For Python API, I use NULL instead of nullptr
+
 // free 
 static void destory_tpr(PyObject* obj)
 {
@@ -11,7 +13,7 @@ static void destory_tpr(PyObject* obj)
 
 static PyObject* reader_new(PyObject* self, PyObject* args) 
 {
-	const char		* fname = nullptr;
+	const char		* fname = NULL;
 	PyObject		* bGRO_obj = Py_False;
 	PyObject		* bMol2_obj = Py_False;
 	PyObject		* bCharge_obj = Py_False;
@@ -25,7 +27,7 @@ static PyObject* reader_new(PyObject* self, PyObject* args)
 	bool bMol2 = PyObject_IsTrue(bMol2_obj);
 	bool bCharge = PyObject_IsTrue(bCharge_obj);
 
-	TprReader* reader = nullptr;
+	TprReader* reader = NULL;
 	try
 	{
 		reader = new TprReader(fname, bGRO, bMol2, bCharge);
@@ -33,25 +35,25 @@ static PyObject* reader_new(PyObject* self, PyObject* args)
 	catch (const std::exception&e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 	return PyCapsule_New(reader, "TprParser", destory_tpr);
 }
 
 static PyObject* set_nsteps(PyObject* self, PyObject* args) 
 {
-	PyObject	* capsule = nullptr;
+	PyObject	* capsule = NULL;
 	int64_t		nsteps;
 	if (!PyArg_ParseTuple(args, "OL", &capsule, &nsteps)) 
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
 	if (!reader) 
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
+		return NULL;
 	}
 
 	try
@@ -60,13 +62,13 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
 		if (ret == TPR_FAILED)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "set_nsteps failed");
-			return nullptr;
+			return NULL;
 		}
 	}
 	catch (const std::exception&e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 
 	Py_RETURN_TRUE;
@@ -74,18 +76,18 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
 
 static PyObject* set_dt(PyObject* self, PyObject* args) 
 {
-	PyObject	* capsule = nullptr;
+	PyObject	* capsule = NULL;
 	double      dt = 0.0;
 	if (!PyArg_ParseTuple(args, "Od", &capsule, &dt)) 
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
+		return NULL;
 	}
 
 	try
@@ -94,19 +96,19 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 		if (ret == TPR_FAILED)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "set_dt failed");
-			return nullptr;
+			return NULL;
 		}
 	}
 	catch (const std::exception&e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 
 	Py_RETURN_TRUE;
 }
 
-//< get vector from given object, return nullptr if failed
+//< get vector from given object, return NULL if failed
 static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
 {
 	if (PyArray_Check(vec_obj))
@@ -117,7 +119,7 @@ static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
 		// 比较数据类型代码
 		if (PyArray_TYPE(arr) != NPY_FLOAT32) {
 			PyErr_SetString(PyExc_RuntimeError, "Python API Only support np.float32 array");
-			return nullptr;
+			return NULL;
 		}
 
 		npy_intp* dims = PyArray_DIMS(arr);
@@ -125,7 +127,7 @@ static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
 		if (ndim != 1)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Input numpy dimension is not equal 1");
-			return nullptr;
+			return NULL;
 		}
 		float* data = (float*)PyArray_DATA(vec_obj);
 		vec.assign(data, data + dims[0]);
@@ -140,13 +142,13 @@ static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
 			//if (!PyFloat_Check(item))
 			//{
 			//	PyErr_SetString(PyExc_RuntimeError, "List must be float type");
-			//	return nullptr;
+			//	return NULL;
 			//}
 			double value = PyFloat_AsDouble(item);
 			if (PyErr_Occurred())
 			{
 				PyErr_SetString(PyExc_RuntimeError, "Some value of input vector can not be converted");
-				return nullptr;
+				return NULL;
 			}
 			vec.push_back((float)(value)); // double to float
 		}
@@ -154,90 +156,48 @@ static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
 	else
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Input vector must be numpy array or list");
-		return nullptr;
+		return NULL;
 	}
 	// check array size
 	if (vec.empty())
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Empty input vector");
-		return nullptr;
+		return NULL;
 	}
 
 	return vec_obj;
 }
 
-static PyObject* set_coordinates(PyObject* self, PyObject* args, PyObject* kwargs)
-{
-	PyObject* capsule = nullptr;
-	PyObject* coords_obj = nullptr;
-
-	static const char* keywords[] = { "capsule", "coords", nullptr };
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", (char**)keywords, &capsule, &coords_obj))
-	{
-		return nullptr;
-	}
-
-	// get coords
-	std::vector<float> coords;
-	if (!get_vector(coords_obj, coords))
-	{
-		return nullptr;
-	}
-
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
-	if (!reader) 
-	{
-		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
-	}
-
-	try
-	{
-		bool ret = reader->set_coordinates(coords);
-		if (ret == TPR_FAILED)
-		{
-			PyErr_SetString(PyExc_RuntimeError, "set_coordinates failed");
-			return nullptr;
-		}
-	}
-	catch (const std::exception&e)
-	{
-		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
-	}
-
-	Py_RETURN_TRUE;
-}
 
 static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-	PyObject		* capsule = nullptr;
-	const char		* epc = nullptr;
-	const char		* epct = nullptr;
+	PyObject		* capsule = NULL;
+	const char		* epc = NULL;
+	const char		* epct = NULL;
 	float			tau_p;
-	PyObject		* ref_p = nullptr;
-	PyObject		* compress = nullptr;
+	PyObject		* ref_p = NULL;
+	PyObject		* compress = NULL;
 
-	static const char* keywords[] = { "capsule", "epc", "epct", "tau_p", "ref_p", "compress", nullptr };
+	static const char* keywords[] = { "capsule", "epc", "epct", "tau_p", "ref_p", "compress", NULL };
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OssfOO",
 		(char**)keywords, &capsule, &epc, &epct, &tau_p, &ref_p, &compress))
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	// get pressure
 	std::vector<float> vec_press;
-	if (!get_vector(ref_p, vec_press)) return nullptr;
+	if (!get_vector(ref_p, vec_press)) return NULL;
 
 	// get compress
 	std::vector<float> vec_compress;
-	if (!get_vector(compress, vec_compress)) return nullptr;
+	if (!get_vector(compress, vec_compress)) return NULL;
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
+		return NULL;
 	}
 
 	try
@@ -246,13 +206,13 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 		if (ret == TPR_FAILED)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "set_pressure failed");
-			return nullptr;
+			return NULL;
 		}
 	}
 	catch (const std::exception& e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 
 	Py_RETURN_TRUE;
@@ -260,32 +220,32 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 
 static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-	PyObject* capsule = nullptr;
-	const char* etc = nullptr;
-	PyObject* ref_t = nullptr;
-	PyObject* tau_t = nullptr;
+	PyObject* capsule = NULL;
+	const char* etc = NULL;
+	PyObject* ref_t = NULL;
+	PyObject* tau_t = NULL;
 
-	static const char* keywords[] = { "capsule", "etc", "tau_t", "ref_t", nullptr };
+	static const char* keywords[] = { "capsule", "etc", "tau_t", "ref_t", NULL };
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OsOO",
 		(char**)keywords, &capsule, &etc, &tau_t, &ref_t))
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	// get tau_t
 	std::vector<float> vec_tau;
-	if (!get_vector(tau_t, vec_tau)) return nullptr;
+	if (!get_vector(tau_t, vec_tau)) return NULL;
 
 	// get ref_t
 	std::vector<float> vec_t;
-	if (!get_vector(ref_t, vec_t)) return nullptr;
+	if (!get_vector(ref_t, vec_t)) return NULL;
 
 	// get handle
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
+		return NULL;
 	}
 
 	try
@@ -294,13 +254,13 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 		if (ret == TPR_FAILED)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "set_temperature failed");
-			return nullptr;
+			return NULL;
 		}
 	}
 	catch (const std::exception& e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 
 	Py_RETURN_TRUE;
@@ -309,20 +269,20 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 // set integer props in mdp
 static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 {
-	PyObject	* capsule = nullptr;
-	const char	* prop = nullptr;
+	PyObject	* capsule = NULL;
+	const char	* prop = NULL;
 	int			val = 0;
 
 	if (!PyArg_ParseTuple(args, "Osi", &capsule, &prop, &val))
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
+		return NULL;
 	}
 
 	try
@@ -331,13 +291,13 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 		if (ret == TPR_FAILED)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "set_mdp_integer failed");
-			return nullptr;
+			return NULL;
 		}
 	}
 	catch (const std::exception& e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 
 
@@ -346,20 +306,20 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 
 static PyObject* get_xvf(PyObject* self, PyObject* args)
 {
-	PyObject		* capsule = nullptr;
-	const char		* type = nullptr;
+	PyObject		* capsule = NULL;
+	const char		* type = NULL;
 
 	// get object handle
 	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
-		return nullptr;
+		return NULL;
 	}
 
 	std::vector<float> vec;
@@ -370,12 +330,12 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 	catch (const std::exception& e)
 	{
 		PyErr_SetString(PyExc_RuntimeError, e.what());
-		return nullptr;
+		return NULL;
 	}
 	if (vec.empty())
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Can not find vector in tpr");
-		return nullptr;
+		return NULL;
 	}
 
 	// coords to python list
@@ -383,7 +343,7 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 	if (!list)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Can not new list for vector");
-		return nullptr;
+		return NULL;
 	}
 	Py_ssize_t i = 0;
 	for (const auto& it : vec)
@@ -393,12 +353,54 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Can not convert vector to list");
 			Py_DECREF(list); // free list
-			return nullptr;
+			return NULL;
 		}
 		PyList_SET_ITEM(list, i++, value);
 	}
 
 	return list;
+}
+
+//< set atom coords/velocity/force
+static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject *kwargs)
+{
+	PyObject		* capsule = NULL;
+	const char		* prop = NULL;
+	PyObject		* vec_obj = NULL;
+
+	static const char* keywords[] = { "capsule", "prop", "vec", NULL };
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OsO", (char**)keywords, &capsule, &prop, &vec_obj))
+	{
+		return NULL;
+	}
+
+	// get vector from handle
+	std::vector<float> vec;
+	if (!get_vector(vec_obj, vec)) return NULL;
+
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return NULL;
+	}
+
+	try
+	{
+		bool ret = reader->set_xvf(prop, vec);
+		if (ret == TPR_FAILED)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "set_xvf failed");
+			return NULL;
+		}
+	}
+	catch (const std::exception& e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return NULL;
+	}
+
+	Py_RETURN_TRUE;
 }
 
 static PyMethodDef methods[] =
@@ -407,7 +409,7 @@ static PyMethodDef methods[] =
 	{"set_nsteps", set_nsteps, METH_VARARGS, "Set up nsteps"},
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
 	{"set_mdp_integer", set_mdp_integer, METH_VARARGS, "Set up int keyword"},
-	{"set_coordinates", (PyCFunction)set_coordinates, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates"},
+	{"set_xvf", (PyCFunction)set_xvf, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates/velocity/force"},
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 

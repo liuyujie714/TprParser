@@ -98,56 +98,7 @@ public:
 	bool set_dt(double dt);
 
 	//< change tpr atomic coordinates
-	template<typename T>
-	bool set_coordinates(std::vector<T>& coords)
-	{
-		// check if has coordinates of tpr
-		if (!data_->bX)
-		{
-			throw std::runtime_error("Input tpr has not coordinates information");
-		}
-
-		// check vector size 
-		if (coords.size() != data_->natoms * DIM)
-		{
-			throw std::runtime_error("Input vector size is not equal to natoms * 3");
-		}
-
-		// check data type float or double, must be same as data_->prec
-		if (sizeof(T) != data_->prec)
-		{
-			throw std::runtime_error("Input data type is not equal to data_->precision: " + std::to_string(data_->prec));
-		}
-
-		long            fsize = 0;
-		const char* buffer = tpr_.get_file_buffer(&fsize);
-		// 原始位置不为0
-		if (fsize && data_->property.x)
-		{
-			FileSerializer  newtpr(fout_, "wb");
-
-			// write nsteps before 
-			if (newtpr.fwrite_(buffer, data_->property.x * sizeof(char), 1) != 1)
-			{
-				throw std::runtime_error("fwrite_ error in set_coordinates before");
-			}
-
-			// write new coordinates
-			newtpr.do_vector(coords.data(), (int)coords.size(), data_->prec);
-
-			// write coordinates after
-			size_t size = coords.size() * sizeof(T);
-			long len = fsize - data_->property.x - (long)size;
-			if (newtpr.fwrite_(&buffer[data_->property.x + size], len * sizeof(char), 1) != 1)
-			{
-				throw std::runtime_error("fwrite_ error in set_coordinates after");
-			}
-
-			return TPR_SUCCESS;
-		}
-
-		return TPR_FAILED;
-	}
+	bool set_xvf(const char* type, std::vector<float>& vec);
 
 	//< set pressure coupling parts
 	bool set_pressure(
@@ -170,6 +121,9 @@ public:
 	const std::vector<float>& get_xvf(const char* type) const;
 
 private:
+	//< assistant func to write tpr given new coords, velocity or force
+	bool write_xvf(std::vector<float>& vec, long pos, long prec) const;
+
 	//< read forcefield parameters
 	bool tpr_readff();
 
