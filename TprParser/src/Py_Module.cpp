@@ -8,7 +8,7 @@
 // free 
 static void destory_tpr(PyObject* obj)
 {
-	delete (TprReader*)PyCapsule_GetPointer(obj, "TprParser");
+	delete (TprReader*)PyCapsule_GetPointer(obj, "TprParser_");
 }
 
 static PyObject* reader_new(PyObject* self, PyObject* args) 
@@ -37,7 +37,7 @@ static PyObject* reader_new(PyObject* self, PyObject* args)
 		PyErr_SetString(PyExc_RuntimeError, e.what());
 		return NULL;
 	}
-	return PyCapsule_New(reader, "TprParser", destory_tpr);
+	return PyCapsule_New(reader, "TprParser_", destory_tpr);
 }
 
 static PyObject* set_nsteps(PyObject* self, PyObject* args) 
@@ -49,7 +49,7 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
 		return NULL;
 	}
 
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader) 
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -83,7 +83,7 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 		return NULL;
 	}
 
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -193,7 +193,7 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 	std::vector<float> vec_compress;
 	if (!get_vector(compress, vec_compress)) return NULL;
 
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -241,7 +241,7 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 	if (!get_vector(ref_t, vec_t)) return NULL;
 
 	// get handle
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -278,7 +278,7 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 		return NULL;
 	}
 
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -315,7 +315,7 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 		return NULL;
 	}
 
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -378,7 +378,7 @@ static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject *kwargs)
 	std::vector<float> vec;
 	if (!get_vector(vec_obj, vec)) return NULL;
 
-	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser"));
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
@@ -420,16 +420,18 @@ static PyMethodDef methods[] =
 static struct PyModuleDef tpr_module = 
 {
 	PyModuleDef_HEAD_INIT,
-	"TprParser",		//m_name
+	"TprParser_",		//m_name
 	NULL,				//m_doc
 	-1,					//m_size
 	methods				//m_methods
 };
 
-PyMODINIT_FUNC PyInit_TprParser(void) 
+// TprParser_  module name
+PyMODINIT_FUNC PyInit_TprParser_(void) 
 {
 	// if is numpy
 	import_array() // 使用numpy相关的函数时候必须先调用这个
 
 	return PyModule_Create(&tpr_module);
 }
+

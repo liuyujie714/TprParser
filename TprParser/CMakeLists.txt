@@ -14,21 +14,21 @@ else()
 endif()
 
 # 添加可执行文件
-add_executable(TprReader main.cpp Reader.cpp)
+add_executable(TprReader src/main.cpp src/Reader.cpp)
 
 # 添加动态链接库
-add_library(TprParser SHARED Reader.cpp Py_Module.cpp)
+add_library(TprParser_ SHARED src/Reader.cpp src/Py_Module.cpp)
 
 # windows or linux 
 if(WIN32)
-	set_target_properties(TprParser PROPERTIES SUFFIX ".pyd")
+	set_target_properties(TprParser_ PROPERTIES SUFFIX ".pyd")
 else()
-	set_target_properties(TprParser PROPERTIES SUFFIX ".so")
-	set_target_properties(TprParser PROPERTIES PREFIX "") # 去除lib前缀
+	set_target_properties(TprParser_ PROPERTIES SUFFIX ".so")
+	set_target_properties(TprParser_ PROPERTIES PREFIX "") # 去除lib前缀
 endif()
 
 # 链接 Python 库
-target_link_libraries(TprParser ${PYTHON_LIBRARIES})
+target_link_libraries(TprParser_ ${PYTHON_LIBRARIES})
 
 # 设置输出路径
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
@@ -36,5 +36,5 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 # 安装可执行文件和动态链接库
 install(TARGETS TprReader DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-install(TARGETS TprParser DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS TprParser_ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 

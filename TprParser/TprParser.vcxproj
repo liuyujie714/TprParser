@@ -19,17 +19,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Bytes.h" />
-    <ClInclude Include="define.h" />
-    <ClInclude Include="endianswap.h" />
-    <ClInclude Include="Reader.h" />
-    <ClInclude Include="Enum.h" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Py_Module.cpp" />
+    <ClCompile Include="src\Reader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Reader.cpp" />
-    <ClCompile Include="Py_Module.cpp" />
-    <ClCompile Include="TprData.h" />
+    <ClInclude Include="src\Bytes.h" />
+    <ClInclude Include="src\define.h" />
+    <ClInclude Include="src\endianswap.h" />
+    <ClInclude Include="src\Enum.h" />
+    <ClInclude Include="src\Reader.h" />
+    <ClInclude Include="src\TprData.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

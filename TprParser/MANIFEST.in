@@ -1,2 +1,4 @@
-global-include *.h
-include TprReader.py
+include TprParser/*
+include *.py
+include src/*
+exclude src/main.cpp
