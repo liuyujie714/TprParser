@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 import numpy, os
 
 # Always update program version
-__version__ = '0.1.41'
+__version__ = '0.1.44'
 
 # Description
 long_doc = ""
@@ -40,7 +40,7 @@ setup(
     description='A reader of gromacs tpr file', 
     long_description=long_doc,
     long_description_content_type='text/markdown',
-    license='',
+    license='GPL',
     author='Yujie Liu',
     author_email='',
     python_requires='>=3.8',
@@ -48,5 +48,16 @@ setup(
     exclude=['setup.py'],
     ext_modules=[module],
     # put TprReader.py/__init__.py in TprParser folder to site-packages
-    py_modules=['TprParser.TprReader', 'TprParser.__init__'] 
+    py_modules=['TprParser.TprReader', 'TprParser.__init__'],
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Programming Language :: C++",
+        "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering :: Physics",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Intended Audience :: Science/Research",
+    ]
 )

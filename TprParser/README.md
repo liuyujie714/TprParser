@@ -8,6 +8,9 @@ The module only supports get atoms coordinates, velocity and force if exist in `
 
 However, many properties can be set up by module, such as total simulation time `nsteps`, simulation integrator interval `dt`, output control parameters (`nstxout, nstvout, etc.`) and temperature/pressure coupling parameters.
 
+# Compatibility
+GROMACS tpr version should between `4.0` to `2024`, too old tpr can not be read by this module.
+
 # Install
 
 * Requirements
@@ -28,7 +31,7 @@ However, many properties can be set up by module, such as total simulation time 
 
   Please **ALWAYS** install Latest version.
 
-  add `-i https://pypi.tuna.tsinghua.edu.cn/simple` if you are in China
+  add `-i https://pypi.tuna.tsinghua.edu.cn/simple` if you are in China.
 
 # Usage
 
@@ -54,7 +57,7 @@ velocity = reader.get_xvf('v')
 ## Modify atom property
 
 ```python
-newcoords = np.array([1,2,3,4,5,6, ...], dtype=np.float32) # shape= N*3
+newcoords = np.array([[1,2,3], [4,5,6], [...]], dtype=np.float32) # shape= N*3
 # The step will create new.tpr that used newcoords
 reader.set_xvf('x', newcoords)
 ```
@@ -93,6 +96,11 @@ def Pressure(fname):
 
 Please see `TprReader` module annotation
 
+
+# Cite
+If `TprParser` is utilized in your work, please cite as follows in main text:
+
+> Yujie Liu, TprParser, Version [xxx](), https://pypi.org/project/TprParser/
 
 
 ## TODO

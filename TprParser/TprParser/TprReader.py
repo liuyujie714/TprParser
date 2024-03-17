@@ -77,7 +77,7 @@ class TprReader:
         ----------
         etc: temperature coupling method, No, Berendsen, NoseHoover, VRescale
         tau_t: the temperature coupling constant, the length must be same as old tpr
-        ref_t: a list of temperature in bar, the length must be same as old tpr
+        ref_t: a list of temperature in K, the length must be same as old tpr
 
         Returns
         -------

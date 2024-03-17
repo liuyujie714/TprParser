@@ -149,7 +149,7 @@ bool TprReader::tpr_body()
 		}
 		//These used to be the Berendsen tcoupl_lambda's
 		if(!tpr_.do_vector(temparr, data_->ngtc, data_->prec)) return TPR_FAILED;
-		delete temparr;
+		delete [] temparr;
 	}
 
 	return TPR_SUCCESS;

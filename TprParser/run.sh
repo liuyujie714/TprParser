@@ -23,9 +23,7 @@ function showHelp
 }
 
 # check if input
-opt=($*)
-N=${#opt[@]}
-[[ $N == 0 ]] && showHelp && exit
+[[ $# -lt 1 ]] && showHelp && exit
 
 inp=$1
 # for testpypi
