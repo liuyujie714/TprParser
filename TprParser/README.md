@@ -26,12 +26,10 @@ GROMACS tpr version should between `4.0` to `2024`, too old tpr can not be read 
   The module is installed by `pip` method:
 
   ```
-  pip install TprParser
+  pip install TprParser -i https://pypi.org/simple
   ```
 
   Please **ALWAYS** install Latest version.
-
-  add `-i https://pypi.tuna.tsinghua.edu.cn/simple` if you are in China.
 
 # Usage
 

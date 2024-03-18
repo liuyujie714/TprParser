@@ -2464,7 +2464,7 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         {
             throw std::runtime_error("Input tpr has not force information");
         }
-        if (write_xvf(vec, data_->property.v, data_->prec)) return TPR_SUCCESS;
+        if (write_xvf(vec, data_->property.f, data_->prec)) return TPR_SUCCESS;
         break;
     }
     default:
