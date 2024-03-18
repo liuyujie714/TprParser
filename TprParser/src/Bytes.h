@@ -433,7 +433,6 @@ private:
 	//< get all binary file buffer
 	void get_buffer()
 	{
-		fseek_(0, SEEK_SET); // file start
 		fseek_(0, SEEK_END); // file end
 		long fsize = ftell_();
 		m_buffer = new char[fsize];

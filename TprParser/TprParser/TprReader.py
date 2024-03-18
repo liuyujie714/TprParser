@@ -5,10 +5,11 @@ import TprParser_
 
 class TprReader:
     """ @brief A wrapper of TprParser_
-        1. get atmic coordinates/velocity/force  of tpr
+        1. get atmic coordinates/velocity/force/mass/charge of tpr
         2. modify simulation nsteps/dt/integer/coordinates/velocity/force and save as new.tpr
     """
-    VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F']
+    VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
+    VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
         # get internal object
         self.tprCapsule = TprParser_.load(fname, bGRO, bMol2, bCharge)
@@ -106,12 +107,35 @@ class TprReader:
 
         Parameters
         ----------
-        type: must be 'X', 'V', or 'F', represents atomic coordinates/velocity/force to get
+        type: must be 'X', 'V', 'F', 'BOX', represents atomic coordinates/velocity/force/box to get
 
         Returns
         -------
-        return a np.array(dtype=np.float32), the dimension is natoms * 3
+        return a np.array(dtype=np.float32), the dimension is natoms * 3, except box is 3*3
         """
         vec = TprParser_.get_xvf(self.tprCapsule, type)
         return np.array(vec, np.float32).reshape(-1, 3)
+    
+    def get_mq(self, type:VecType2):
+        """ @brief get atomic mass/charge from tpr
 
+        Parameters
+        ----------
+        type: must be 'M', 'Q', represents atomic mass/charge to get
+
+        Returns
+        -------
+        return a np.array(dtype=np.float32), the dimension is natoms
+        """
+        vec = TprParser_.get_xvf(self.tprCapsule, type)
+        return np.array(vec, np.float32)
+
+    def get_bonds(self):
+        """ @brief get atom bonds pairs from tpr if exist.
+
+        Returns
+        -------
+        return a np.array(dtype=int), the length is the number of bonds
+        """
+        bonds = TprParser_.get_bonds(self.tprCapsule)
+        return np.array(bonds, dtype=np.int32).reshape(-1, 2)

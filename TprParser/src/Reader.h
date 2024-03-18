@@ -117,8 +117,12 @@ public:
 	//< set integer mdp parameters
 	bool set_mdp_integer(const char* prop, int val);
 
-	//< get coords/velocity/force
+	//< 1. get coords/velocity/force/mass/charge
+	//< 2. get box info in vector 9
 	const std::vector<float>& get_xvf(const char* type) const;
+
+	//< get bonds info in vector 
+	std::vector<int> get_bonds() const;
 
 private:
 	//< assistant func to write tpr given new coords, velocity or force

@@ -37,6 +37,7 @@
     <ProjectGuid>{4a8a3dff-52e9-48a7-91f9-b1f053324d38}</ProjectGuid>
     <RootNamespace>TprParser</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>TprParser_</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

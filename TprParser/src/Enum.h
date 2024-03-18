@@ -87,11 +87,14 @@ enum class VecProps : int
 	x,
 	v, 
 	f,
+	m, // the mass of atoms
+	q, // the charge of atoms
+	box, // the box vector
 	Count
 };
 static const char* c_mdp_vector[static_cast<int>(VecProps::Count)] =
 {
-	"x", "v", "f",
+	"x", "v", "f", "m", "q", "box"
 };
 
 

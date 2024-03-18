@@ -109,7 +109,7 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 }
 
 //< get vector from given object, return NULL if failed
-static inline PyObject * get_vector(PyObject* vec_obj, std::vector<float> &vec)
+static inline PyObject * get_vector_float(PyObject* vec_obj, std::vector<float> &vec)
 {
 	if (PyArray_Check(vec_obj))
 	{
@@ -187,11 +187,11 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 
 	// get pressure
 	std::vector<float> vec_press;
-	if (!get_vector(ref_p, vec_press)) return NULL;
+	if (!get_vector_float(ref_p, vec_press)) return NULL;
 
 	// get compress
 	std::vector<float> vec_compress;
-	if (!get_vector(compress, vec_compress)) return NULL;
+	if (!get_vector_float(compress, vec_compress)) return NULL;
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
@@ -234,11 +234,11 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 
 	// get tau_t
 	std::vector<float> vec_tau;
-	if (!get_vector(tau_t, vec_tau)) return NULL;
+	if (!get_vector_float(tau_t, vec_tau)) return NULL;
 
 	// get ref_t
 	std::vector<float> vec_t;
-	if (!get_vector(ref_t, vec_t)) return NULL;
+	if (!get_vector_float(ref_t, vec_t)) return NULL;
 
 	// get handle
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
@@ -361,6 +361,58 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 	return list;
 }
 
+static PyObject* get_bonds(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = NULL;
+
+	if (!PyArg_ParseTuple(args, "O", &capsule))
+	{
+		return NULL;
+	}
+
+	// get handle
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return NULL;
+	}
+
+	std::vector<int> vec;
+	try
+	{
+		vec = reader->get_bonds();
+	}
+	catch (const std::exception& e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return NULL;
+	}
+
+	// coords to python list
+	PyObject* list = PyList_New(vec.size());
+	if (!list)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not new list for vector");
+		return NULL;
+	}
+	Py_ssize_t i = 0;
+	for (const auto& it : vec)
+	{
+		// int to Pyobject
+		PyObject* value = PyLong_FromLong(static_cast<long>(it));
+		if (!value)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Can not convert vector to list");
+			Py_DECREF(list); // free list
+			return NULL;
+		}
+		PyList_SET_ITEM(list, i++, value);
+	}
+
+	return list;
+}
+
 //< set atom coords/velocity/force
 static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject *kwargs)
 {
@@ -376,7 +428,7 @@ static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject *kwargs)
 
 	// get vector from handle
 	std::vector<float> vec;
-	if (!get_vector(vec_obj, vec)) return NULL;
+	if (!get_vector_float(vec_obj, vec)) return NULL;
 
 	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
 	if (!reader)
@@ -413,7 +465,8 @@ static PyMethodDef methods[] =
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
-	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force from tpr"},
+	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
+	{"get_bonds", get_bonds, METH_VARARGS, "Get bonds information from tpr"},
 	{NULL, NULL, 0, NULL}
 };
 

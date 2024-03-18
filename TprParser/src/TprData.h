@@ -63,7 +63,7 @@ struct TprData
 	bool				bF; //< if has force
 	bool				bBox; //< if has box 
 	bool				bInter; //< if has inter-molecular bonds
-	float				box[DIM * DIM] = { 0 }; //< box size
+	std::vector<float>	box = {}; //< box size
 	char				* symtab;//< symb name, truncate to 8 characters
 	int					symtablen, nmoltypes, nmolblock;
 

@@ -19,7 +19,7 @@ GROMACS tpr version should between `4.0` to `2024`, too old tpr can not be read 
 
   * `Numpy`
 
-  * `C++ compiler` (g++ for Linux, MSVC for Windows)
+  * `C++ compiler` (g++ for Linux, MSVC for Windows) supports `C++ 17` standard
 
 * Install
 

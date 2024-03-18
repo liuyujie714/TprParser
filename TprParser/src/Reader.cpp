@@ -115,8 +115,9 @@ bool TprReader::tpr_body()
 	// read box size
 	if (data_->bBox)
 	{
-		tpr_.do_vector(data_->box, 9, data_->prec);
-        print_vec("box= ", data_->box);
+        data_->box.resize(DIM * DIM);
+		tpr_.do_vector(data_->box.data(), 9, data_->prec);
+        print_vec("box= ", data_->box.data());
 
 		// Relative box vectors characteristic of the box shape, used to to preserve that box shape
 		if (data_->filever >= 51)
@@ -2141,7 +2142,7 @@ bool TprReader::set_pressure(const char* method, const char* type, float tau_p, 
             do_box_rel(ndim,
                 (float(*)[DIM])data_->ir.deform,
                 (float(*)[DIM])box_rel,
-                (float(*)[DIM])data_->box,
+                (float(*)[DIM])data_->box.data(),
                 true);
         }
         if (!newtpr.do_vector(box_rel, DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
@@ -2337,7 +2338,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
 
 const std::vector<float>& TprReader::get_xvf(const char* type) const
 {
-    // check input type, must X, or V or F
+    // check input type, must X, or V or F or M or Q or box
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
@@ -2373,12 +2374,57 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         }
         return data_->atoms.f;
     }
+    case VecProps::m:
+    {
+        // check if has get mass
+        if (data_->atoms.mass.empty())
+        {
+            throw std::runtime_error("Can not get mass information");
+        }
+        return data_->atoms.mass;
+    }
+    case VecProps::q:
+    {
+        // check if has get charge
+        if (data_->atoms.charge.empty())
+        {
+            throw std::runtime_error("Can not get charge information");
+        }
+        return data_->atoms.charge;
+    }
+    case VecProps::box:
+    {
+        // check if has get charge
+        if (!data_->bBox)
+        {
+            throw std::runtime_error("Have not box information in tpr");
+        }
+        return data_->box;
+    }
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);
         break;
     }
 
     return {};
+}
+
+std::vector<int> TprReader::get_bonds() const
+{
+    if (data_->bonds.empty())
+    {
+        throw std::runtime_error("Can not get bonds information from tpr");
+    }
+
+    std::vector<int> bonds; // return bonds in single vector!
+    for (const auto& bond : data_->bonds)
+    {
+        for (const auto& id : bond)
+        {
+            bonds.push_back(id);
+        }
+    }
+    return bonds; // RVO
 }
 
 
