@@ -5,11 +5,13 @@ import TprParser_
 
 class TprReader:
     """ @brief A wrapper of TprParser_
-        1. get atmic coordinates/velocity/force/mass/charge of tpr
+        1. get atmic coordinates/velocity/force/mass/charge ... of tpr
         2. modify simulation nsteps/dt/integer/coordinates/velocity/force and save as new.tpr
     """
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
+    VecType3: TypeAlias = Literal['res', 'atom']
+    BondedType: TypeAlias = Literal['bonds', 'angles']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
         # get internal object
         self.tprCapsule = TprParser_.load(fname, bGRO, bMol2, bCharge)
@@ -93,7 +95,7 @@ class TprReader:
         ----------
         keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed, \
             nsttcouple, nstpcouple, nstcalcenergy
-        val: a int value for keyword
+        val: an int value for keyword
 
         Returns
         -------
@@ -102,8 +104,8 @@ class TprReader:
         return TprParser_.set_mdp_integer(self.tprCapsule, keyword, val)
         
     def get_xvf(self, type:VecType) -> np.array:
-        """ @brief get atomic coordinates/velocity/force from tpr if exist. \
-        the unit is nm, nm/ps, kJ/mol/nm
+        """ @brief get atomic coordinates/velocity/force/box from tpr if exist. 
+        the unit is nm, nm/ps, kJ/mol/nm, nm
 
         Parameters
         ----------
@@ -125,17 +127,32 @@ class TprReader:
 
         Returns
         -------
-        return a np.array(dtype=np.float32), the dimension is natoms
+        return a np.array(dtype=np.float32), the lengths is natoms
         """
         vec = TprParser_.get_xvf(self.tprCapsule, type)
         return np.array(vec, np.float32)
+    
+    def get_name(self, type:VecType3):
+        """ @brief get resname/atomname from tpr
 
-    def get_bonds(self):
-        """ @brief get atom bonds pairs from tpr if exist.
+        Parameters
+        ----------
+        type: must be 'res', 'atom', represents resname/atomname to get
 
         Returns
         -------
-        return a np.array(dtype=int), the length is the number of bonds
+        return a np.array(dtype='<U'), the lengths is natoms
         """
-        bonds = TprParser_.get_bonds(self.tprCapsule)
-        return np.array(bonds, dtype=np.int32).reshape(-1, 2)
+        vec = TprParser_.get_name(self.tprCapsule, type)
+        return np.array(vec, dtype='<U')
+
+    def get_bonded(self, type:BondedType):
+        """ @brief get atom bonds/angles pairs from tpr if exist.
+
+        Returns
+        -------
+        return a np.array(dtype=int), the length is the number of bonds/angles
+        """
+        bonded = TprParser_.get_bonded(self.tprCapsule, type)
+        dim = 2 if type=='bonds' else 3 if type=='angles' else 4
+        return np.array(bonded, dtype=np.int32).reshape(-1, dim)

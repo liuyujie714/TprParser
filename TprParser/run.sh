@@ -3,7 +3,7 @@
 # clear
 function clean
 {
-    rm -rf dist TprParser.egg-info 
+    rm -rf dist TprParser.egg-info build
 }
 
 # build

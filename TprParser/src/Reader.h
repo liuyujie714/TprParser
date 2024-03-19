@@ -5,6 +5,7 @@
 #include "Bytes.h"
 #include "TprData.h"
 #include <string.h>
+#include <cstdint>
 
 #define INSERT_POS(prop) data_->property.prop = tpr_.ftell_()
 
@@ -121,8 +122,11 @@ public:
 	//< 2. get box info in vector 9
 	const std::vector<float>& get_xvf(const char* type) const;
 
-	//< get bonds info in vector 
-	std::vector<int> get_bonds() const;
+	//< get resname, atomname
+	const std::vector<std::string>& get_name(const char *type) const;
+
+	//< get bonds/angles info in vector 
+	std::vector<int> get_bonded(const char *type) const;
 
 private:
 	//< assistant func to write tpr given new coords, velocity or force

@@ -444,6 +444,25 @@ bool TprReader::tpr_angles()
     }
 
     // 可能需要去除重复的键
+    for (auto& angle : data_->angles)
+    {
+        // index from small to big, fix center
+        if (angle[0] > angle[2]) std::swap(angle[0], angle[2]);
+    }
+    std::sort(data_->angles.begin(), data_->angles.end(),
+        [](const std::array<int, 3> &a, const std::array<int, 3> &b)
+        {
+            // first atom from small to big
+            if (a[0] < b[0]) {
+                return true;
+            } else if (a[0] == b[0]) {
+                return a[2] < b[2];
+            }
+            return false;
+        }
+    );
+    data_->angles.erase(std::unique(data_->angles.begin(), data_->angles.end()), data_->angles.end());
+    
     //for (auto& angle : data_->angles)
     //{
     //    msg("%d %d %d\n", angle.at(0), angle.at(1), angle.at(2));
@@ -2409,22 +2428,90 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
     return {};
 }
 
-std::vector<int> TprReader::get_bonds() const
+const std::vector<std::string>& TprReader::get_name(const char* type) const
 {
-    if (data_->bonds.empty())
+    // check input, res, atom name
+    StringType evec;
+    if ((evec = check_string<StringType>(type, c_name_vector)) == StringType::Count)
     {
-        throw std::runtime_error("Can not get bonds information from tpr");
+        throw std::runtime_error(std::string("Unknown vector property: ") + type);
     }
 
-    std::vector<int> bonds; // return bonds in single vector!
-    for (const auto& bond : data_->bonds)
+    switch (evec)
     {
-        for (const auto& id : bond)
+    case StringType::res:
+    {
+        if (data_->atoms.resname.empty())
         {
-            bonds.push_back(id);
+            throw std::runtime_error("Can not get resname information");
         }
+        return data_->atoms.resname;
     }
-    return bonds; // RVO
+    case StringType::atom:
+    {
+        if (data_->atoms.atomname.empty())
+        {
+            throw std::runtime_error("Can not get atomname information");
+        }
+        return data_->atoms.atomname;
+    }
+    default:
+        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        break;
+    }
+
+    return {};
+}
+
+std::vector<int> TprReader::get_bonded(const char *type) const
+{
+    // check input
+    BondedType evec;
+    if ((evec = check_string<BondedType>(type, c_bonded_type)) == BondedType::Count)
+    {
+        throw std::runtime_error(std::string("Unknown bonded property: ") + type);
+    }
+    
+    switch (evec)
+    {
+    case BondedType::bonds:
+    {
+        if (data_->bonds.empty())
+        {
+            throw std::runtime_error("Can not get bonds information from tpr");
+        }
+        std::vector<int> bonds; // return bonds in single vector!
+        for (const auto& bond : data_->bonds)
+        {
+            for (const auto& id : bond)
+            {
+                bonds.push_back(id);
+            }
+        }
+        return bonds; // RVO
+    }
+    case BondedType::angles:
+    {
+        if (data_->angles.empty())
+        {
+            throw std::runtime_error("Can not get angles information from tpr");
+        }
+        std::vector<int> angles; // return angles in single vector!
+        for (const auto& angle : data_->angles)
+        {
+            for (const auto& id : angle)
+            {
+                angles.push_back(id);
+            }
+        }
+        return angles; // RVO
+    }
+    default:
+        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        break;
+    }
+
+
 }
 
 

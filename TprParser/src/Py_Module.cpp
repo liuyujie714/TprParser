@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "Reader.h"
-#include <string.h>
 
 //< For Python API, I use NULL instead of nullptr
 
@@ -361,11 +360,72 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 	return list;
 }
 
-static PyObject* get_bonds(PyObject* self, PyObject* args)
+// get resname or atomname
+static PyObject* get_name(PyObject* self, PyObject* args)
 {
 	PyObject* capsule = NULL;
+	const char* type = NULL;
 
-	if (!PyArg_ParseTuple(args, "O", &capsule))
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
+	{
+		return NULL;
+	}
+
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return NULL;
+	}
+
+	// get vector of naem
+	std::vector<std::string> vec;
+	try
+	{
+		vec = reader->get_name(type);
+	}
+	catch (const std::exception& e)
+	{
+		PyErr_SetString(PyExc_RuntimeError, e.what());
+		return NULL;
+	}
+	if (vec.empty())
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not find vector in tpr");
+		return NULL;
+	}
+
+	// coords to python list
+	PyObject* list = PyList_New(vec.size());
+	if (!list)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not new list for vector");
+		return NULL;
+	}
+	Py_ssize_t i = 0;
+	for (const auto& it : vec)
+	{
+		// const char * to python string obj
+		PyObject* value = PyUnicode_FromString(it.c_str());
+		if (!value)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Can not convert vector to list");
+			Py_DECREF(list); // free list
+			return NULL;
+		}
+		PyList_SET_ITEM(list, i++, value);
+	}
+
+	return list;
+}
+
+//< get bonds/angles pair of tpr
+static PyObject* get_bonded(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = NULL;
+	const char* type = NULL;
+
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
 	{
 		return NULL;
 	}
@@ -381,7 +441,7 @@ static PyObject* get_bonds(PyObject* self, PyObject* args)
 	std::vector<int> vec;
 	try
 	{
-		vec = reader->get_bonds();
+		vec = reader->get_bonded(type);
 	}
 	catch (const std::exception& e)
 	{
@@ -455,6 +515,7 @@ static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject *kwargs)
 	Py_RETURN_TRUE;
 }
 
+
 static PyMethodDef methods[] =
 {
 	{"load", reader_new, METH_VARARGS, "Create a new TprReader instance"},
@@ -465,8 +526,9 @@ static PyMethodDef methods[] =
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
+	{"get_name", get_name, METH_VARARGS, "Get resname/atomname from tpr"},
 	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
-	{"get_bonds", get_bonds, METH_VARARGS, "Get bonds information from tpr"},
+	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles information from tpr"},
 	{NULL, NULL, 0, NULL}
 };
 

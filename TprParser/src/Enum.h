@@ -97,6 +97,31 @@ static const char* c_mdp_vector[static_cast<int>(VecProps::Count)] =
 	"x", "v", "f", "m", "q", "box"
 };
 
+// vector of tpr, resname or atomname
+enum class StringType : int
+{
+	res,
+	atom,
+	Count
+};
+static const char* c_name_vector[static_cast<int>(StringType::Count)] =
+{
+	"res", "atom"
+};
+
+
+// type of bonded
+enum class BondedType : int
+{
+	bonds,
+	angles,
+	Count
+};
+static const char* c_bonded_type[static_cast<int>(BondedType::Count)] =
+{
+	"bonds", "angles"
+};
+
 
 //< check key words in a c_string ignore case, return enum value if find, else return ENUM::Count
 template<typename ENUM, const int count = static_cast<int>(ENUM::Count)>
