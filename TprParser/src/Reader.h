@@ -53,6 +53,10 @@ public:
 		{
 			throw std::runtime_error("error for tpr_angles()");
 		}
+		if (tpr_dihedrals() != TPR_SUCCESS)
+		{
+			throw std::runtime_error("error for tpr_dihedrals()");
+		}
 		if (do_ir() != TPR_SUCCESS)
 		{
 			throw std::runtime_error("error for do_ir()");
@@ -61,7 +65,6 @@ public:
 
 	~TprReader()
 	{
-		if (data_->symtab) delete[] data_->symtab;
 		if (data_) delete data_;
 
 		msg("End of TprReader\n");
@@ -82,11 +85,16 @@ public:
 	//< dump charges and mass
 	bool tpr_chargemass();
 
-	//< dump bonds of tpr
+	//< dump bonds of tpr, can only store angle and harmonic force constant
 	bool tpr_bonds();
 
-	//< dump angles of tpr
+	//< dump angles of tpr, can only store angle and harmonic force constant
 	bool tpr_angles();
+
+	/*  \brief dump ALL dihedrals of tpr.
+	* Can not store dihedrals parameters
+	*/
+	bool tpr_dihedrals();
 
 	//< do_ir
 	bool do_ir();
@@ -160,6 +168,7 @@ private:
 	FileSerializer			tpr_;
 	TprData					*data_;
 	std::vector<t_iparams>  iparams_; // 力场参数
+	std::vector<int>		functype_; // 函数类型
 	bool					bGRO_ = false; //< if write a gro
 	bool					bMol2_ = false; //< if write a mol2 whith bonds
 	bool					bCharge_ = false; //< if write atomic charge and mass to file

@@ -43,10 +43,14 @@ int main(int argc, char *argv[])
 
 		// ·Ö¿ª¿ØÎÂ
 		{
+			//TprReader reader("test/nvt_WAT.tpr");
+			//std::vector<float> ref_t = { 200.0f };
+			//std::vector<float> tau_t = { 2.0f };
+			//reader.set_temperature("NoseHoover", tau_t, ref_t);
+		}
+
+		{
 			TprReader reader("test/nvt_WAT.tpr");
-			std::vector<float> ref_t = { 200.0f };
-			std::vector<float> tau_t = { 2.0f };
-			reader.set_temperature("NoseHoover", tau_t, ref_t);
 		}
 	}
 	catch (const std::exception&e)

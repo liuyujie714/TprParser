@@ -6,37 +6,54 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <utility>
+#include <set> 
 
 using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;
 using vecU2D = std::vector<std::vector<unsigned short>>;
 
-//< set up box rel
-static inline void do_box_rel(int ndim, const float deform[DIM][DIM], float box_rel[DIM][DIM], float b[DIM][DIM], bool bInit)
+// bonded pairs and ff parameters, such as bonds, angle, dihedrals
+struct Bonded
 {
-	for (int d = YY; d <= ZZ; ++d)
+	// bond
+	Bonded(int ta, int tb, float fa = 0, float fb = 0)
+		: a(ta), b(tb), c0(fa), c1(fb)
 	{
-		for (int d2 = XX; d2 < ndim; ++d2)
+		if (a > b) std::swap(a, b);
+	}
+
+	// angle
+	Bonded(int ta, int tb, int tc, float fa = 0, float fb = 0)
+		: a(ta), b(tb), c(tc), c0(fa), c1(fb)
+	{
+		if (a > c) std::swap(a, c);
+	}
+
+	// dihedral
+	Bonded(int ta, int tb, int tc, int td, float fa = 0, float fb = 0)
+		: a(ta), b(tb), c(tc), d(td), c0(fa), c1(fb)
+	{
+		// small x x big
+		if (a > d)
 		{
-			/* We need to check if this box component is deformed
-			 * or if deformation of another component might cause
-			 * changes in this component due to box corrections.
-			 */
-			if (deform[d][d2] == 0
-				&& !(d == ZZ && d2 == XX && deform[d][YY] != 0 && (b[YY][d2] != 0 || deform[YY][d2] != 0)))
-			{
-				if (bInit)
-				{
-					box_rel[d][d2] = b[d][d2] / b[XX][XX];
-				}
-				else
-				{
-					b[d][d2] = b[XX][XX] * box_rel[d][d2];
-				}
-			}
+			std::swap(a, d);
+			std::swap(b, c);
 		}
 	}
-}
+
+	// a b c d
+	bool operator<(const Bonded& rhs) const
+	{
+		return std::tie(a, d, b, c) < std::tie(rhs.a, rhs.d, rhs.b, rhs.c);
+	}
+
+	int		a = 0; // atom1
+	int		b = 0; // atom2
+	int		c = 0; // atom3
+	int		d = 0; // atom4
+	float	c0 = 0, c1 = 0; // ff parameters
+};
 
 
 struct TprData
@@ -47,6 +64,11 @@ struct TprData
 		prec = filever = vergen = natoms = ngtc = fep_state = 0;
 		symtablen = nmoltypes = nmolblock = 0;
 		bIr = bTop = bX = bV = bF = bBox = bInter = false;
+	}
+
+	~TprData()
+	{
+		if (symtab) delete[] symtab;
 	}
 
 	int					prec; //< the precision of tpr, 4 or 8
@@ -218,12 +240,17 @@ struct TprData
 		std::vector<int>			resid;
 		std::vector<float>			mass;
 		std::vector<float>			charge;
+		std::vector<unsigned short>	type; 
 	} atoms;
 
-	// bonds
-	std::vector<std::array<int, 2>> bonds;
-	// angles
-	std::vector<std::array<int, 3>>	angles;
+	// bonds (1-based)
+	std::set<Bonded>		bonds;
+	// angles (1-based)
+	std::set<Bonded>		angles;
+	// proper dihedrals (1-based)
+	std::set<Bonded>		dihedrals;
+	// improper dihedrals (1-based)
+	std::set<Bonded>		impropers;
 
 	// mdp属性位置, 所有变量都必须初始化为0
 	struct

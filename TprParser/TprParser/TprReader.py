@@ -11,7 +11,7 @@ class TprReader:
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
     VecType3: TypeAlias = Literal['res', 'atom']
-    BondedType: TypeAlias = Literal['bonds', 'angles']
+    BondedType: TypeAlias = Literal['bonds', 'angles', 'dihedrals', 'impropers']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
         # get internal object
         self.tprCapsule = TprParser_.load(fname, bGRO, bMol2, bCharge)
@@ -147,11 +147,11 @@ class TprReader:
         return np.array(vec, dtype='<U')
 
     def get_bonded(self, type:BondedType):
-        """ @brief get atom bonds/angles pairs from tpr if exist.
+        """ @brief get atom bonds/angles/dihedrals/impropers pairs (1-based index) from tpr if exist.
 
         Returns
         -------
-        return a np.array(dtype=int), the length is the number of bonds/angles
+        return a np.array(dtype=int), the length is the number of bonded
         """
         bonded = TprParser_.get_bonded(self.tprCapsule, type)
         dim = 2 if type=='bonds' else 3 if type=='angles' else 4

@@ -419,7 +419,7 @@ static PyObject* get_name(PyObject* self, PyObject* args)
 	return list;
 }
 
-//< get bonds/angles pair of tpr
+//< get bonds/angles/dihedrals/impropers (1-based index) pair of tpr
 static PyObject* get_bonded(PyObject* self, PyObject* args)
 {
 	PyObject* capsule = NULL;
@@ -528,7 +528,7 @@ static PyMethodDef methods[] =
 
 	{"get_name", get_name, METH_VARARGS, "Get resname/atomname from tpr"},
 	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
-	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles information from tpr"},
+	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers pairs (1-based index) information from tpr"},
 	{NULL, NULL, 0, NULL}
 };
 

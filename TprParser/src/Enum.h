@@ -115,11 +115,13 @@ enum class BondedType : int
 {
 	bonds,
 	angles,
+	dihedrals,
+	impropers,
 	Count
 };
 static const char* c_bonded_type[static_cast<int>(BondedType::Count)] =
 {
-	"bonds", "angles"
+	"bonds", "angles", "dihedrals", "impropers"
 };
 
 
