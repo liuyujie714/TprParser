@@ -343,6 +343,7 @@ bool TprReader::tpr_bonds()
                             {
                             1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
+                            // TODO: need corresponding to different function parameters
                             iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
                             }
                         );
@@ -357,19 +358,24 @@ bool TprReader::tpr_bonds()
     // inter-molecular bonds
     if (data_->bInter)
     {
-        // use global atom index
-        for (int m = 0; m < data_->inter_molecular_ilist.nr[F_HARMONIC][0] / 3; m++)
+        // use global atom index, No F_SETTLE
+        for (int k = 0; k < nBonds - 1; k++)
         {
-            int functype = data_->ilist.interactionlist[F_HARMONIC][0][3 * m];
-            int a = 3 * m + 1;
-            int b = 3 * m + 2;
-            data_->bonds.insert(
-                {
-                    1 + data_->inter_molecular_ilist.interactionlist[F_HARMONIC][0][a],
-                    1 + data_->inter_molecular_ilist.interactionlist[F_HARMONIC][0][b],
-                    iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
-                }
-            );
+            int nameInter = interactions[k];
+            for (int m = 0; m < data_->inter_molecular_ilist.nr[nameInter][0] / 3; m++)
+            {
+                int functype = data_->inter_molecular_ilist.interactionlist[nameInter][0][3 * m];
+                int a = 3 * m + 1;
+                int b = 3 * m + 2;
+                data_->bonds.insert(
+                    {
+                        1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][a],
+                        1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][b],
+                        // TODO: need corresponding to different function parameters
+                        iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
+                    }
+                );
+            }
         }
     }
 
@@ -445,6 +451,7 @@ bool TprReader::tpr_angles()
                                 1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                                 1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
                                 1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
+                                // TODO: need corresponding to different function parameters
                                 iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
                             }
                         );

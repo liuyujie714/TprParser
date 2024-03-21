@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 		}
 
 		{
-			TprReader reader("test/nvt_WAT.tpr");
+			TprReader reader("test/Inter-2019.6.tpr");
 		}
 	}
 	catch (const std::exception&e)
