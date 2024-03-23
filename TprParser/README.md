@@ -31,6 +31,11 @@ GROMACS tpr version should between `4.0` to `2024`, too old tpr can not be read 
 
   Please **ALWAYS** install Latest version.
 
+  Update this module if you have installed:
+  ```
+  pip install TprParser --upgrade -i https://pypi.org/simple
+  ```
+
 # Usage
 
 Write your python program like this:
@@ -47,7 +52,31 @@ from TprParser.TprReader import TprReader	# import this module
 reader = TprReader("your.tpr")
 coords = reader.get_xvf('x')
 velocity = reader.get_xvf('v')
-# ...
+
+# get atom charge or mass
+charge = reader.get_mq('q')
+mass = reader.get_mq('m')
+
+# get residue or atom name of each atom
+resnames = reader.get_name('res')
+atomnames = reader.get_name('atom')
+```
+
+
+## Get bonds/angles/dihedrals(proper and impropers)
+```python
+# get all bond pairs (1-based index)
+bonds = reader.get_bonded('bonds')
+
+# get all angles pairs (1-based index)
+angles = reader.get_bonded('angles')
+
+# get all proper dihedrals pairs (1-based index)
+propers = reader.get_bonded('dihedrals')
+
+# get all improper dihedrals pairs (1-based index)
+impropers = reader.get_bonded('impropers')
+
 ```
 
 
@@ -88,6 +117,11 @@ def Pressure(fname):
 
 ```
 
+# Modify system temperature
+```python
+# set Berendsen algorithm and tau_t=0.2, ref_t=400 K for one temperature coupling group
+reader.set_temperature(etc='Berendsen', tau_t=[0.2], ref_t=[400])
+```
 
 
 ## Other

@@ -8,6 +8,7 @@
 #include <array>
 #include <utility>
 #include <set> 
+#include <tuple> // std::tie
 
 using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;

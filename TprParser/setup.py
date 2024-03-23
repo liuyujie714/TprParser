@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 import numpy, os
 
 # Always update program version
-__version__ = '0.1.47'
+__version__ = '0.1.48'
 
 # Description
 long_doc = ""
