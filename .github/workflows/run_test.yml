@@ -23,10 +23,11 @@ jobs:
       working-directory: build
       run: |
         set -x
-        cmake ..
+        cmake -DCMAKE_BUILD_TYPE=Release
 
     - name: Build project
       working-directory: build
       run: |
         set -x
-        cmake --build .
+        cmake --build . --target INSTALL --config Release
+
