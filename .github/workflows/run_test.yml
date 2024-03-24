@@ -70,7 +70,6 @@ jobs:
 
     - name: build job
       run: |
-        set -x
         python -m pip install numpy
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
