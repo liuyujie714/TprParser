@@ -50,3 +50,33 @@ jobs:
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
         cmake --build . --target INSTALL --config Release
 
+
+  Mingw64Build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        mingw: 64
+
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
+
+    - name: set mingw64
+      uses: alexeykuz-min/mingw@v2
+      with:
+        mingw-installation: 'latest'
+
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: build job
+      run: |
+        set -x
+        python -m pip install numpy
+        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install 
