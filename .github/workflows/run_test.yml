@@ -21,5 +21,7 @@ jobs:
         set -x
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --target INSTALL --config Release
+        make 
+        make install 
+
 
