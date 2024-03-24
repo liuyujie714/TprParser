@@ -8,12 +8,14 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(PythonLibs 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
-message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
-if (WIN32)
-	include_directories(${Python3_INCLUDE_DIRS} "${Python3_INCLUDE_DIRS}/../Lib/site-packages/numpy/core/include")
-else()
-	include_directories(${Python3_INCLUDE_DIRS} "${Python3_INCLUDE_DIRS}/../../lib/python3.8/site-packages/numpy/core/include")
-endif()
+# add numpy include
+execute_process(
+    COMMAND python -c "import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NUMPY_INCLUDE_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+include_directories(${Python3_INCLUDE_DIRS} "${NUMPY_INCLUDE_PATH}")
+
 
 # 添加可执行文件
 add_executable(TprReader src/main.cpp src/Reader.cpp src/Utils.cpp)
