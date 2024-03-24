@@ -62,6 +62,14 @@ jobs:
       uses: msys2/setup-msys2@v2
       with:
         msystem: mingw64
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          cmake:p
+          ninja:p
 
     - name: set python version
       uses: actions/setup-python@v2
