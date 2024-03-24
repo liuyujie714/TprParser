@@ -17,14 +17,19 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Create build directory
-      run: mkdir build
-
-    - name: Configure CMake
       run: |
         set -x
-        cmake -DCMAKE_BUILD_TYPE=Release
+        cd TprParser 
+        mkdir build
+
+    - name: Configure CMake
+      working-directory: build
+      run: |
+        set -x
+        cmake .. -DCMAKE_BUILD_TYPE=Release
 
     - name: Build project
+      working-directory: build
       run: |
         set -x
         cmake --build . --target INSTALL --config Release
