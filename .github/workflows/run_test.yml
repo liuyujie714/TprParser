@@ -19,7 +19,7 @@ jobs:
     - name: Create build directory
       run: |
         set -x
-        cd TprParser 
+        cd TprParser/TprParser
         mkdir build
 
     - name: Configure CMake
