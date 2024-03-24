@@ -54,10 +54,6 @@ jobs:
   Mingw64Build:
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        mingw: 64
-
     steps:
     - name: git source
       uses: actions/checkout@v2
@@ -78,5 +74,6 @@ jobs:
         python -m pip install numpy
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-        make 
-        make install 
+        mingw64-make 
+        mingw64-make install 
+        
