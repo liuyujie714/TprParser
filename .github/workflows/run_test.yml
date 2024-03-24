@@ -61,7 +61,7 @@ jobs:
     - name: Set up Msys2
       uses: msys2/setup-msys2@v2
       with:
-        msystem: UCRT64
+        msystem: mingw64
 
     - name: set python version
       uses: actions/setup-python@v2
@@ -73,4 +73,5 @@ jobs:
         python -m pip install numpy
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-        cmake --build . --target INSTALL --config Release
+        make 
+        make install
