@@ -1,3 +1,5 @@
+#include <cinttypes> // toupper
+
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "Reader.h"
@@ -336,8 +338,30 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
 	}
 
 	// get vector from handle
-	std::vector<int> vec;
+	std::vector<Bonded> vec;
+	
 	TRY_THROW_EXCEPTION_FROM_OBJ(get_bonded, vec, type);
+
+	// type to releated the number of atoms
+	Py_ssize_t nat = 2;
+	switch (std::toupper(type[0]))
+	{
+		// bonds
+	case 'B':
+		nat = 2;
+		break;
+		// angles
+	case 'A':
+		nat = 3;
+		break;
+		// dihedrals/impropers
+	case 'D':
+	case 'I':
+		nat = 4;
+		break;
+	default:
+		break;
+	}
 
 	// coords to python list
 	PyObject* list = PyList_New(vec.size());
@@ -346,18 +370,61 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
 		PyErr_SetString(PyExc_RuntimeError, "Can not new list for vector");
 		return NULL;
 	}
+
 	Py_ssize_t i = 0;
 	for (const auto& it : vec)
 	{
-		// int to Pyobject
-		PyObject* value = PyLong_FromLong(static_cast<long>(it));
+		// atom indexs
+		PyObject* ids = PyList_New(nat);
+		for (Py_ssize_t j = 0; j < nat; j++)
+		{
+			PyObject* value = PyLong_FromLong(static_cast<long>(it[j]));
+			if (!value)
+			{
+				PyErr_SetString(PyExc_RuntimeError, "Can not convert it[j] to pyobj");
+				Py_DECREF(ids); // free ids
+				Py_DECREF(list); // free list
+				return NULL;
+			}
+			PyList_SET_ITEM(ids, j, value);
+		}
+
+
+		//! ffparams
+		Py_ssize_t count = 0;
+		PyObject* ffparam = PyList_New(1 + it.ff.size());
+		// append func type
+		PyObject* value = PyLong_FromLong(static_cast<long>(it.ifunc));
 		if (!value)
 		{
-			PyErr_SetString(PyExc_RuntimeError, "Can not convert vector to list");
+			PyErr_SetString(PyExc_RuntimeError, "Can not convert it.ifunc to pyobj");
+			Py_DECREF(ids); // free ids
 			Py_DECREF(list); // free list
+			Py_DECREF(ffparam); // free ffparam
 			return NULL;
 		}
-		PyList_SET_ITEM(list, i++, value);
+		PyList_SET_ITEM(ffparam, count++, value);
+		// append ff parameters in float for all
+		for (Py_ssize_t k = 0; k < it.ff.size(); k++)
+		{
+			PyObject* value = PyFloat_FromDouble(static_cast<double>(it.ff[k]));
+			if (!value)
+			{
+				PyErr_SetString(PyExc_RuntimeError, "Can not convert iit.ff[k] to pyobj");
+				Py_DECREF(ids); // free ids
+				Py_DECREF(ffparam); // free ffparam
+				Py_DECREF(list); // free list
+				return NULL;
+			}
+			PyList_SET_ITEM(ffparam, count++, value);
+		}
+
+		PyObject* merge = PyList_New(2); // atom indexs + ffparams
+		PyList_SET_ITEM(merge, 0, ids);
+		PyList_SET_ITEM(merge, 1, ffparam);
+
+		// final obj
+		PyList_SET_ITEM(list, i++, merge);
 	}
 
 	return list;

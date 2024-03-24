@@ -133,8 +133,8 @@ public:
 	//< get resname, atomname
 	const std::vector<std::string>& get_name(const char *type) const;
 
-	//< get bonds/angles info in vector 
-	std::vector<int> get_bonded(const char *type) const;
+	//< get bonds/angles info in struct 
+	const std::vector<Bonded> &get_bonded(const char *type) const;
 
 private:
 	//< assistant func to write tpr given new coords, velocity or force

@@ -31,7 +31,7 @@ module = Extension(
     language='c++',
     extra_compile_args=CXXFLAGS, # C++ standard
     define_macros=[('_CRT_SECURE_NO_WARNINGS', 1)], # for MSVC
-    sources=['src/Py_Module.cpp', 'src/Reader.cpp'], # source code path
+    sources=['src/Py_Module.cpp', 'src/Reader.cpp', 'src/Utils.cpp'], # source code path
     extra_link_args=LINKER  # link to c++ library
 )
 setup(

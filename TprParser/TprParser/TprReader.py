@@ -6,7 +6,8 @@ import TprParser_
 class TprReader:
     """ @brief A wrapper of TprParser_
         1. get atmic coordinates/velocity/force/mass/charge ... of tpr
-        2. modify simulation nsteps/dt/integer/coordinates/velocity/force and save as new.tpr
+        2. get force field parameters for bonds/angles/dihedrals/impropers
+        3. modify simulation nsteps/dt/integer/coordinates/velocity/force and save as new.tpr
     """
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
@@ -93,8 +94,8 @@ class TprReader:
 
         Parameters
         ----------
-        keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed, \
-            nsttcouple, nstpcouple, nstcalcenergy
+        keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
+        nsttcouple, nstpcouple, nstcalcenergy
         val: an int value for keyword
 
         Returns
@@ -151,8 +152,15 @@ class TprReader:
 
         Returns
         -------
-        return a np.array(dtype=int), the length is the number of bonded
+        return a np.array(dtype=object), the length is the number of bonded
+        for each bonded, composed of [[atomid pairs] + [force field parameters]]
+
+        Example:
+        -------
+        >>> bonds = reader.get_bonded('bonds')
+        >>> print(bonds[0])     # print all information about the first bonds
+        >>> print(bonds[0,0])   # print atom index (1-based) of the first bond
+        >>> print(bonds[0,1])   # print force field parameters of the first bond, includes functype+parameters
         """
         bonded = TprParser_.get_bonded(self.tprCapsule, type)
-        dim = 2 if type=='bonds' else 3 if type=='angles' else 4
-        return np.array(bonded, dtype=np.int32).reshape(-1, dim)
+        return np.array(bonded, dtype=object)

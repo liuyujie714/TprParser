@@ -1,9 +1,9 @@
 #include "Utils.h"
 
-std::pair<int, std::vector<float>> get_bond_type(int Enum, const t_iparams *param)
+std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams *param)
 {
     std::vector<float> ffparam;
-    switch (Enum)
+    switch (ftype)
     {
     case F_BONDS: 
         ffparam.push_back(param->harmonic.rA);
@@ -66,8 +66,8 @@ std::pair<int, std::vector<float>> get_bond_type(int Enum, const t_iparams *para
     case F_SETTLE:
         ffparam.push_back(param->settle.doh);
         ffparam.push_back(param->settle.dhh);
-        return std::make_pair(0, ffparam);
-    // 成键关系会转换成约束Constraint
+        return std::make_pair(1, ffparam);
+    // 有些成键关系会转换成约束Constraint
     case F_CONSTR:
         ffparam.push_back(param->constr.dA); // 距离
         ffparam.push_back(param->constr.dB);
@@ -83,59 +83,127 @@ std::pair<int, std::vector<float>> get_bond_type(int Enum, const t_iparams *para
 }
 
 
-// TODO
-int get_angle_type(int Enum)
+std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* param)
 {
-    switch (Enum)
+    std::vector<float> ffparam;
+    switch (ftype)
     {
     case F_ANGLES:
-        return 1;
+        ffparam.push_back(param->harmonic.rA);
+        ffparam.push_back(param->harmonic.krA);
+        ffparam.push_back(param->harmonic.rB);
+        ffparam.push_back(param->harmonic.krB);
+        return std::make_pair(1, ffparam);
     case F_G96ANGLES:
-        return 2;
+        ffparam.push_back(param->harmonic.rA);
+        ffparam.push_back(param->harmonic.krA);
+        ffparam.push_back(param->harmonic.rB);
+        ffparam.push_back(param->harmonic.krB);
+        return std::make_pair(2, ffparam);
     case F_CROSS_BOND_BONDS:
-        return 3;
+        ffparam.push_back(param->cross_bb.r1e);
+        ffparam.push_back(param->cross_bb.r2e);
+        ffparam.push_back(param->cross_bb.krr);
+        return std::make_pair(3, ffparam);
     case F_CROSS_BOND_ANGLES:
-        return 4;
+        ffparam.push_back(param->cross_ba.r1e);
+        ffparam.push_back(param->cross_ba.r2e);
+        ffparam.push_back(param->cross_ba.r3e);
+        ffparam.push_back(param->cross_ba.krt);
+        return std::make_pair(4, ffparam);
     case F_UREY_BRADLEY:
-        return 5;
+        ffparam.push_back(param->u_b.thetaA);
+        ffparam.push_back(param->u_b.kthetaA);
+        ffparam.push_back(param->u_b.r13A);
+        ffparam.push_back(param->u_b.kUBA);
+        ffparam.push_back(param->u_b.thetaB);
+        ffparam.push_back(param->u_b.kthetaB);
+        ffparam.push_back(param->u_b.r13B);
+        ffparam.push_back(param->u_b.kUBB);
+        return std::make_pair(5, ffparam);
     case F_QUARTIC_ANGLES:
-        return 6;
+        ffparam.push_back(param->qangle.theta);
+        for (int i = 0; i < 5; i++) ffparam.push_back(param->qangle.c[i]);
+        return std::make_pair(6, ffparam);
     case F_TABANGLES:
-        return 8;
+        ffparam.push_back(param->tab.kA);
+        ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
+        ffparam.push_back(param->tab.kB);
+        return std::make_pair(8, ffparam);
     case F_LINEAR_ANGLES:
-        return 9;
+        ffparam.push_back(param->linangle.klinA);
+        ffparam.push_back(param->linangle.aA);
+        ffparam.push_back(param->linangle.klinB);
+        ffparam.push_back(param->linangle.aB);
+        return std::make_pair(9, ffparam);
     case F_RESTRANGLES:
-        return 10;
+        ffparam.push_back(param->harmonic.rA);
+        ffparam.push_back(param->harmonic.krA);
+        return std::make_pair(10, ffparam);
     default:
         break;
     }
-    return -1;
+    return std::make_pair(-1, ffparam);
 }
 
-// TODO
-int get_dihedral_type(int Enum)
+std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams* param)
 {
-    switch (Enum)
+    std::vector<float> ffparam;
+    switch (ftype)
     { 
     case F_PDIHS: // 周期性二面角多重
+        ffparam.push_back(param->pdihs.phiA);
+        ffparam.push_back(param->pdihs.cpA);
+        ffparam.push_back(param->pdihs.phiB);
+        ffparam.push_back(param->pdihs.cpB);
+        ffparam.push_back(static_cast<float>(param->pdihs.mult));
         //return 1;
-        return 9;
-    case F_IDIHS:
-        return 2;
+        return std::make_pair(9, ffparam);
     case F_RBDIHS:
-        return 3;
-    case F_PIDIHS:
-        return 4;
+        for (int i = 0; i < 6; i++) ffparam.push_back(param->rbdihs.rbcA[i]);
+        for (int i = 0; i < 6; i++) ffparam.push_back(param->rbdihs.rbcB[i]);
+        return std::make_pair(3, ffparam);
     case F_FOURDIHS:
-        return 5;
+        for (int i = 0; i < 6; i++) ffparam.push_back(param->rbdihs.rbcA[i]);
+        for (int i = 0; i < 6; i++) ffparam.push_back(param->rbdihs.rbcB[i]);
+        return std::make_pair(5, ffparam);
     case F_TABDIHS:
-        return 8;
+        ffparam.push_back(param->tab.kA);
+        ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
+        ffparam.push_back(param->tab.kB);
+        return std::make_pair(8, ffparam);
     case F_RESTRDIHS:
-        return 10;
+        ffparam.push_back(param->pdihs.phiA);
+        ffparam.push_back(param->pdihs.cpA);
+        return std::make_pair(10, ffparam);
     case F_CBTDIHS:
-        return 11;
+        for (int i = 0; i < 6; i++) ffparam.push_back(param->cbtdihs.cbtcA[i]);
+        return std::make_pair(11, ffparam);
     default:
         break;
     }
-    return -1;
+    return std::make_pair(-1, ffparam);
+}
+
+std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams* param)
+{
+    std::vector<float> ffparam;
+    switch (ftype)
+    {
+    case F_IDIHS:
+        ffparam.push_back(param->harmonic.rA);
+        ffparam.push_back(param->harmonic.krA);
+        ffparam.push_back(param->harmonic.rB);
+        ffparam.push_back(param->harmonic.krB);
+        return std::make_pair(2, ffparam);
+    case F_PIDIHS:
+        ffparam.push_back(param->harmonic.rA);
+        ffparam.push_back(param->harmonic.krA);
+        ffparam.push_back(param->harmonic.rB);
+        ffparam.push_back(param->harmonic.krB);
+        return std::make_pair(4, ffparam);
+    default:
+        break;
+    }
+    return std::make_pair(-1, ffparam);
 }

@@ -316,45 +316,26 @@ bool TprReader::tpr_bonds()
         {
             for (int k = 0; k < nBonds; k++)
             {
-                int type = interactions[k];
-                // settle 
-                if (type == F_SETTLE)
-                {
-                    // settle algorithm for water molecules
-                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 2; m++)
-                    {
-                        int itype = data_->ilist.interactionlist[type][mtype][2 * m];
-                        // OW-HW
-                        int a = 2 * m + 1;
-                        int b = 2 * m + 2;
+                int ftype = interactions[k];
+                // settle algorithm for water molecules nspce=2
+                const int nspace = (ftype == F_SETTLE) ? 2 : 3;
 
-                        // ffparameters
-                        auto param = get_bond_type(type, &iparams_[itype]);
-                        data_->bonds.push_back(
-                            { 
-                                1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
-                                param.first, param.second
-                            }
-                        );
-                    }
-                }
-                else
+                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
                 {
-                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 3; m++)
-                    {
-                        int itype = data_->ilist.interactionlist[type][mtype][3 * m];
-                        int a = 3 * m + 1;
-                        int b = 3 * m + 2;
-                        auto param = get_bond_type(type, &iparams_[itype]);
-                        data_->bonds.push_back(
-                            {
-                                1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
-                                param.first, param.second
-                            }
-                        );
-                    }
+                    // the id of type
+                    int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
+                    int a = nspace * m + 1;
+                    int b = nspace * m + 2;
+
+                    // ffparameters
+                    auto param = get_bond_type(ftype, &iparams_[itype]);
+                    data_->bonds.push_back(
+                        {
+                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                            param.first, param.second
+                        }
+                    );
                 }
             }
             aoffset += data_->atomsinmol[mtype];
@@ -386,7 +367,7 @@ bool TprReader::tpr_bonds()
         }
     }
 
-    // ÅÅÐò
+    // ³É¼üÅÅÐò
     std::sort(data_->bonds.begin(), data_->bonds.end(),
         [](const Bonded& lhs, const Bonded& rhs)
         {
@@ -436,16 +417,17 @@ bool TprReader::tpr_angles()
         {
             for (int k = 0; k < nAngles; k++)
             {
-                int type = interactions[k];
+                int ftype = interactions[k];
+
                 // settle 
-                if (type == F_SETTLE)
+                if (ftype == F_SETTLE)
                 {
                     // settle algorithm for water molecules, one water only an angle!
-                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
+                    for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 4; m++)
                     {
-                        int itype = data_->ilist.interactionlist[type][mtype][4 * m];
+                        int itype = data_->ilist.interactionlist[ftype][mtype][4 * m];
                         data_->angles.push_back(
-                            { 
+                            {
                                 2 + aoffset, 1 + aoffset, 3 + aoffset,
                                 // TODO
                                 0, {}
@@ -456,19 +438,20 @@ bool TprReader::tpr_angles()
                 else
                 {
                     // harmonic force angle
-                    for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
+                    for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 4; m++)
                     {
-                        int itype = data_->ilist.interactionlist[type][mtype][4 * m];
+                        int itype = data_->ilist.interactionlist[ftype][mtype][4 * m];
                         int a = 4 * m + 1;
                         int b = 4 * m + 2;
                         int c = 4 * m + 3;
+
+                        auto param = get_angle_type(ftype, &iparams_[itype]);
                         data_->angles.push_back(
                             {
-                                1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
-                                1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
-                                // TODO
-                                0, {}
+                                1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                                1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                                1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                                param.first, param.second
                             }
                         );
                     }
@@ -477,6 +460,14 @@ bool TprReader::tpr_angles()
             aoffset += data_->atomsinmol[mtype];
         }
     }
+
+    // ½Ç¶ÈÅÅÐò
+    std::sort(data_->angles.begin(), data_->angles.end(),
+        [](const Bonded& lhs, const Bonded& rhs)
+        {
+            return std::tie(lhs.a, lhs.b, lhs.c) < std::tie(rhs.a, rhs.b, rhs.c);
+        }
+    );
 
     // TODO
     // 1. inter-molecular angles, dihedrals, imp...
@@ -499,21 +490,22 @@ bool TprReader::tpr_dihedrals()
         {
             for (int k = 0; k < nDihedrals; k++)
             {
-                int type = interactions[k];
-                for (int m = 0; m < data_->ilist.nr[type][mtype] / 5; m++)
+                int ftype = interactions[k];
+                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 5; m++)
                 {
+                    int itype = data_->ilist.interactionlist[ftype][mtype][5 * m];
                     int a = 5 * m + 1;
                     int b = 5 * m + 2;
                     int c = 5 * m + 3;
                     int d = 5 * m + 4;
+                    auto param = get_dihedral_type(ftype, &iparams_[itype]);
                     data_->dihedrals.push_back(
                         {
-                            1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][d] + aoffset,
-                            // TODO
-                            0, {}
+                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
+                            param.first, param.second
                         }
                     );
                 }
@@ -533,21 +525,22 @@ bool TprReader::tpr_dihedrals()
         {
             for (int k = 0; k < nImproper; k++)
             {
-                int type = interactions_imp[k];
-                for (int m = 0; m < data_->ilist.nr[type][mtype] / 5; m++)
+                int ftype = interactions_imp[k];
+                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 5; m++)
                 {
+                    int itype = data_->ilist.interactionlist[ftype][mtype][5 * m];
                     int a = 5 * m + 1;
                     int b = 5 * m + 2;
                     int c = 5 * m + 3;
                     int d = 5 * m + 4;
+                    auto param = get_improper_type(ftype, &iparams_[itype]);
                     data_->impropers.push_back(
                         {
-                            1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][d] + aoffset,
-                            // TODO
-                            0, {}
+                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
+                            param.first, param.second
                         }
                     );
                 }
@@ -555,6 +548,14 @@ bool TprReader::tpr_dihedrals()
             aoffset += data_->atomsinmol[mtype];
         }
     }
+
+    // ¶þÃæ½ÇÅÅÐò
+    auto dihfunc = [](const Bonded& lhs, const Bonded& rhs)
+    {
+        return std::tie(lhs.a, lhs.b, lhs.c, lhs.d) < std::tie(rhs.a, rhs.b, rhs.c, rhs.d);
+    };
+    std::sort(data_->dihedrals.begin(), data_->dihedrals.end(), dihfunc);
+    std::sort(data_->impropers.begin(), data_->impropers.end(), dihfunc);
  
     return TPR_SUCCESS;
 }
@@ -2574,7 +2575,7 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
     return {};
 }
 
-std::vector<int> TprReader::get_bonded(const char *type) const
+const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
 {
     // check input
     BondedType evec;
@@ -2591,13 +2592,7 @@ std::vector<int> TprReader::get_bonded(const char *type) const
         {
             throw std::runtime_error("Can not get bonds information from tpr");
         }
-        std::vector<int> bonds; // return bonds in single vector!
-        for (const auto& bond : data_->bonds)
-        {
-            bonds.push_back(bond.a);
-            bonds.push_back(bond.b);
-        }
-        return bonds; // RVO
+        return data_->bonds; 
     }
     case BondedType::angles:
     {
@@ -2605,14 +2600,7 @@ std::vector<int> TprReader::get_bonded(const char *type) const
         {
             throw std::runtime_error("Can not get angles information from tpr");
         }
-        std::vector<int> angles; // return angles in single vector!
-        for (const auto& angle : data_->angles)
-        {
-            angles.push_back(angle.a);
-            angles.push_back(angle.b);
-            angles.push_back(angle.c);
-        }
-        return angles; // RVO
+        return data_->angles; 
     }
     case BondedType::dihedrals:
     {
@@ -2620,15 +2608,7 @@ std::vector<int> TprReader::get_bonded(const char *type) const
         {
             throw std::runtime_error("Can not get dihedrals information from tpr");
         }
-        std::vector<int> dihedrals; // return angles in single vector!
-        for (const auto& dihedral : data_->dihedrals)
-        {
-            dihedrals.push_back(dihedral.a);
-            dihedrals.push_back(dihedral.b);
-            dihedrals.push_back(dihedral.c);
-            dihedrals.push_back(dihedral.d);
-        }
-        return dihedrals; // RVO
+        return data_->dihedrals;
     }
     case BondedType::impropers:
     {
@@ -2636,15 +2616,7 @@ std::vector<int> TprReader::get_bonded(const char *type) const
         {
             throw std::runtime_error("Can not get dihedrals information from tpr");
         }
-        std::vector<int> impropers; // return angles in single vector!
-        for (const auto& improper : data_->impropers)
-        {
-            impropers.push_back(improper.a);
-            impropers.push_back(improper.b);
-            impropers.push_back(improper.c);
-            impropers.push_back(improper.d);
-        }
-        return impropers; // RVO
+        return data_->impropers;
     }
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);

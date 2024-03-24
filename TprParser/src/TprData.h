@@ -7,8 +7,9 @@
 #include <string>
 #include <array>
 #include <utility>
-#include <set> 
+#include <cassert>
 #include <tuple> // std::tie
+
 
 using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;
@@ -18,22 +19,22 @@ using vecU2D = std::vector<std::vector<unsigned short>>;
 struct Bonded
 {
 	// bond
-	Bonded(int ta, int tb, int functype, const std::vector<float> &ffparam = {})
+	Bonded(int ta, int tb, int functype, const std::vector<float> &ffparam)
 		: a(ta), b(tb), ifunc(functype), ff { ffparam }
 	{
 		if (a > b) std::swap(a, b);
 	}
 
 	// angle
-	Bonded(int ta, int tb, int tc, int functype, const std::vector<float>& ffparam = {})
+	Bonded(int ta, int tb, int tc, int functype, const std::vector<float>& ffparam)
 		: a(ta), b(tb), c(tc), ifunc(functype), ff{ ffparam }
 	{
 		if (a > c) std::swap(a, c);
 	}
 
 	// dihedral
-	Bonded(int ta, int tb, int tc, int td, int functype, const std::vector<float>& ffparam = {})
-		: a(ta), b(tb), c(tc), ifunc(functype), ff{ ffparam }
+	Bonded(int ta, int tb, int tc, int td, int functype, const std::vector<float>& ffparam)
+		: a(ta), b(tb), c(tc), d(td), ifunc(functype), ff{ ffparam }
 	{
 		// small x x big
 		if (a > d)
@@ -41,6 +42,33 @@ struct Bonded
 			std::swap(a, d);
 			std::swap(b, c);
 		}
+	}
+
+	// return a, b, c, d according to index 0-3
+	int operator[](int idx)
+	{
+		assert(idx >= 0 && idx < 4);
+		switch (idx)
+		{
+		case 0: return a;
+		case 1: return b;
+		case 2: return c;
+		case 3: return d;
+		}
+		return 2;
+	}
+	// const version
+	const int operator[](int idx) const
+	{
+		assert(idx >= 0 && idx < 4);
+		switch (idx)
+		{
+		case 0: return a;
+		case 1: return b;
+		case 2: return c;
+		case 3: return d;
+		}
+		return 2;
 	}
 
 	// 不去重复用vector
@@ -246,7 +274,7 @@ struct TprData
 		std::vector<unsigned short>	type; 
 	} atoms;
 
-	//TODO 这里应该考虑是否使用set去重复键角，如果去，有多个参数怎么办，比如键转换成约束了。
+	//! 此处没有进行去重复，一个角可以存在多类参数
 	// bonds (1-based)
 	std::vector<Bonded>		bonds;
 	// angles (1-based)
