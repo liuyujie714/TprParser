@@ -25,11 +25,12 @@ jobs:
     - name: Configure CMake
       run: |
         set -x
-        ls
-        # cmake .. -DCMAKE_BUILD_TYPE=Release
+        cd TprParser
+        cmake .. -DCMAKE_BUILD_TYPE=Release
 
     - name: Build project
       run: |
         set -x
+        cd TprParser
         cmake --build . --target INSTALL --config Release
 
