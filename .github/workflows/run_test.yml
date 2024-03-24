@@ -17,16 +17,16 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Create build directory
-      run: mkdir ${GITHUB_WORKSPACE}/build
+      run: mkdir /build
 
     - name: Configure CMake
-      working-directory: ${GITHUB_WORKSPACE}/build
+      working-directory: /build
       run: |
         set -x
         cmake ..
 
     - name: Build project
-      working-directory: ${GITHUB_WORKSPACE}/build
+      working-directory: /build
       run: |
         set -x
         cmake --build .
