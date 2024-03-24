@@ -1,4 +1,6 @@
 #include "Reader.h"
+#include "Utils.h"
+
 #include <set>
 #include <string.h> // memset
 #include <algorithm>
@@ -321,13 +323,18 @@ bool TprReader::tpr_bonds()
                     // settle algorithm for water molecules
                     for (int m = 0; m < data_->ilist.nr[type][mtype] / 2; m++)
                     {
+                        int itype = data_->ilist.interactionlist[type][mtype][2 * m];
                         // OW-HW
                         int a = 2 * m + 1;
                         int b = 2 * m + 2;
-                        data_->bonds.insert(
+
+                        // ffparameters
+                        auto param = get_bond_type(type, &iparams_[itype]);
+                        data_->bonds.push_back(
                             { 
                                 1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset
+                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
+                                param.first, param.second
                             }
                         );
                     }
@@ -336,15 +343,15 @@ bool TprReader::tpr_bonds()
                 {
                     for (int m = 0; m < data_->ilist.nr[type][mtype] / 3; m++)
                     {
-                        int functype = data_->ilist.interactionlist[type][mtype][3 * m];
+                        int itype = data_->ilist.interactionlist[type][mtype][3 * m];
                         int a = 3 * m + 1;
                         int b = 3 * m + 2;
-                        data_->bonds.insert(
+                        auto param = get_bond_type(type, &iparams_[itype]);
+                        data_->bonds.push_back(
                             {
-                            1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
-                            // TODO: need corresponding to different function parameters
-                            iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
+                                1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
+                                1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
+                                param.first, param.second
                             }
                         );
                     }
@@ -364,20 +371,28 @@ bool TprReader::tpr_bonds()
             int nameInter = interactions[k];
             for (int m = 0; m < data_->inter_molecular_ilist.nr[nameInter][0] / 3; m++)
             {
-                int functype = data_->inter_molecular_ilist.interactionlist[nameInter][0][3 * m];
+                int itype = data_->inter_molecular_ilist.interactionlist[nameInter][0][3 * m];
                 int a = 3 * m + 1;
                 int b = 3 * m + 2;
-                data_->bonds.insert(
+                auto param = get_bond_type(nameInter, &iparams_[itype]);
+                data_->bonds.push_back(
                     {
                         1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][a],
                         1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][b],
-                        // TODO: need corresponding to different function parameters
-                        iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
+                        param.first, param.second
                     }
                 );
             }
         }
     }
+
+    // ÅÅÐò
+    std::sort(data_->bonds.begin(), data_->bonds.end(),
+        [](const Bonded& lhs, const Bonded& rhs)
+        {
+            return std::tie(lhs.a, lhs.b) < std::tie(rhs.a, rhs.b);
+        }
+    );
 
 
     // write a mol2 format
@@ -428,11 +443,12 @@ bool TprReader::tpr_angles()
                     // settle algorithm for water molecules, one water only an angle!
                     for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
                     {
-                        int functype = data_->ilist.interactionlist[type][mtype][4 * m];
-                        data_->angles.insert(
+                        int itype = data_->ilist.interactionlist[type][mtype][4 * m];
+                        data_->angles.push_back(
                             { 
                                 2 + aoffset, 1 + aoffset, 3 + aoffset,
-                                iparams_[functype].settle.doh, iparams_[functype].settle.dhh
+                                // TODO
+                                0, {}
                             }
                         );
                     }
@@ -442,17 +458,17 @@ bool TprReader::tpr_angles()
                     // harmonic force angle
                     for (int m = 0; m < data_->ilist.nr[type][mtype] / 4; m++)
                     {
-                        int functype = data_->ilist.interactionlist[type][mtype][4 * m];
+                        int itype = data_->ilist.interactionlist[type][mtype][4 * m];
                         int a = 4 * m + 1;
                         int b = 4 * m + 2;
                         int c = 4 * m + 3;
-                        data_->angles.insert(
+                        data_->angles.push_back(
                             {
                                 1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                                 1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
                                 1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
-                                // TODO: need corresponding to different function parameters
-                                iparams_[functype].harmonic.rA, iparams_[functype].harmonic.krA
+                                // TODO
+                                0, {}
                             }
                         );
                     }
@@ -490,12 +506,14 @@ bool TprReader::tpr_dihedrals()
                     int b = 5 * m + 2;
                     int c = 5 * m + 3;
                     int d = 5 * m + 4;
-                    data_->dihedrals.insert(
+                    data_->dihedrals.push_back(
                         {
                             1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][d] + aoffset,
+                            // TODO
+                            0, {}
                         }
                     );
                 }
@@ -522,12 +540,14 @@ bool TprReader::tpr_dihedrals()
                     int b = 5 * m + 2;
                     int c = 5 * m + 3;
                     int d = 5 * m + 4;
-                    data_->impropers.insert(
+                    data_->impropers.push_back(
                         {
                             1 + data_->ilist.interactionlist[type][mtype][a] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][b] + aoffset,
                             1 + data_->ilist.interactionlist[type][mtype][c] + aoffset,
-                            1 + data_->ilist.interactionlist[type][mtype][d] + aoffset
+                            1 + data_->ilist.interactionlist[type][mtype][d] + aoffset,
+                            // TODO
+                            0, {}
                         }
                     );
                 }

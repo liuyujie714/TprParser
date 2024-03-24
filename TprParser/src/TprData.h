@@ -18,22 +18,22 @@ using vecU2D = std::vector<std::vector<unsigned short>>;
 struct Bonded
 {
 	// bond
-	Bonded(int ta, int tb, float fa = 0, float fb = 0)
-		: a(ta), b(tb), c0(fa), c1(fb)
+	Bonded(int ta, int tb, int functype, const std::vector<float> &ffparam = {})
+		: a(ta), b(tb), ifunc(functype), ff { ffparam }
 	{
 		if (a > b) std::swap(a, b);
 	}
 
 	// angle
-	Bonded(int ta, int tb, int tc, float fa = 0, float fb = 0)
-		: a(ta), b(tb), c(tc), c0(fa), c1(fb)
+	Bonded(int ta, int tb, int tc, int functype, const std::vector<float>& ffparam = {})
+		: a(ta), b(tb), c(tc), ifunc(functype), ff{ ffparam }
 	{
 		if (a > c) std::swap(a, c);
 	}
 
 	// dihedral
-	Bonded(int ta, int tb, int tc, int td, float fa = 0, float fb = 0)
-		: a(ta), b(tb), c(tc), d(td), c0(fa), c1(fb)
+	Bonded(int ta, int tb, int tc, int td, int functype, const std::vector<float>& ffparam = {})
+		: a(ta), b(tb), c(tc), ifunc(functype), ff{ ffparam }
 	{
 		// small x x big
 		if (a > d)
@@ -43,17 +43,19 @@ struct Bonded
 		}
 	}
 
+	// 不去重复用vector
 	// a b c d
-	bool operator<(const Bonded& rhs) const
-	{
-		return std::tie(a, d, b, c) < std::tie(rhs.a, rhs.d, rhs.b, rhs.c);
-	}
+	//bool operator<(const Bonded& rhs) const
+	//{
+	//	return std::tie(a, d, b, c) < std::tie(rhs.a, rhs.d, rhs.b, rhs.c);
+	//}
 
-	int		a = 0; // atom1
-	int		b = 0; // atom2
-	int		c = 0; // atom3
-	int		d = 0; // atom4
-	float	c0 = 0, c1 = 0; // ff parameters
+	int					a = 0; // atom1
+	int					b = 0; // atom2
+	int					c = 0; // atom3
+	int					d = 0; // atom4
+	int					ifunc = 0; // the function type id, 1,2,,,
+	std::vector<float>	ff {}; // ff parameters
 };
 
 
@@ -244,14 +246,15 @@ struct TprData
 		std::vector<unsigned short>	type; 
 	} atoms;
 
+	//TODO 这里应该考虑是否使用set去重复键角，如果去，有多个参数怎么办，比如键转换成约束了。
 	// bonds (1-based)
-	std::set<Bonded>		bonds;
+	std::vector<Bonded>		bonds;
 	// angles (1-based)
-	std::set<Bonded>		angles;
+	std::vector<Bonded>		angles;
 	// proper dihedrals (1-based)
-	std::set<Bonded>		dihedrals;
+	std::vector<Bonded>		dihedrals;
 	// improper dihedrals (1-based)
-	std::set<Bonded>		impropers;
+	std::vector<Bonded>		impropers;
 
 	// mdp属性位置, 所有变量都必须初始化为0
 	struct

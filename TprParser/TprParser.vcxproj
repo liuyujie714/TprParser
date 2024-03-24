@@ -22,6 +22,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Py_Module.cpp" />
     <ClCompile Include="src\Reader.cpp" />
+    <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Bytes.h" />
@@ -30,6 +31,7 @@
     <ClInclude Include="src\Enum.h" />
     <ClInclude Include="src\Reader.h" />
     <ClInclude Include="src\TprData.h" />
+    <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
