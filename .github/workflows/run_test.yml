@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: get source
+    - name: git source
       uses: actions/checkout@v2
 
-    - name: set python
+    - name: set python version
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
@@ -27,7 +27,7 @@ jobs:
         set -x
         python -m pip install numpy
         cd TprParser
-        cmake . -DCMAKE_BUILD_TYPE=Release
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
         make 
         make install 
 
