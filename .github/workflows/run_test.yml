@@ -20,13 +20,13 @@ jobs:
       run: mkdir build
 
     - name: Configure CMake
-      working-directory: /build
+      working-directory: build
       run: |
         set -x
         cmake ..
 
     - name: Build project
-      working-directory: /build
+      working-directory: build
       run: |
         set -x
         cmake --build .
