@@ -58,10 +58,10 @@ jobs:
     - name: git source
       uses: actions/checkout@v2
 
-    - name: set mingw64
-      uses: alexeykuz-min/mingw@v2
+    - name: Set up MinGW64
+      uses: egor-tensin/setup-mingw@v2
       with:
-        mingw-installation: 'latest'
+        platform: x64
 
     - name: set python version
       uses: actions/setup-python@v2
