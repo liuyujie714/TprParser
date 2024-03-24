@@ -16,21 +16,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Create build directory
+    - name: build job
       run: |
         set -x
         cd TprParser
-        mkdir build
-
-    - name: Configure CMake
-      run: |
-        set -x
-        cd TprParser
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build project
-      run: |
-        set -x
-        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release
         cmake --build . --target INSTALL --config Release
 
