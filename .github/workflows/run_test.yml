@@ -26,7 +26,7 @@ jobs:
       run: |
         set -x
         ls
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+        # cmake .. -DCMAKE_BUILD_TYPE=Release
 
     - name: Build project
       run: |
