@@ -14,7 +14,7 @@ else()
 endif()
 
 # 添加可执行文件
-add_executable(TprReader src/main.cpp src/Reader.cpp)
+add_executable(TprReader src/main.cpp src/Reader.cpp src/Utils.cpp)
 
 # 添加动态链接库
 add_library(TprParser_ SHARED src/Reader.cpp src/Py_Module.cpp)

@@ -79,7 +79,7 @@ std::pair<int, std::vector<float>> get_bond_type(int Enum, const t_iparams *para
     default:
         break;
     }
-    return {};
+    return std::make_pair(-1, ffparam);
 }
 
 
