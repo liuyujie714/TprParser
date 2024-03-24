@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 17)
 # °üº¬ Python
 find_package(PythonLibs 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
 if (WIN32)
 	include_directories(${Python3_INCLUDE_DIRS} "${Python3_INCLUDE_DIRS}/../Lib/site-packages/numpy/core/include")
 else()
