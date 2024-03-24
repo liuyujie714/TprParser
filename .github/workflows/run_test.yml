@@ -21,10 +21,12 @@ jobs:
 
     - name: Configure CMake
       working-directory: ./build
-      run: cmake ..
+      run: |
+        set -x
+        cmake ..
 
     - name: Build project
       working-directory: ./build
-      run: cmake --build .
-
-    - name: do_test
+      run: |
+        set -x
+        cmake --build .
