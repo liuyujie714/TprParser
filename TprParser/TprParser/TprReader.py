@@ -153,14 +153,43 @@ class TprReader:
         Returns
         -------
         return a np.array(dtype=object), the length is the number of bonded
-        for each bonded, composed of [[atomid pairs] + [force field parameters]]
+        for each bonded, composed of [atomid pairs] + force field parameters]
 
         Example:
         -------
         >>> bonds = reader.get_bonded('bonds')
-        >>> print(bonds[0])     # print all information about the first bonds
-        >>> print(bonds[0,0])   # print atom index (1-based) of the first bond
-        >>> print(bonds[0,1])   # print force field parameters of the first bond, includes functype+parameters
+        # print all information about the first bonds
+        >>> print(bonds[0])     
+        [1, 2, 1, 0.10100000351667404, 363171.1875, 0.10100000351667404, 363171.1875]
+        # print atom index (1-based) of the first bond
+        >>> print(bonds[0][:2]) 
+        [1, 2]
+        # print force field parameters of the first bond, includes functype+parameters
+        >>> bonds[0][2:]         
+        array([1, 0.10100000351667404, 363171.1875, 0.10100000351667404, 363171.1875]
+        ---------------------------------------------
+        >>> angles = reader.get_bonded('angles')
+        # print all information about the first angle
+        >>> print(angles[0]) 
+        [1 5 6 1 109.5 418.3999938964844 109.5 418.3999938964844]
+        # print atom index (1-based) of the first angle
+        >>> print(angles[0][:3]) 
+        [1 5 6]
+        # print force field parameters
+        >>> print(angles[0][3:]) 
+        [1 109.5 418.3999938964844 109.5 418.3999938964844]
+        ---------------------------------------------
+        >>> dihedrals = reader.get_bonded('dihedrals')
+        # print all information about the first dihedral
+        >>> print(dihedrals[0]) 
+        [1 5 7 8 9 0.0 0.6508399844169617 0.0 0.6508399844169617 3.0]
+        # print atom index (1-based) of the first dihedral
+        >>> print(dihedrals[0][:4]) 
+        [1 5 6]
+        # print force field parameters
+        >>> print(dihedrals[0][4:]) 
+        [9 0.0 0.6508399844169617 0.0 0.6508399844169617 3.0]
         """
         bonded = TprParser_.get_bonded(self.tprCapsule, type)
         return np.array(bonded, dtype=object)
+

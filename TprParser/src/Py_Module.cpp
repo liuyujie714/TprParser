@@ -374,57 +374,50 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
 	Py_ssize_t i = 0;
 	for (const auto& it : vec)
 	{
-		// atom indexs
-		PyObject* ids = PyList_New(nat);
+		//! atom indexs + ffparams
+		PyObject* ffparams = PyList_New(nat + 1 + it.ff.size());
+
+		Py_ssize_t count = 0;
 		for (Py_ssize_t j = 0; j < nat; j++)
 		{
 			PyObject* value = PyLong_FromLong(static_cast<long>(it[j]));
 			if (!value)
 			{
 				PyErr_SetString(PyExc_RuntimeError, "Can not convert it[j] to pyobj");
-				Py_DECREF(ids); // free ids
+				Py_DECREF(ffparams); // free ids
 				Py_DECREF(list); // free list
 				return NULL;
 			}
-			PyList_SET_ITEM(ids, j, value);
+			PyList_SET_ITEM(ffparams, count++, value);
 		}
 
-
-		//! ffparams
-		Py_ssize_t count = 0;
-		PyObject* ffparam = PyList_New(1 + it.ff.size());
 		// append func type
 		PyObject* value = PyLong_FromLong(static_cast<long>(it.ifunc));
 		if (!value)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Can not convert it.ifunc to pyobj");
-			Py_DECREF(ids); // free ids
+			Py_DECREF(ffparams); // free ffparams
 			Py_DECREF(list); // free list
-			Py_DECREF(ffparam); // free ffparam
 			return NULL;
 		}
-		PyList_SET_ITEM(ffparam, count++, value);
-		// append ff parameters in float for all
+		PyList_SET_ITEM(ffparams, count++, value);
+
+		// append true ff parameters in float for all
 		for (Py_ssize_t k = 0; k < it.ff.size(); k++)
 		{
 			PyObject* value = PyFloat_FromDouble(static_cast<double>(it.ff[k]));
 			if (!value)
 			{
 				PyErr_SetString(PyExc_RuntimeError, "Can not convert iit.ff[k] to pyobj");
-				Py_DECREF(ids); // free ids
-				Py_DECREF(ffparam); // free ffparam
+				Py_DECREF(ffparams); // free ffparams
 				Py_DECREF(list); // free list
 				return NULL;
 			}
-			PyList_SET_ITEM(ffparam, count++, value);
+			PyList_SET_ITEM(ffparams, count++, value);
 		}
 
-		PyObject* merge = PyList_New(2); // atom indexs + ffparams
-		PyList_SET_ITEM(merge, 0, ids);
-		PyList_SET_ITEM(merge, 1, ffparam);
-
 		// final obj
-		PyList_SET_ITEM(list, i++, merge);
+		PyList_SET_ITEM(list, i++, ffparams);
 	}
 
 	return list;
