@@ -20,7 +20,7 @@ if os.name == 'nt':
     CXXFLAGS = ['/std:c++17', '/O2']
 elif os.name == 'posix':
     os.environ['CC'] = 'g++' # tell compiler cpp must need g++
-    CXXFLAGS = ['-std=c++17', '-O3', '-Wno-error']
+    CXXFLAGS = ['-std=c++17', '-O3', '-Wno-error=format-truncation']
     LINKER = ['-lstdc++'] 
 else:
     raise OSError("Unsupported OS %s" % os.name)
