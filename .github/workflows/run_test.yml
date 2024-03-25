@@ -10,34 +10,34 @@ on:
 
     
 jobs:
-  # UbuntuLinux:
-  #   runs-on: ubuntu-latest
+  UbuntuLinux:
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   - name: set python version
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: '3.8'
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
 
-  #   - name: build job
-  #     run: |
-  #       set -x
-  #       python -m pip install numpy
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       make 
-  #       make install 
+    - name: build job
+      run: |
+        set -x
+        python -m pip install numpy
+        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install 
     
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
+    - name: Tests
+      run: |
+        cd TprParser
+        python setup.py build
+        python setup.py install
 
-  #       python TprParser/TestTprReader.py
+        python TprParser/TestTprReader.py
 
   RockyLinux:
     runs-on: ubuntu-latest
@@ -71,70 +71,70 @@ jobs:
 
         python TprParser/TestTprReader.py
 
-  # WindowsBuild:
-  #   runs-on: windows-latest
+  WindowsBuild:
+    runs-on: windows-latest
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   - name: set python version
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: '3.8'
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
 
-  #   - name: build job
-  #     run: |
-  #       python -m pip install numpy
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       cmake --build . --target INSTALL --config Release
+    - name: build job
+      run: |
+        python -m pip install numpy
+        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        cmake --build . --target INSTALL --config Release
 
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
+    - name: Tests
+      run: |
+        cd TprParser
+        python setup.py build
+        python setup.py install
 
-  #       python TprParser/TestTprReader.py
+        python TprParser/TestTprReader.py
 
 
-  # Mingw64Build:
-  #   runs-on: windows-latest
+  Mingw64Build:
+    runs-on: windows-latest
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   - name: Set up Msys2
-  #     uses: msys2/setup-msys2@v2
-  #     with:
-  #       msystem: mingw64
-  #       update: true
-  #       install: >-
-  #         git
-  #         make
-  #       pacboy: >-
-  #         toolchain:p
-  #         cmake:p
+    - name: Set up Msys2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: mingw64
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          cmake:p
 
-  #   - name: set python version
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: '3.8'
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
 
-  #   - name: build job
-  #     run: |
-  #       python -m pip install numpy
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       make 
-  #       make install
+    - name: build job
+      run: |
+        python -m pip install numpy
+        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install
 
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
+    - name: Tests
+      run: |
+        cd TprParser
+        python setup.py build
+        python setup.py install
 
-  #       python TprParser/TestTprReader.py
+        python TprParser/TestTprReader.py
