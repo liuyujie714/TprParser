@@ -10,9 +10,40 @@ on:
 
     
 jobs:
-  LinuxBuild:
+  UbuntuLinux:
     runs-on: ubuntu-latest
 
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
+
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: build job
+      run: |
+        set -x
+        python -m pip install numpy
+        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install 
+    
+    - name: Tests
+      run: |
+        cd TprParser
+        python setup.py build
+        python setup.py install
+
+        python TprParser/TestTprReader.py
+
+  RockyLinux:
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux/rockylinux:9
+      
     steps:
     - name: git source
       uses: actions/checkout@v2
