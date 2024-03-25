@@ -39,37 +39,37 @@ jobs:
 
         python TprParser/TestTprReader.py
 
-  # RockyLinux:
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: rockylinux/rockylinux:9
+  RockyLinux:
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux/rockylinux:9
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   - name: set python and gcc env
-  #     run: |
-  #       set -x
-  #       dnf install gcc gcc-c++ cmake python3 python3-devel.x86_64 -y
-  #       ln -sf /usr/bin/python3 /usr/bin/python
-  #       pip install numpy
+    - name: set python and gcc env
+      run: |
+        set -x
+        dnf install gcc gcc-c++ cmake python3 python3-devel.x86_64 -y
+        ln -sf /usr/bin/python3 /usr/bin/python
+        pip install numpy
 
-  #   - name: build job
-  #     run: |
-  #       set -x 
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       make 
-  #       make install 
+    - name: build job
+      run: |
+        set -x 
+        cd TprParser
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install 
     
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
+    - name: Tests
+      run: |
+        cd TprParser
+        python setup.py build
+        python setup.py install
 
-  #       python TprParser/TestTprReader.py
+        python TprParser/TestTprReader.py
 
   WindowsBuild:
     runs-on: windows-latest
