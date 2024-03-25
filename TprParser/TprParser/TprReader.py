@@ -8,13 +8,23 @@ class TprReader:
         1. get atmic coordinates/velocity/force/mass/charge ... of tpr
         2. get force field parameters for bonds/angles/dihedrals/impropers
         3. modify simulation nsteps/dt/integer/coordinates/velocity/force and save as new.tpr
+
+        Parameters
+        ---------
+        fname: str
+            The name of tpr file
+        bGRO: bool, default ``False``
+            If output a system gro file
+        bMol2: bool, default ``False``
+            If output a system mol2 file with correct bonds
+        bCharge: bool, default ``False``
+            If output a plain text file contained atom mass and charge
     """
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
     VecType3: TypeAlias = Literal['res', 'atom']
     BondedType: TypeAlias = Literal['bonds', 'angles', 'dihedrals', 'impropers']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
-        # get internal object
         self.tprCapsule = TprParser_.load(fname, bGRO, bMol2, bCharge)
     
     def set_nsteps(self, nsteps):
@@ -148,12 +158,12 @@ class TprReader:
         return np.array(vec, dtype='<U')
 
     def get_bonded(self, type:BondedType):
-        """ @brief get atom bonds/angles/dihedrals/impropers pairs (1-based index) from tpr if exist.
+        """ @brief get atom bonds/angles/dihedrals/impropers (1-based index) force field parameters from tpr if exist.
 
         Returns
         -------
-        return a np.array(dtype=object), the length is the number of bonded
-        for each bonded, composed of [atomid pairs] + force field parameters]
+        return a np.array(dtype=object), the length is the number of bonded. 
+        For each bonded, composed of [atomid pairs + force field parameters], float precision error can be ignored
 
         Example:
         -------
@@ -165,8 +175,9 @@ class TprReader:
         >>> print(bonds[0][:2]) 
         [1, 2]
         # print force field parameters of the first bond, includes functype+parameters
-        >>> bonds[0][2:]         
-        array([1, 0.10100000351667404, 363171.1875, 0.10100000351667404, 363171.1875]
+        >>> print(bonds[0][2:] )        
+        [1, 0.10100000351667404, 363171.1875, 0.10100000351667404, 363171.1875]
+        The first int value represents function type, corresponding to [ bonds ] function type in itp/top
         ---------------------------------------------
         >>> angles = reader.get_bonded('angles')
         # print all information about the first angle
@@ -178,6 +189,7 @@ class TprReader:
         # print force field parameters
         >>> print(angles[0][3:]) 
         [1 109.5 418.3999938964844 109.5 418.3999938964844]
+        The first int value corresponding to [ angles ] function type in itp/top
         ---------------------------------------------
         >>> dihedrals = reader.get_bonded('dihedrals')
         # print all information about the first dihedral
@@ -189,7 +201,8 @@ class TprReader:
         # print force field parameters
         >>> print(dihedrals[0][4:]) 
         [9 0.0 0.6508399844169617 0.0 0.6508399844169617 3.0]
+        The first int value corresponding to [ dihedrals ] function type in itp/top
         """
         bonded = TprParser_.get_bonded(self.tprCapsule, type)
         return np.array(bonded, dtype=object)
-
+    

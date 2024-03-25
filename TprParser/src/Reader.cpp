@@ -418,43 +418,24 @@ bool TprReader::tpr_angles()
             for (int k = 0; k < nAngles; k++)
             {
                 int ftype = interactions[k];
-
-                // settle 
-                if (ftype == F_SETTLE)
+            
+               // force parametersm, note F_SETTLE no angle information
+                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 4; m++)
                 {
-                    // settle algorithm for water molecules, one water only an angle!
-                    for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 4; m++)
-                    {
-                        int itype = data_->ilist.interactionlist[ftype][mtype][4 * m];
-                        data_->angles.push_back(
-                            {
-                                2 + aoffset, 1 + aoffset, 3 + aoffset,
-                                // TODO
-                                0, {}
-                            }
-                        );
-                    }
-                }
-                else
-                {
-                    // harmonic force angle
-                    for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 4; m++)
-                    {
-                        int itype = data_->ilist.interactionlist[ftype][mtype][4 * m];
-                        int a = 4 * m + 1;
-                        int b = 4 * m + 2;
-                        int c = 4 * m + 3;
-
-                        auto param = get_angle_type(ftype, &iparams_[itype]);
-                        data_->angles.push_back(
-                            {
-                                1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                                1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                                1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                                param.first, param.second
-                            }
-                        );
-                    }
+                    int itype = data_->ilist.interactionlist[ftype][mtype][4 * m];
+                    int a = 4 * m + 1;
+                    int b = 4 * m + 2;
+                    int c = 4 * m + 3;
+            
+                    auto param = get_angle_type(ftype, &iparams_[itype]);
+                    data_->angles.push_back(
+                        {
+                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                            param.first, param.second
+                        }
+                    );
                 }
             }
             aoffset += data_->atomsinmol[mtype];
