@@ -2,3 +2,4 @@ include TprParser/*
 include *.py
 include src/*
 exclude src/main.cpp
+include LICENSE
