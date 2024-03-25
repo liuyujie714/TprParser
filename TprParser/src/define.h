@@ -6,7 +6,7 @@
 #define YY 1
 #define ZZ 2
 
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
 #define msg(...) \
 do { \
@@ -201,7 +201,7 @@ typedef struct
     int ftype; /* function type */
 } t_ftupd;
 
-// 不同函数类型对应的文件版本
+// 锟斤拷同锟斤拷锟斤拷锟斤拷锟酵讹拷应锟斤拷锟侥硷拷锟芥本
 static const t_ftupd ftupd[] = {
     { 70, F_RESTRBONDS },
     { tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES },
