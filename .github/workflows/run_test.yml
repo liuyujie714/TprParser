@@ -58,7 +58,7 @@ jobs:
         set -x
         dnf install gcc gcc-c++ -y
         gcc --version
-        python -m pip install numpy
+        python -m pip install numpy==1.1
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
         make 
