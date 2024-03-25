@@ -317,25 +317,35 @@ bool TprReader::tpr_bonds()
             for (int k = 0; k < nBonds; k++)
             {
                 int ftype = interactions[k];
-                // settle algorithm for water molecules nspce=2
-                const int nspace = (ftype == F_SETTLE) ? 2 : 3;
+                // settle algorithm for water molecules nspce=4
+                const int nspace = (ftype == F_SETTLE) ? 4 : 3;
 
                 for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
                 {
                     // the id of type
                     int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
-                    int a = nspace * m + 1;
-                    int b = nspace * m + 2;
 
                     // ffparameters
                     auto param = get_bond_type(ftype, &iparams_[itype]);
-                    data_->bonds.push_back(
-                        {
-                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                            param.first, param.second
-                        }
-                    );
+
+                    if (ftype == F_SETTLE)
+                    {
+                        // doh, dHH, indx 0 1 2
+                        data_->bonds.push_back({ 1 + aoffset, 2 + aoffset,param.first, param.second });
+                        data_->bonds.push_back({ 1 + aoffset, 3 + aoffset,param.first, param.second });
+                    }
+                    else
+                    {
+                        int a = nspace * m + 1;
+                        int b = nspace * m + 2;
+                        data_->bonds.push_back(
+                            {
+                                1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                                1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                                param.first, param.second
+                            }
+                        );
+                    }
                 }
             }
             aoffset += data_->atomsinmol[mtype];

@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 		}
 
 		{
-			TprReader reader("test/md_T.tpr");
+			TprReader reader("test/semiP.tpr", false, true);
 		}
 	}
 	catch (const std::exception&e)
