@@ -51,7 +51,7 @@ jobs:
     - name: set python version
       uses: actions/setup-python@v2
       with:
-        python-version: '3.5.10'
+        python-version: '3.7'
 
     - name: build job
       run: |
