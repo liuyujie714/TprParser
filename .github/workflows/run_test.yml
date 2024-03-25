@@ -51,12 +51,12 @@ jobs:
     - name: set python version
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.6'
 
     - name: build job
       run: |
         set -x
-        python -m pip install numpy==1.20.0
+        python -m pip install numpy
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
         make 
