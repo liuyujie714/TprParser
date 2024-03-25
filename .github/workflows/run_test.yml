@@ -32,7 +32,7 @@ jobs:
         make install 
     
     - name: Tests
-      run: 
+      run: |
         cd TprParser
         python TprParser/TestTprReader.py
 
