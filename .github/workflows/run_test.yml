@@ -56,6 +56,7 @@ jobs:
     - name: build job
       run: |
         set -x
+        dnf install gcc gcc-c++ -y
         gcc --version
         python -m pip install numpy
         cd TprParser
