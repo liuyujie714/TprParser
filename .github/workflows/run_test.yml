@@ -36,6 +36,7 @@ jobs:
         cd TprParser
         python setup.py build
         python setup.py install
+        ls
         python TprParser/TestTprReader.py
 
   # WindowsBuild:
