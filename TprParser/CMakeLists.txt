@@ -10,7 +10,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 # add numpy include
 execute_process(
-    COMMAND python -c "import numpy; print(numpy.get_include())"
+    COMMAND python3 -c "import numpy; print(numpy.get_include())"
     OUTPUT_VARIABLE NUMPY_INCLUDE_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
