@@ -52,7 +52,7 @@ jobs:
       run: |
         set -x
         dnf install gcc gcc-c++ cmake python3 python3-devel.x86_64 -y
-        gcc --version
+        pip install numpy
         cd TprParser
         cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
         make 
