@@ -48,11 +48,6 @@ jobs:
     - name: git source
       uses: actions/checkout@v2
 
-    - name: set python version
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.7'
-
     - name: build job
       run: |
         set -x
