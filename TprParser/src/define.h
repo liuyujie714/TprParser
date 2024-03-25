@@ -6,7 +6,7 @@
 #define YY 1
 #define ZZ 2
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define msg(...) \
 do { \
