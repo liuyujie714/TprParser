@@ -10,12 +10,10 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 # add numpy include
 execute_process(
-    COMMAND python3 -c "import numpy; print(numpy.get_include())"
+    COMMAND python -c "import numpy; print(numpy.get_include())"
     OUTPUT_VARIABLE NUMPY_INCLUDE_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-message(STATUS  "Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS}")
-message(STATUS  "NUMPY_INCLUDE_PATH=${NUMPY_INCLUDE_PATH}")
 include_directories(${Python3_INCLUDE_DIRS} "${NUMPY_INCLUDE_PATH}")
 
 
