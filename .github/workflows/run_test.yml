@@ -35,11 +35,13 @@ jobs:
         make install 
 
     - name: build job by setup.py
+      run: |
+        set -x
         python setup.py build
         python setup.py install
 
     - name: Tests
-      run: |
+      run:
         python TprParser/TestTprReader.py
 
   # RockyLinux:
