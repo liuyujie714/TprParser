@@ -354,19 +354,21 @@ public:
 		{
 			size += 4 - (size % 4); // Âú×ã4µÄ±¶Êý
 		}
-		if (str && size <= max)
+
+		size_t ssize = static_cast<size_t>(size); // ignore warning
+		if (str && size < max)
 		{
-			if (fread(str, 1, size, fp) != size) return TPR_FAILED;
-			str[size] = '\0';
+			if (fread(str, 1, ssize, fp) != ssize) return TPR_FAILED;
+			str[ssize] = '\0';
 			return TPR_SUCCESS;
 		}
-		// size > max
+		// size >= max
 		else if (str)
 		{
-			if (fread(str, 1, max, fp) != max) return TPR_FAILED;
+			if (fread(str, 1, (size_t)max, fp) != (size_t)max) return TPR_FAILED;
+			str[max - 1] = '\0';
 			// skip next string
-			if (fseek(fp, size - max, SEEK_CUR) != 0) return TPR_FAILED;
-			str[max] = '\0';
+			if (fseek(fp, ssize - max, SEEK_CUR) != 0) return TPR_FAILED;
 			return TPR_SUCCESS;
 		}
 		else

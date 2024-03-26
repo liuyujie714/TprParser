@@ -1,4 +1,3 @@
-
 #include <cinttypes> // toupper
 
 #include "Python.h"

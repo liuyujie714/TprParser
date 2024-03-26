@@ -316,7 +316,7 @@ bool TprReader::tpr_bonds()
             for (int k = 0; k < nBonds; k++)
             {
                 int ftype = interactions[k];
-                // settle algorithm for water molecules nspce=4
+                // settle algorithm for water molecules nspace=4
                 const int nspace = (ftype == F_SETTLE) ? 4 : 3;
 
                 for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
@@ -2337,7 +2337,7 @@ bool TprReader::set_temperature(
     {
         throw std::runtime_error("The size of ref_t and tau_t must be same");
     }
-    if (ref_t.size() != data_->ir.ngtc)
+    if (static_cast<int>(ref_t.size()) != data_->ir.ngtc)
     {
         throw std::runtime_error(std::string("The size of ref_t must be same as old tpr: ") + std::to_string(data_->ir.ngtc));
     }

@@ -45,7 +45,7 @@ struct Bonded
 	}
 
 	// return a, b, c, d according to index 0-3
-	int operator[](int idx)
+	int operator[](size_t idx)
 	{
 		assert(idx >= 0 && idx < 4);
 		switch (idx)
@@ -58,7 +58,7 @@ struct Bonded
 		return 2;
 	}
 	// const version
-	const int operator[](int idx) const
+	const int operator[](size_t idx) const
 	{
 		assert(idx >= 0 && idx < 4);
 		switch (idx)

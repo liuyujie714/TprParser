@@ -166,7 +166,7 @@ private:
 
 private:
 	FileSerializer			tpr_;
-	TprData					*data_;
+	TprData					*data_ = nullptr;
 	std::vector<t_iparams>  iparams_; // 力场参数
 	std::vector<int>		functype_; // 函数类型
 	bool					bGRO_ = false; //< if write a gro
