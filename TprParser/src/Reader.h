@@ -22,7 +22,7 @@ public:
 		bool bMol2 = false,
 		bool bCharge = false
 	)
-		: tpr_(fname, "rb"), data_(new TprData), fout_("new.tpr"),
+		: tpr_(fname, "rb"), data_{ new TprData() }, fout_("new.tpr"),
 		bGRO_(bGRO), bMol2_(bMol2), bCharge_(bCharge)
 	{
 		if (tpr_header() != TPR_SUCCESS)

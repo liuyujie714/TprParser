@@ -89,13 +89,8 @@ struct Bonded
 
 struct TprData
 {
-	// clear zero
-	TprData() : symtab(nullptr), lambda(0.0f)
-	{
-		prec = filever = vergen = natoms = ngtc = fep_state = 0;
-		symtablen = nmoltypes = nmolblock = 0;
-		bIr = bTop = bX = bV = bF = bBox = bInter = false;
-	}
+	// POD clear zero
+	TprData() = default;
 
 	~TprData()
 	{

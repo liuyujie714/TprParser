@@ -145,14 +145,13 @@ bool TprReader::tpr_body()
 	// ÎÂ¶ÈñîºÏ×é
 	if (data_->ngtc > 0)
 	{
-		float* temparr = new float[data_->ngtc];
+        std::vector<float> temparr(data_->ngtc);
 		if (data_->filever < 69)
 		{
-			if (!tpr_.do_vector(temparr, data_->ngtc, data_->prec)) return TPR_FAILED;
+			if (!tpr_.do_vector(temparr.data(), data_->ngtc, data_->prec)) return TPR_FAILED;
 		}
 		//These used to be the Berendsen tcoupl_lambda's
-		if(!tpr_.do_vector(temparr, data_->ngtc, data_->prec)) return TPR_FAILED;
-		delete [] temparr;
+		if(!tpr_.do_vector(temparr.data(), data_->ngtc, data_->prec)) return TPR_FAILED;
 	}
 
 	return TPR_SUCCESS;
@@ -2527,8 +2526,6 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);
         break;
     }
-
-    return {};
 }
 
 const std::vector<std::string>& TprReader::get_name(const char* type) const
@@ -2562,8 +2559,6 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);
         break;
     }
-
-    return {};
 }
 
 const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
@@ -2613,8 +2608,6 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);
         break;
     }
-
-    return {};
 }
 
 
