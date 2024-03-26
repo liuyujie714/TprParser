@@ -44,102 +44,111 @@ jobs:
       run:
         python TprParser/TestTprReader.py
 
-  # RockyLinux:
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: rockylinux/rockylinux:9
+  RockyLinux:
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux/rockylinux:9
+    defaults:
+      run:
+        working-directory: ./TprParser
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   - name: set python and gcc env
-  #     run: |
-  #       set -x
-  #       dnf install gcc gcc-c++ cmake python3 python3-devel.x86_64 -y
-  #       ln -sf /usr/bin/python3 /usr/bin/python
-  #       pip install numpy
+    - name: set python and gcc env
+      run: |
+        set -x
+        dnf install gcc gcc-c++ cmake python3 python3-devel.x86_64 -y
+        ln -sf /usr/bin/python3 /usr/bin/python
+        pip install numpy
 
-  #   - name: build job
-  #     run: |
-  #       set -x 
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       make 
-  #       make install 
+    - name: build job by cmake
+      run: |
+        set -x 
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install 
+
+    - name: build job by setup.py
+      run: |
+        python setup.py build
+        python setup.py install
     
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
+    - name: Tests
+      run: 
+        python TprParser/TestTprReader.py
 
-  #       python TprParser/TestTprReader.py
+  WindowsBuild:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./TprParser
 
-  # WindowsBuild:
-  #   runs-on: windows-latest
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
 
-  #   - name: set python version
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: '3.8'
+    - name: build job by cmake
+      run: |
+        python -m pip install numpy
+        cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
+        cmake --build . --target INSTALL --config Release
 
-  #   - name: build job
-  #     run: |
-  #       python -m pip install numpy
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       cmake --build . --target INSTALL --config Release
+    - name: build job by setup.py
+      run: |
+        python setup.py build
+        python setup.py install
 
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
-
-  #       python TprParser/TestTprReader.py
+    - name: Tests
+      run: 
+        python TprParser/TestTprReader.py
 
 
-  # Mingw64Build:
-  #   runs-on: windows-latest
+  Mingw64Build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./TprParser
 
-  #   steps:
-  #   - name: git source
-  #     uses: actions/checkout@v2
+    steps:
+    - name: git source
+      uses: actions/checkout@v2
 
-  #   - name: Set up Msys2
-  #     uses: msys2/setup-msys2@v2
-  #     with:
-  #       msystem: mingw64
-  #       update: true
-  #       install: >-
-  #         git
-  #         make
-  #       pacboy: >-
-  #         toolchain:p
-  #         cmake:p
+    - name: Set up Msys2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: mingw64
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          cmake:p
 
-  #   - name: set python version
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: '3.8'
+    - name: set python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
 
-  #   - name: build job
-  #     run: |
-  #       python -m pip install numpy
-  #       cd TprParser
-  #       cmake . -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=$(pwd)
-  #       make 
-  #       make install
+    - name: build job by cmake
+      run: |
+        python -m pip install numpy
+        cmake . -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=$(pwd)
+        make 
+        make install
 
-  #   - name: Tests
-  #     run: |
-  #       cd TprParser
-  #       python setup.py build
-  #       python setup.py install
+    - name: build job by setup.py
+      run: |
+        python setup.py build
+        python setup.py install
 
-  #       python TprParser/TestTprReader.py
+    - name: Tests
+      run: 
+        python TprParser/TestTprReader.py
