@@ -404,7 +404,7 @@ public:
 			// actually len
 			if (!do_int(&len)) return TPR_FAILED;
 			if (len % 4) len += 4 - len % 4; // ×Ö½Ú¶ÔÆë
-			if (fread(buf, 1, len, fp) != len) return TPR_FAILED;
+			if (fread(buf, 1, (size_t)len, fp) != (size_t)len) return TPR_FAILED;
 			for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
 				saveloc[i] = buf[i];
 			}
