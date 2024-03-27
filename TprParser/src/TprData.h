@@ -1,8 +1,6 @@
 #ifndef TPRDATA_H
 #define TPRDATA_H
 
-#include "define.h"
-#include "Enum.h"
 #include <vector>
 #include <string>
 #include <array>
@@ -10,6 +8,9 @@
 #include <cassert>
 #include <tuple> // std::tie
 
+
+#include "define.h"
+#include "Enum.h"
 
 using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;
@@ -287,6 +288,7 @@ struct TprData
 		long		x = 0; //< the started atom coordinates position in tpr
 		long		v = 0; //< the started atom velocity position in tpr
 		long		f = 0; //< the started atom force position in tpr
+		long		box = 0; //< the box position in tpr
 
 
 		// 压力设置参数位置

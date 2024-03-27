@@ -1,3 +1,6 @@
+#include <stdexcept>
+#include <string>
+
 #include "Utils.h"
 
 std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams *param)
@@ -206,4 +209,14 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
         break;
     }
     return std::make_pair(-1, ffparam);
+}
+
+FILE* efopen(const char* fname, const char* mod)
+{
+    FILE* fp = fopen(fname, mod);
+    if (!fp)
+    {
+        throw std::runtime_error(std::string("Can not open/write file: ") + fname);
+    }
+    return fp;
 }

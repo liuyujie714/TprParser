@@ -3,9 +3,10 @@
 
 #include <stdio.h>
 #include <stdexcept>
-#include "endianswap.h"
 #include <type_traits>
 #include <string>
+
+#include "endianswap.h"
 
 #define TPR_SUCCESS true
 #define CPT_SUCCESS true
@@ -368,7 +369,7 @@ public:
 			if (fread(str, 1, (size_t)max, fp) != (size_t)max) return TPR_FAILED;
 			str[max - 1] = '\0';
 			// skip next string
-			if (fseek(fp, ssize - max, SEEK_CUR) != 0) return TPR_FAILED;
+			if (fseek(fp, size - max, SEEK_CUR) != 0) return TPR_FAILED;
 			return TPR_SUCCESS;
 		}
 		else

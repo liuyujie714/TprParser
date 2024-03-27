@@ -1,11 +1,12 @@
 #ifndef READER_H
 #define	 READER_H
 
+#include <cstring>
+#include <cstdint>
+
 #include "define.h"
 #include "Bytes.h"
 #include "TprData.h"
-#include <string.h>
-#include <cstdint>
 
 #define INSERT_POS(prop) data_->property.prop = tpr_.ftell_()
 
@@ -33,6 +34,7 @@ public:
 		{
 			throw std::runtime_error("error for tpr_body()");
 		}
+
 		if (tpr_mtop() != TPR_SUCCESS)
 		{
 			throw std::runtime_error("error for tpr_mtop()");

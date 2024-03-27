@@ -1,12 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "define.h"
-
+#include <cstdio>
 #include <vector>
 #include <utility> // std::pair
 
-
+#include "define.h"
 
 //! \brief return bond function type id and force parameters. 
 //! includes constraint derived from bonds
@@ -24,5 +23,8 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
 //! \brief return impropers dihedral function type id and force parameters,
 //! \return return std::pair(-1, {}) if failed
 std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams* param);
+
+//! \brief safely fopen 
+FILE* efopen(const char* fname, const char* mod);
 
 #endif // !UTILS_H

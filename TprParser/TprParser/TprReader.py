@@ -5,9 +5,9 @@ import TprParser_
 
 class TprReader:
     """ @brief A wrapper of TprParser_
-        1. get atmic coordinates/velocity/force/mass/charge ... of tpr
-        2. get force field parameters for bonds/angles/dihedrals/impropers
-        3. modify simulation nsteps/dt/integer/coordinates/velocity/force and save as new.tpr
+        1. get atmic coordinates/velocity/force/box/mass/charge ... of tpr
+        2. get full force field parameters for bonds/angles/dihedrals/impropers
+        3. modify simulation nsteps/dt/integer/coordinates/velocity/force/box and save as new.tpr
 
         Parameters
         ---------
@@ -54,12 +54,13 @@ class TprReader:
         return TprParser_.set_dt(self.tprCapsule, dt)
 
     def set_xvf(self, type:VecType, vec:np.array):
-        """ @brief set up atomic coordinates/velocity/force of tpr
+        """ @brief set up atomic coordinates/velocity/force/box of tpr
 
         Parameters
         ----------
-        type: must be 'X', 'V', or 'F', represents atomic coordinates/velocity/force to set
-        vec: a np.array(dtype=np.float32) of atom coordinates/velocity/force, the dimension must be natoms * 3
+        type: must be 'X', 'V', 'F', or 'BOX', represents atomic coordinates/velocity/force/box to set
+        vec: a np.array(dtype=np.float32) of atom coordinates/velocity/force/box, 
+        the dimension must be natoms * 3, except the box dimension is 9
 
         Returns
         -------

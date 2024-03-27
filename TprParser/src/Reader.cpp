@@ -1,9 +1,10 @@
-#include "Reader.h"
-#include "Utils.h"
-
 #include <set>
 #include <string.h> // memset
 #include <algorithm>
+
+
+#include "Reader.h"
+#include "Utils.h"
 
 bool TprReader::tpr_header()
 {
@@ -117,6 +118,7 @@ bool TprReader::tpr_body()
 	// read box size
 	if (data_->bBox)
 	{
+        INSERT_POS(box);
         data_->box.resize(DIM * DIM);
 		tpr_.do_vector(data_->box.data(), 9, data_->prec);
         print_vec("box= ", data_->box.data());
@@ -2626,10 +2628,10 @@ bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
             throw std::runtime_error("fwrite_ error in write_xvf before");
         }
 
-        // write new coordinates
+        // write new vector
         if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_SUCCESS;
 
-        // write coordinates after
+        // write vector after
         size_t size = vec.size() * sizeof(float);
         long len = fsize - pos - (long)size;
         if (newtpr.fwrite_(&buffer[pos + size], len * sizeof(char), 1) != 1)
@@ -2650,18 +2652,25 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         throw std::runtime_error("Unsupport double precision of tpr in set_xvf");
     }
 
-    // check vector size 
-    if ((int)vec.size() != data_->natoms * DIM)
-    {
-        throw std::runtime_error("Input vector size is not equal to natoms * 3");
-    }
-
-    // check input type, must X, or V or F
+    // check input type, must X, or V or F or box
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
         throw std::runtime_error(std::string("Unknown set vector property: ") + type);
     }
+
+    // check vector size 
+    if (evec != VecProps::box && (int)vec.size() != data_->natoms * DIM)
+    {
+        throw std::runtime_error("Input vector size is not equal to natoms * 3");
+    }
+
+    // check box size
+    if (evec == VecProps::box && (int)vec.size() != DIM * DIM)
+    {
+        throw std::runtime_error("Input box size is not equal to 9");
+    }
+
 
     switch (evec)
     {
@@ -2694,6 +2703,15 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
             throw std::runtime_error("Input tpr has not force information");
         }
         if (write_xvf(vec, data_->property.f, data_->prec)) return TPR_SUCCESS;
+        break;
+    }
+    case VecProps::box:
+    {
+        if (!data_->bBox)
+        {
+            throw std::runtime_error("Input tpr has not box information");
+        }
+        if (write_xvf(vec, data_->property.box, data_->prec)) return TPR_SUCCESS;
         break;
     }
     default:
