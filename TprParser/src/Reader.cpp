@@ -2613,6 +2613,40 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
 }
 
 
+int TprReader::get_mdp_integer(const char* prop)
+{
+    ParamsInteger epi;
+    if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
+    {
+        throw std::runtime_error(std::string("Unknown mdp property: ") + prop);
+    }
+
+    switch (epi)
+    {
+    case ParamsInteger::nstlog:
+        return data_->ir.nstlog;
+    case ParamsInteger::nstxout:
+        return data_->ir.nstxout;
+    case ParamsInteger::nstvout:
+        return data_->ir.nstvout;
+    case ParamsInteger::nstfout:
+        return data_->ir.nstfout;
+    case ParamsInteger::nstenergy:
+        return data_->ir.nstenergy;
+    case ParamsInteger::nstxout_compressed:
+        return data_->ir.nstxout_compressed;
+    case ParamsInteger::nsttcouple:
+        return data_->ir.nsttcouple;
+    case ParamsInteger::nstpcouple:
+        return data_->ir.nstpcouple;
+    case ParamsInteger::nstcalcenergy:
+        return data_->ir.nstcalcenergy;
+    default:
+        break;
+    }
+    return -1;
+}
+
 bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
 {
     long            fsize = 0;

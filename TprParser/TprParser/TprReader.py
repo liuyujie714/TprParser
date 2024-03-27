@@ -2,9 +2,10 @@ from typing_extensions import TypeAlias
 from typing import Literal
 import numpy as np
 import TprParser_
+import shutil
 
 class TprReader:
-    """ @brief A wrapper of TprParser_
+    """ @brief A wrapper of TprParser
         1. get atmic coordinates/velocity/force/box/mass/charge ... of tpr
         2. get full force field parameters for bonds/angles/dihedrals/impropers
         3. modify simulation nsteps/dt/integer/coordinates/velocity/force/box and save as new.tpr
@@ -114,6 +115,29 @@ class TprReader:
         return True if succeed
         """
         return TprParser_.set_mdp_integer(self.tprCapsule, keyword, val)
+    
+    def get_prec(self):
+        """ @brief get the precision of tpr
+
+        Return
+        ------
+        return 4 is float, 8 is dobule
+        """
+        return TprParser_.get_prec(self.tprCapsule)
+    
+    def get_mdp_integer(self, keyword:str):
+        """ @brief get integer keyword of tpr
+
+        Parameters
+        ----------
+        keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
+        nsttcouple, nstpcouple, nstcalcenergy
+
+        Returns
+        -------
+        return an int value for keyword
+        """
+        return TprParser_.get_mdp_integer(self.tprCapsule, keyword)
         
     def get_xvf(self, type:VecType) -> np.array:
         """ @brief get atomic coordinates/velocity/force/box from tpr if exist. 
@@ -207,3 +231,62 @@ class TprReader:
         bonded = TprParser_.get_bonded(self.tprCapsule, type)
         return np.array(bonded, dtype=object)
     
+
+class SimSettings():
+    """ breif A wrapper of TprParser for setting multiple mdp parameters
+
+        Parameters
+        ---------
+        See ``class TprParser`` all set_ methods
+    """
+    def __init__(self, fname, bGRO=False, bMol2=False, bCharge=False) -> None:
+        self.tempname = '_temp_.tpr'
+        self.newname = 'new.tpr'
+        shutil.copy(fname, self.tempname) # copy src to temp.tpr
+
+    def __movefile(self):
+        """ @breif Move generated self.newname to self.tempname
+        """
+        shutil.move(self.newname, self.tempname)
+
+    def set_dt(self, dt):
+        reader = TprReader(self.tempname)
+        reader.set_dt(dt)
+        reader = None # only set None to relase handle, do not call __del__
+        self.__movefile()
+    
+    def set_nsteps(self, nsteps):
+        reader = TprReader(self.tempname)
+        reader.set_nsteps(nsteps)
+        reader = None
+        self.__movefile()
+    
+    def set_mdp_integer(self, keyword: str, val: int):
+        reader = TprReader(self.tempname)
+        reader.set_mdp_integer(keyword, val)
+        reader = None
+        self.__movefile()
+
+    def set_xvf(self, type, vec):
+        reader = TprReader(self.tempname)
+        reader.set_xvf(type, vec)
+        reader = None
+        self.__movefile()
+
+    def set_pressure(self, epc, epct, tau_p, ref_p, compress):
+        reader = TprReader(self.tempname)
+        reader.set_pressure(epc, epct, tau_p, ref_p, compress)
+        reader = None
+        self.__movefile()
+
+    def set_temperature(self, etc, tau_t: list, ref_t: list):
+        reader = TprReader(self.tempname)
+        reader.set_temperature(etc, tau_t, ref_t)
+        reader = None
+        self.__movefile()
+
+    def __del__(self):
+        try:
+            shutil.move(self.tempname, self.newname)
+        except:
+            pass

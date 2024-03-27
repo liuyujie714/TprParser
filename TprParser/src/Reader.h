@@ -138,6 +138,12 @@ public:
 	//< get bonds/angles info in struct 
 	const std::vector<Bonded> &get_bonded(const char *type) const;
 
+	//< get precision of tpr
+	int get_precision() const { return data_->prec; }
+
+	//< get integer mdp parameters
+	int get_mdp_integer(const char* prop);
+
 private:
 	//< assistant func to write tpr given new coords, velocity or force
 	bool write_xvf(std::vector<float>& vec, long pos, long prec) const;

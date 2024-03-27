@@ -237,6 +237,23 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 	Py_RETURN_TRUE;
 }
 
+// get integer props in mdp
+static PyObject* get_mdp_integer(PyObject* self, PyObject* args)
+{
+	PyObject	* capsule = NULL;
+	const char	* prop = NULL;
+
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &prop))
+	{
+		return NULL;
+	}
+
+	int ret = -1;
+	TRY_THROW_EXCEPTION_FROM_OBJ(get_mdp_integer, ret, prop);
+
+	return Py_BuildValue("i", ret);
+}
+
 static PyObject* get_xvf(PyObject* self, PyObject* args)
 {
 	PyObject		* capsule = NULL;
@@ -279,6 +296,22 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 	}
 
 	return list;
+}
+
+// get precision of tpr
+static PyObject* get_prec(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = NULL;
+
+	if (!PyArg_ParseTuple(args, "O", &capsule))
+	{
+		return NULL;
+	}
+
+	int prec = 4;
+	TRY_THROW_EXCEPTION_FROM_OBJ(get_precision, prec);
+
+	return Py_BuildValue("i", prec);
 }
 
 // get resname or atomname
@@ -457,6 +490,8 @@ static PyMethodDef methods[] =
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
+	{"get_prec", get_prec, METH_VARARGS, "Get precision of tpr, float(4) or double(8)"},
+	{"get_mdp_integer", get_mdp_integer, METH_VARARGS, "get int value of keyword"},
 	{"get_name", get_name, METH_VARARGS, "Get resname/atomname from tpr"},
 	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
 	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers pairs (1-based index) information from tpr"},
