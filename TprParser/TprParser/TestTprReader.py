@@ -59,7 +59,7 @@ def test_tot_atoms(handle, natoms, fname):
 
 def do_test():
     for name in tprlist.keys():
-        fname = '../test/' + name
+        fname = 'test/' + name
         try:
             reader = TprReader(fname)
         except:
@@ -92,7 +92,7 @@ def do_test():
 
 def do_test2():
     for name in tprlist.keys():
-        fname = '../test/' + name
+        fname = 'test/' + name
 
         # get precision of tpr
         reader = TprReader(fname)
