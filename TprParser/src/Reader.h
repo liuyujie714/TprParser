@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <cstdint>
+#include <memory> // unique_ptr
 
 #include "define.h"
 #include "Bytes.h"
@@ -23,8 +24,12 @@ public:
 		bool bMol2 = false,
 		bool bCharge = false
 	)
-		: tpr_(fname, "rb"), data_{ new TprData() }, fout_("new.tpr"),
-		bGRO_(bGRO), bMol2_(bMol2), bCharge_(bCharge)
+		: tpr_(fname, "rb"), 
+		data_{ std::make_unique<TprData>() }, 
+		fout_("new.tpr"),
+		bGRO_(bGRO), 
+		bMol2_(bMol2),
+		bCharge_(bCharge)
 	{
 		if (tpr_header() != TPR_SUCCESS)
 		{
@@ -34,7 +39,6 @@ public:
 		{
 			throw std::runtime_error("error for tpr_body()");
 		}
-
 		if (tpr_mtop() != TPR_SUCCESS)
 		{
 			throw std::runtime_error("error for tpr_mtop()");
@@ -67,8 +71,6 @@ public:
 
 	~TprReader()
 	{
-		if (data_) delete data_;
-
 		msg("End of TprReader\n");
 	}
 
@@ -142,7 +144,7 @@ public:
 	int get_precision() const { return data_->prec; }
 
 	//< get integer mdp parameters
-	int get_mdp_integer(const char* prop);
+	int get_mdp_integer(const char* prop) const;
 
 private:
 	//< assistant func to write tpr given new coords, velocity or force
@@ -174,7 +176,7 @@ private:
 
 private:
 	FileSerializer			tpr_;
-	TprData					*data_ = nullptr;
+	std::unique_ptr<TprData>data_;
 	std::vector<t_iparams>  iparams_; // 力场参数
 	std::vector<int>		functype_; // 函数类型
 	bool					bGRO_ = false; //< if write a gro

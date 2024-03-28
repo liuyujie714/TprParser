@@ -41,7 +41,7 @@ public:
 		}
 
 		// note
-		fprintf(stderr, "NOTE) Open file %s to %s\n", fname, m_read ? "read" : "write");
+		//fprintf(stderr, "NOTE) Open file %s to %s\n", fname, m_read ? "read" : "write");
 
 		// need endianism swap?
 		m_rev = is_litendian();
@@ -55,7 +55,7 @@ public:
 	{
 		if (m_buffer) delete [] m_buffer;
 		if (fp) fclose(fp);
-		fprintf(stderr, "NOTE) End of %s to %s\n", m_fname.c_str(), m_read ? "read" : "write");
+		//fprintf(stderr, "NOTE) End of %s to %s\n", m_fname.c_str(), m_read ? "read" : "write");
 	}
 
 	//< get a pointer to file char *buffer

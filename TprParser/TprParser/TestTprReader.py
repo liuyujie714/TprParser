@@ -58,7 +58,8 @@ def test_tot_atoms(handle, natoms, fname):
     assert natoms == len(handle.get_name('res')), f"The number of atoms is wrong in file {fname}"
 
 def do_test():
-    for name in tprlist.keys():
+    for index, name in enumerate(tprlist.keys()):
+        print(f'do test {index+1}', flush=True)
         fname = 'test/' + name
         try:
             reader = TprReader(fname)
@@ -91,7 +92,8 @@ def do_test():
         del reader
 
 def do_test2():
-    for name in tprlist.keys():
+    for index, name in enumerate(tprlist.keys()):
+        print(f'do test {index+1}', flush=True)
         fname = 'test/' + name
 
         # get precision of tpr
@@ -158,7 +160,7 @@ def do_test2():
 
 if __name__ == '__main__':
     do_test()
-    print('<'*10+'Passed All TprParser Tests'+'>'*10)
+    print('<'*10+'Passed All TprParser Tests'+'>'*10, flush=True)
 
     do_test2()
-    print('<'*10+'Passed All SimSettings Tests'+'>'*10)
+    print('<'*10+'Passed All SimSettings Tests'+'>'*10, flush=True)

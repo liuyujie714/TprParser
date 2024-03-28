@@ -2613,7 +2613,7 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
 }
 
 
-int TprReader::get_mdp_integer(const char* prop)
+int TprReader::get_mdp_integer(const char* prop) const
 {
     ParamsInteger epi;
     if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
