@@ -92,6 +92,7 @@ def do_test():
         del reader
 
 def do_test2():
+    fout = 'output.tpr'
     for index, name in enumerate(tprlist.keys()):
         print(f'do test {index+1}', flush=True)
         fname = 'test/' + name
@@ -100,47 +101,39 @@ def do_test2():
         reader = TprReader(fname)
         prec = reader.get_prec()
         del reader
-
-        #
-        try:
-            writer = SimSettings(fname)
-        except:
-            sys.exit(f'Can not init tpr handle for file: {fname}')
         
-        # change 
-        writer.set_dt(0.002)
-        writer.set_nsteps(100)
-        # unsupport set_mdp_integer for gmx < 4.6
-        if '4.0' not in name:
-            writer.set_mdp_integer('nstxout', 100)
-            writer.set_mdp_integer('nstenergy', 100)
-            writer.set_mdp_integer('nsttcouple', 1)
-            writer.set_mdp_integer('nstpcouple', 1)
-            writer.set_mdp_integer('nstxout_compressed', 1032)
+        with SimSettings(fname, fout) as writer:
+            # change 
+            writer.set_dt(0.002)
+            writer.set_nsteps(100)
+            # unsupport set_mdp_integer for gmx < 4.6
+            if '4.0' not in name:
+                writer.set_mdp_integer('nstxout', 100)
+                writer.set_mdp_integer('nstenergy', 100)
+                writer.set_mdp_integer('nsttcouple', 1)
+                writer.set_mdp_integer('nstpcouple', 1)
+                writer.set_mdp_integer('nstxout_compressed', 1032)
 
-        if prec==4:
-            writer.set_pressure('CRescale', 'Isotropic', 3.0, 
-                                [
-                                    100,0, 0,
-                                    0, 100,0,
-                                    0, 0, 100
-                                ],
-                                [
-                                    1,0,0,
-                                    0,1,0,
-                                    0,0,1,
-                                ]
-                                )
-            newX = 152*np.ones(shape=(tprlist[name][0], 3))
-            newV = 110*np.ones(shape=(tprlist[name][0], 3))
-            writer.set_xvf('x', newX)
-            writer.set_xvf('v', newV)
-
-        # generated new.tpr
-        del writer
-        
+            if prec==4:
+                writer.set_pressure('CRescale', 'Isotropic', 3.0, 
+                                    [
+                                        100,0, 0,
+                                        0, 100,0,
+                                        0, 0, 100
+                                    ],
+                                    [
+                                        1,0,0,
+                                        0,1,0,
+                                        0,0,1,
+                                    ]
+                                    )
+                newX = 152*np.ones(shape=(tprlist[name][0], 3))
+                newV = 110*np.ones(shape=(tprlist[name][0], 3))
+                writer.set_xvf('x', newX)
+                writer.set_xvf('v', newV)
+            
         # assert modify parameters
-        reader = TprReader('new.tpr')
+        reader = TprReader(fout)
         x = reader.get_xvf('x')
         v = reader.get_xvf('v')
 
@@ -155,7 +148,6 @@ def do_test2():
             assert reader.get_mdp_integer('nstpcouple') == 1
             assert reader.get_mdp_integer('nstxout_compressed') == 1032
         
-
         del reader
 
 if __name__ == '__main__':

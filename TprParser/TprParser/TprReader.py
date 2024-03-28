@@ -233,16 +233,25 @@ class TprReader:
     
 
 class SimSettings():
-    """ breif A wrapper of TprParser for setting multiple mdp parameters
+    """ @breif A wrapper of TprParser for setting multiple mdp parameters
 
-        Parameters
-        ---------
-        See ``class TprParser`` all set_ methods
-    """
-    def __init__(self, fname, bGRO=False, bMol2=False, bCharge=False) -> None:
+    Parameters
+    ---------
+    See ``class TprParser`` all set_ methods
+
+    Example
+    -------
+    with SimSettings('input.tpr', 'output.tpr') as writer:
+        writer.set_dt(0.001)
+        writer.set_mdp_integer('nstxout', 100)
+    
+    # output.tpr 
+    """  
+    def __init__(self, fin, fout, bGRO=False, bMol2=False, bCharge=False) -> None:
         self.tempname = '_temp_.tpr'
         self.newname = 'new.tpr'
-        shutil.copy(fname, self.tempname) # copy src to temp.tpr
+        self.fout = fout
+        shutil.copy(fin, self.tempname) # copy src to temp.tpr
 
     def __movefile(self):
         """ @breif Move generated self.newname to self.tempname
@@ -285,8 +294,11 @@ class SimSettings():
         reader = None
         self.__movefile()
 
-    def __del__(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, exec, tracback):
         try:
-            shutil.move(self.tempname, self.newname)
+            shutil.move(self.tempname, self.fout)
         except:
             pass

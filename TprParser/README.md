@@ -124,9 +124,21 @@ reader.set_temperature(etc='Berendsen', tau_t=[0.2], ref_t=[400])
 ```
 
 
+# Modify multiple paramaters
+I write a `SimSettings` class to do this work
+```python
+from TprParser.TprReader import SimSettings
+
+with SimSettings('input.tpr', 'output.tpr') as writer:
+    writer.set_dt(0.001)
+    writer.set_mdp_integer('nstxout', 100)
+    writer.set_nsteps(2000000)
+```
+
+
 ## Other
 
-Please see `TprReader` module annotation
+Please see `TprReader` and `SimSettings` module annotation
 
 
 # Cite
