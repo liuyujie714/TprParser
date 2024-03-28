@@ -19,6 +19,7 @@ function showHelp
     echo $0 build
     echo $0 test
     echo $0 pypi
+    echo $0 install
     echo $0 clean
 }
 
@@ -37,6 +38,10 @@ elif [[ "$inp" == "pypi" ]]; then
 # only build
 elif [[ "$inp" == "build" ]]; then
     clean && build
+# native install
+elif [[ "$inp" == "install" ]]; then
+    clean
+    python setup.py build && python setup.py install
 # only clean old file
 elif [[ "$inp" == "clean" ]]; then
     clean

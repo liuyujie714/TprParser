@@ -416,7 +416,7 @@ bool TprReader::tpr_angles()
     // angles type
     const int interactions[] = {
         F_ANGLES, F_G96ANGLES, F_CROSS_BOND_BONDS, F_CROSS_BOND_ANGLES, F_UREY_BRADLEY,
-        F_QUARTIC_ANGLES, F_RESTRANGLES, F_TABANGLES, F_SETTLE
+        F_QUARTIC_ANGLES, F_LINEAR_ANGLES, F_RESTRANGLES, F_TABANGLES, F_SETTLE
     };
     constexpr int nAngles = asize(interactions);
 

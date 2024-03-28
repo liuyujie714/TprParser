@@ -241,9 +241,9 @@ class SimSettings():
 
     Example
     -------
-    with SimSettings('input.tpr', 'output.tpr') as writer:
-        writer.set_dt(0.001)
-        writer.set_mdp_integer('nstxout', 100)
+    >>> with SimSettings('input.tpr', 'output.tpr') as writer:
+    >>>    writer.set_dt(0.001)
+    >>>    writer.set_mdp_integer('nstxout', 100)
     
     # output.tpr 
     """  

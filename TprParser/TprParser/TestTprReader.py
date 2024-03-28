@@ -26,7 +26,8 @@ tprlist = {
     'md2024.tpr' : [58385], 
     'md_cg.tpr' : [8], 
     'pull.tpr' : [94560], 
-    'semiP.tpr' : [4608]
+    'semiP.tpr' : [4608],
+    'CO2_LineAngle.tpr' : [3000]
 }
 
 

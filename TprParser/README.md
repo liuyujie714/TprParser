@@ -124,7 +124,7 @@ reader.set_temperature(etc='Berendsen', tau_t=[0.2], ref_t=[400])
 ```
 
 
-# Modify multiple paramaters
+# Modify multiple parameters
 I write a `SimSettings` class to do this work
 ```python
 from TprParser.TprReader import SimSettings
