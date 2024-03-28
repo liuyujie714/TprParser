@@ -7,6 +7,12 @@ import sys
 import numpy as np
 
 tprlist = {
+    # No dihedrals
+    'md.tpr' : [2520], 
+    'md_cg.tpr' : [8], 
+    'semiP.tpr' : [4608],
+    'CO2_LineAngle.tpr' : [3000],
+
     '1EBZ.tpr' : [3218], 
     '2020.4_gra.tpr' : [4536], 
     '2022.tpr' : [165706], 
@@ -22,13 +28,10 @@ tprlist = {
     'Inter-2019.6.tpr' : [157488], 
     'inter-md.tpr' : [13749], 
     'large_2021_aa_posres.tpr' : [34466], 
-    'md.tpr' : [2520], 
     'md2024.tpr' : [58385], 
-    'md_cg.tpr' : [8], 
-    'pull.tpr' : [94560], 
-    'semiP.tpr' : [4608],
-    'CO2_LineAngle.tpr' : [3000]
+    'pull.tpr' : [94560],
 }
+NoDihedrals = [k for k in list(tprlist.keys())[0:4]]
 
 
 def test_get_xvf(handle, ftype):
@@ -78,8 +81,7 @@ def do_test():
         if 'semiP.tpr' not in fname:
             test_get_bonded(reader, 'angles')
         # these tpr has not dihedrals
-        if ('md.tpr' not in fname) and ('md_cg.tpr' not in fname) and \
-            ('semiP.tpr' not in fname):
+        if name not in NoDihedrals:
             test_get_bonded(reader, 'dihedrals')
             test_get_bonded(reader, 'impropers')
 
