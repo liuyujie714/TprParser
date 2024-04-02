@@ -169,11 +169,11 @@ class TprReader:
         return np.array(vec, np.float32)
     
     def get_name(self, type:VecType3):
-        """ @brief get resname/atomname from tpr
+        """ @brief get resname/atomname/atomtype from tpr
 
         Parameters
         ----------
-        type: must be 'res', 'atom', represents resname/atomname to get
+        type: must be 'res', 'atom', 'type', represents resname/atomname/atomtype to get
 
         Returns
         -------

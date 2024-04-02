@@ -97,16 +97,17 @@ static const char* c_mdp_vector[static_cast<int>(VecProps::Count)] =
 	"x", "v", "f", "m", "q", "box"
 };
 
-// vector of tpr, resname or atomname
+// vector of tpr, resname / atomname / atomtype name
 enum class StringType : int
 {
 	res,
 	atom,
+	type, // atomtype name
 	Count
 };
 static const char* c_name_vector[static_cast<int>(StringType::Count)] =
 {
-	"res", "atom"
+	"res", "atom", "type"
 };
 
 

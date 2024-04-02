@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 		}
 
 		{
-			TprReader reader("test/CO2_LineAngle.tpr", false, false);
+			TprReader reader("test/md.tpr", false, false);
 		}
 	}
 	catch (const std::exception&e)

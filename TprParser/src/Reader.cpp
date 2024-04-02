@@ -202,6 +202,7 @@ bool TprReader::tpr_mtop()
     // 保存分子和原子信息到atoms结构体中
     data_->atoms.atomname.resize(data_->natoms);
     data_->atoms.resname.resize(data_->natoms);
+    data_->atoms.atomtypename.resize(data_->natoms);
     data_->atoms.resid.resize(data_->natoms);
     data_->atoms.mass.resize(data_->natoms);
     data_->atoms.charge.resize(data_->natoms);
@@ -219,6 +220,7 @@ bool TprReader::tpr_mtop()
                 int resind = data_->resids[m][k];
                 data_->atoms.atomname[idx]  = &data_->symtab[SAVELEN * data_->atomnameids[m][k]];
                 data_->atoms.resname[idx]   = &data_->symtab[SAVELEN * data_->resnames[m][resind]];
+                data_->atoms.atomtypename[idx] = &data_->symtab[SAVELEN * data_->atomtypeids[m][k]];
 
                 // 此处的残基编号有问题，当tpr中不连续时候处理不了
                 residx.insert(resind);
@@ -2556,6 +2558,14 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
             throw std::runtime_error("Can not get atomname information");
         }
         return data_->atoms.atomname;
+    }
+    case StringType::type:
+    {
+        if (data_->atoms.atomtypename.empty())
+        {
+            throw std::runtime_error("Can not get atomtypename information");
+        }
+        return data_->atoms.atomtypename;
     }
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);

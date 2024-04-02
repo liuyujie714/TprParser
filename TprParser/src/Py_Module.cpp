@@ -492,7 +492,7 @@ static PyMethodDef methods[] =
 
 	{"get_prec", get_prec, METH_VARARGS, "Get precision of tpr, float(4) or double(8)"},
 	{"get_mdp_integer", get_mdp_integer, METH_VARARGS, "get int value of keyword"},
-	{"get_name", get_name, METH_VARARGS, "Get resname/atomname from tpr"},
+	{"get_name", get_name, METH_VARARGS, "Get resname/atomname/atomtype from tpr"},
 	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
 	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers pairs (1-based index) information from tpr"},
 	{NULL, NULL, 0, NULL}

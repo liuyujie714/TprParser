@@ -264,10 +264,11 @@ struct TprData
 		std::vector<float>			f; //< force
 		std::vector<std::string>	atomname;
 		std::vector<std::string>	resname;
+		std::vector<std::string>	atomtypename; // atom type name from .ff
 		std::vector<int>			resid;
 		std::vector<float>			mass;
 		std::vector<float>			charge;
-		std::vector<unsigned short>	type; 
+		std::vector<unsigned short>	type; // unused ?
 	} atoms;
 
 	//! 此处没有进行去重复，一个角可以存在多类参数
