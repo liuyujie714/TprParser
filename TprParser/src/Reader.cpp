@@ -576,7 +576,8 @@ bool TprReader::tpr_nonbonded()
                 auto C12 = tempLJ[idx].ff[1];
                 if (C6 * C12 != 0)
                 {
-                    sigma = std::powf(C12 / C6, 1.0f / 6);
+                    // linux gcc without std::powf
+                    sigma = static_cast<float>(std::pow(C12 / C6, 1.0 / 6));
                     epsion = C6 * C6 / (4 * C12);
                 }
                 data_->atomtypesLJ[i].ff = { sigma, epsion };
