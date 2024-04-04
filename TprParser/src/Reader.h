@@ -63,6 +63,10 @@ public:
 		{
 			throw std::runtime_error("error for tpr_dihedrals()");
 		}
+		if (tpr_nonbonded() != TPR_SUCCESS)
+		{
+			throw std::runtime_error("error for tpr_nonbonded()");
+		}
 		if (do_ir() != TPR_SUCCESS)
 		{
 			throw std::runtime_error("error for do_ir()");
@@ -99,6 +103,9 @@ public:
 	* Can not store dihedrals parameters
 	*/
 	bool tpr_dihedrals();
+
+	//< dump non-bonded parameters, includes LJ and paris
+	bool tpr_nonbonded();
 
 	//< do_ir
 	bool do_ir();
@@ -137,8 +144,11 @@ public:
 	//< get resname, atomname
 	const std::vector<std::string>& get_name(const char *type) const;
 
-	//< get bonds/angles info in struct 
+	//< get bonds/angles/dihedrals/impropers info in struct 
 	const std::vector<Bonded> &get_bonded(const char *type) const;
+
+	//< get non-bonded pairs/LJ parameters
+	const std::vector<NonBonded> &get_nonbonded(const char *type) const;
 
 	//< get precision of tpr
 	int get_precision() const { return data_->prec; }

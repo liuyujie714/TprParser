@@ -48,7 +48,7 @@ setup(
     exclude=['setup.py'],
     ext_modules=[module],
     # put TprReader.py/__init__.py in TprParser folder to site-packages
-    py_modules=['TprParser.TprReader', 'TprParser.__init__'],
+    py_modules=['TprParser.TprReader', 'TprParser.__init__', 'TprParser.TprMakeTop'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

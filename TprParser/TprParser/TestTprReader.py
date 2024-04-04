@@ -61,6 +61,13 @@ def test_get_name(handle, ftype):
 def test_tot_atoms(handle, natoms, fname):
     assert natoms == len(handle.get_name('res')), f"The number of atoms is wrong in file {fname}"
 
+def test_make_top_from_tpr(tpr, top):
+    from TprParser.TprMakeTop import make_top_from_tpr
+    try:
+        make_top_from_tpr(tpr, top)
+    except:
+        sys.exit(f'Can not execute test_make_top_from_tpr for file: {tpr}')
+
 def do_test():
     for index, name in enumerate(tprlist.keys()):
         print(f'do test {index+1}', flush=True)
@@ -93,6 +100,9 @@ def do_test():
         
         # need delete obj
         del reader
+
+        # top testing
+        test_make_top_from_tpr(fname, 'md.top')
 
 def do_test2():
     fout = 'output.tpr'

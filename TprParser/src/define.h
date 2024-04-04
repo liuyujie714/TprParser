@@ -1,13 +1,15 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
+#include <stdio.h>
+
 #define MAX_LEN 4096
 #define XX 0
 #define YY 1
 #define ZZ 2
 
-//#define DEBUG
-#ifdef DEBUG
+//#define _DEBUG
+#ifdef _DEBUG
 #define msg(...) \
 do { \
     fprintf(stderr, "INFO) "); \
@@ -16,6 +18,14 @@ do { \
 #else
 #define msg(...) 
 #endif // DEBUG
+
+#ifdef _DEBUG
+#include <assert.h>
+#define myassert(cond, message) do {msg(message); assert(cond);} while(0)
+#else
+#define myassert(cond, message) do {if (!(cond)) {puts(message);exit(8);}} while(0)
+#endif // _DEBUG
+
 
 // enum type for input 
 enum

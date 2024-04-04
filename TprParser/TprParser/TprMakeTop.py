@@ -2,16 +2,164 @@
 import sys
 
 try:
-    from TprReader import TprReader
+    from TprParser.TprReader import TprReader
 except ImportError:
     sys.exit('Can not import TprReader')
 
+def _get_bonds(rd:TprReader):
+    """ @brief get bonds from tpr handle
+
+    Return
+    ------
+    return None if No bonds exits
+    """
+    bonds = None
+    try:
+        bonds = rd.get_bonded('bonds')
+    except:
+        pass
+    return bonds
+
+def _get_pairs(rd:TprReader):
+    """ @brief get pairs from tpr handle
+
+    Return
+    ------
+    return None if No pairs exits
+    """
+    pairs = None
+    try:
+        pairs = rd.get_nonbonded('pairs')
+    except:
+        pass
+    return pairs
+
+def _get_angles(rd:TprReader):
+    """ @brief get angles from tpr handle
+
+    Return
+    ------
+    return None if No angles exits
+    """
+    angles = None
+    try:
+        angles = rd.get_bonded('angles')
+    except:
+        pass
+    return angles
+
+def _get_dihedrals(rd:TprReader, type:str = 'dihedrals'):
+    """ @brief get dihedrals/impropers from tpr handle
+
+    Return
+    ------
+    return None if No dihedrals exits
+    """
+    dihedrals = None
+    try:
+        dihedrals = rd.get_bonded(type)
+    except:
+        pass
+    return dihedrals
+
 def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
+    """ @brief Make a gromacs top from given tpr file
+
+    Note
+    ----
+    The top is different from origin because some changes have been done by 
+    gmx grompp stage, like convert bonds to constrains by h-bonds in mdp, etc. 
+    """
     # get tpr handle
     rd = TprReader(fname)
 
-    # get atomtype
+    context = '[ moleculetype ]\n;name  nrexcl\nMOL    3\n\n'
+    # atoms
+    context += '[ atoms ]\n'
+    context += ';   nr  type  resi  res  atom  cgnr     charge      mass       ; qtot   bond_type\n'
+    atomtype = rd.get_name('type')
+    atomname = rd.get_name('atom')
+    resname = rd.get_name('res')
+    charge = rd.get_mq('q')
+    mass = rd.get_mq('m')
+    natoms = len(atomname)
+    for i in range(natoms):
+        context += '%5d %5s %5d %5s %5s %5d %10.6f %10.6f\n' %(
+            i+1, atomtype[i], 1, resname[i], atomname[i], i+1, 
+            charge[i], mass[i]
+        )
+    context += '\n'
+    # bonds
+    bonds = _get_bonds(rd)
+    if bonds is not None:
+        for i in range(bonds.shape[0]):
+            # [ constraints ] from constraints=h-bonds in mdp
+            if len(bonds[i][3:])==2 and abs(bonds[i][3]-bonds[i][4]) < 1E-5:
+                context += '[ constraints ] ; from mdp\n'
+            else:
+                context += '[ bonds ]\n'
 
+            # normal bonds
+            context += '%5d %5d %5d' %(
+                bonds[i][0], bonds[i][1], bonds[i][2]
+            )
+            for param in bonds[i][3:]:
+                context += ' %10.6e' %param
+            context += '\n'
+    context += '\n'
+
+    # get pairs
+    context += '[ pairs ]\n'
+    pairs = _get_pairs(rd)
+    if pairs is not None:
+        for i in range(pairs.shape[0]):
+            # normal bonds
+            context += '%5d %5d %5d ;' %(
+                pairs[i][0], pairs[i][1], pairs[i][2]
+            )
+            for param in pairs[i][3:]:
+                context += ' %10.6e' %param
+            context += '\n'
+    context += '\n'
+
+    context += '[ angles ]\n'
+    angles = _get_angles(rd)
+    if angles is not None:
+        for i in range(angles.shape[0]):
+            context += '%5d %5d %5d %5d' %(
+                angles[i][0], angles[i][1], angles[i][2], angles[i][3]
+            )
+            for param in angles[i][4:]:
+                context += ' %10.6e' %param
+            context += '\n'
+
+    context += '\n[ dihedrals ] ; proper\n'
+    dihedrals = _get_dihedrals(rd, 'dihedrals')
+    if dihedrals is not None:
+        for i in range(dihedrals.shape[0]):
+            context += '%5d %5d %5d %5d %5d' %(
+                dihedrals[i][0], dihedrals[i][1], dihedrals[i][2], dihedrals[i][3], 
+                dihedrals[i][4]
+            )
+            for param in dihedrals[i][5:]:
+                context += ' %10.6e' %param
+            context += '\n'
+
+    context += '\n[ dihedrals ] ; improper\n'
+    dihedrals = _get_dihedrals(rd, 'impropers')
+    if dihedrals is not None:
+        for i in range(dihedrals.shape[0]):
+            context += '%5d %5d %5d %5d %5d' %(
+                dihedrals[i][0], dihedrals[i][1], dihedrals[i][2], dihedrals[i][3], 
+                dihedrals[i][4]
+            )
+            for param in dihedrals[i][5:]:
+                context += ' %10.6e' %param
+            context += '\n'
+    # add tail
+    context += '\n[ system ]\n; dump from tpr via TprParser\n'
+    context += '\n[ molecules ]\nMOL      1\n'
+    print(context, file=open(topfile, 'w'))
 
     del rd
 

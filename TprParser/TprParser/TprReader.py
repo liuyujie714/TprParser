@@ -23,8 +23,9 @@ class TprReader:
     """
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
-    VecType3: TypeAlias = Literal['res', 'atom']
+    VecType3: TypeAlias = Literal['res', 'atom', 'type']
     BondedType: TypeAlias = Literal['bonds', 'angles', 'dihedrals', 'impropers']
+    NonBondedType: TypeAlias = Literal['pairs', 'lj', 'type']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
         self.tprCapsule = TprParser_.load(fname, bGRO, bMol2, bCharge)
     
@@ -231,6 +232,24 @@ class TprReader:
         bonded = TprParser_.get_bonded(self.tprCapsule, type)
         return np.array(bonded, dtype=object)
     
+    def get_nonbonded(self, type:NonBondedType):
+        
+        """ @brief get pairs (1-based index)/LJ parameters of each atom/atomtype LJ information from tpr.
+
+        Returns
+        -------
+        return a np.array(dtype=object), the length is the number of nonbonded. 
+
+        type='pairs', the length is the number of nonbonded, composed of [atomid pairs + force field parameters] (ifunc=1)
+
+        type='lj', the length is the number of atoms, composed of [force field parameters] (ifunc=3)
+
+        type='type', the length is the number of atomtypes, composed of [force field parameters] (ifunc=3)
+
+        """
+        nonbonded = TprParser_.get_nonbonded(self.tprCapsule, type)
+        return np.array(nonbonded, dtype=object)
+
 
 class SimSettings():
     """ @breif A wrapper of TprParser for setting multiple mdp parameters

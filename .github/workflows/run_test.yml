@@ -1,11 +1,11 @@
 name: TprParser
 
 on:
-  # push:
-  #   branches:
-  #     - master
-  schedule:
-    - cron: '0 1 * * *'  # 01:00 trigger
+  push:
+    branches:
+      - master
+  # schedule:
+  #   - cron: '0 1 * * *'  # 01:00 trigger
 
     
 jobs:

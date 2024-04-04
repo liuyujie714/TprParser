@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
 
 		{
 			TprReader reader("test/md.tpr", false, false);
+			//auto ret = reader.get_nonbonded("pairs");
 		}
 	}
 	catch (const std::exception&e)

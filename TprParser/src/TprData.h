@@ -87,6 +87,44 @@ struct Bonded
 	std::vector<float>	ff {}; // ff parameters
 };
 
+//< Non-Bonded pairs
+struct NonBonded
+{
+	NonBonded() = default; // used for std::vector .resize()
+
+	// pairs set
+	NonBonded(int i, int j, int functype, const std::vector<float>& ffparam)
+		: a(i), b(j), ifunc(functype), ff{ ffparam } {}
+
+	// LJ set
+	NonBonded(int functype, const std::vector<float>& ffparam)
+		: ifunc(functype), ff{ ffparam } {}
+	// LJ set by copy constructor
+	NonBonded(const NonBonded& rhs) noexcept
+	{
+		a = rhs.a; b = rhs.b; ifunc = rhs.ifunc;
+		ff = rhs.ff;
+	}
+
+	int operator[](size_t idx)
+	{
+		assert(idx >= 0 && idx < 2);
+		return idx == 0 ? a : b;
+	}
+
+	// const version
+	const int operator[](size_t idx) const 
+	{
+		assert(idx >= 0 && idx < 2);
+		return idx == 0 ? a : b;
+	}
+
+	int					a = 0; // atom1 of [ pairs ]
+	int					b = 0; // atom2 of [ pairs ]
+	int					ifunc = 0;
+	std::vector<float>	ff{}; // non-bonded parameters
+};
+
 
 struct TprData
 {
@@ -115,6 +153,7 @@ struct TprData
 	std::vector<float>	box = {}; //< box size
 	char				* symtab;//< symb name, truncate to 8 characters
 	int					symtablen, nmoltypes, nmolblock;
+	int					atnr; // the number of LJ type 
 
 	std::vector<int>	atomsinmol;
 	std::vector<int>	resinmol;
@@ -127,7 +166,7 @@ struct TprData
 	vecI2D				resids;
 	std::vector<int>	trueresids; // actually residues number in tpr
 	vecI2D				ptypes;
-	vecU2D				types;
+	vecU2D				types; // LJ param type id
 	vecI2D				atomnameids;
 	vecI2D				atomtypeids;
 	vecI2D				resnames;
@@ -280,6 +319,12 @@ struct TprData
 	std::vector<Bonded>		dihedrals;
 	// improper dihedrals (1-based)
 	std::vector<Bonded>		impropers;
+	// pairs/LJ_14
+	std::vector<NonBonded>	pairs;
+	// only the atomtype LJ parameters
+	std::vector<NonBonded>	atomtypesLJ; 
+	// all atoms LJ parameters
+	std::vector<NonBonded>	ljparams; 
 
 	// mdp属性位置, 所有变量都必须初始化为0
 	struct

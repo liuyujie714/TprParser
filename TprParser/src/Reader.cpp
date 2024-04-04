@@ -1,5 +1,6 @@
 #include <set>
-#include <string.h> // memset
+#include <cstring> // memset
+#include <cmath> // pow
 #include <algorithm>
 
 
@@ -334,19 +335,17 @@ bool TprReader::tpr_bonds()
                     if (ftype == F_SETTLE)
                     {
                         // doh, dHH, indx 0 1 2
-                        data_->bonds.push_back({ 1 + aoffset, 2 + aoffset,param.first, param.second });
-                        data_->bonds.push_back({ 1 + aoffset, 3 + aoffset,param.first, param.second });
+                        data_->bonds.emplace_back(1 + aoffset, 2 + aoffset, param.first, param.second);
+                        data_->bonds.emplace_back(1 + aoffset, 3 + aoffset, param.first, param.second);
                     }
                     else
                     {
                         int a = nspace * m + 1;
                         int b = nspace * m + 2;
-                        data_->bonds.push_back(
-                            {
-                                1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                                1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                                param.first, param.second
-                            }
+                        data_->bonds.emplace_back(
+                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                            param.first, param.second
                         );
                     }
                 }
@@ -369,12 +368,10 @@ bool TprReader::tpr_bonds()
                 int a = 3 * m + 1;
                 int b = 3 * m + 2;
                 auto param = get_bond_type(nameInter, &iparams_[itype]);
-                data_->bonds.push_back(
-                    {
-                        1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][a],
-                        1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][b],
-                        param.first, param.second
-                    }
+                data_->bonds.emplace_back(
+                    1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][a],
+                    1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][b],
+                    param.first, param.second
                 );
             }
         }
@@ -415,10 +412,10 @@ bool TprReader::tpr_bonds()
 
 bool TprReader::tpr_angles()
 {
-    // angles type
+    // angles type, drop F_SETTLE because angle from bonds
     const int interactions[] = {
         F_ANGLES, F_G96ANGLES, F_CROSS_BOND_BONDS, F_CROSS_BOND_ANGLES, F_UREY_BRADLEY,
-        F_QUARTIC_ANGLES, F_LINEAR_ANGLES, F_RESTRANGLES, F_TABANGLES, F_SETTLE
+        F_QUARTIC_ANGLES, F_LINEAR_ANGLES, F_RESTRANGLES, F_TABANGLES //, F_SETTLE
     };
     constexpr int nAngles = asize(interactions);
 
@@ -441,13 +438,11 @@ bool TprReader::tpr_angles()
                     int c = 4 * m + 3;
             
                     auto param = get_angle_type(ftype, &iparams_[itype]);
-                    data_->angles.push_back(
-                        {
-                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                            param.first, param.second
-                        }
+                    data_->angles.emplace_back(
+                        1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                        param.first, param.second
                     );
                 }
             }
@@ -493,14 +488,12 @@ bool TprReader::tpr_dihedrals()
                     int c = 5 * m + 3;
                     int d = 5 * m + 4;
                     auto param = get_dihedral_type(ftype, &iparams_[itype]);
-                    data_->dihedrals.push_back(
-                        {
-                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
-                            param.first, param.second
-                        }
+                    data_->dihedrals.emplace_back(
+                        1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
+                        param.first, param.second
                     );
                 }
             }
@@ -528,14 +521,12 @@ bool TprReader::tpr_dihedrals()
                     int c = 5 * m + 3;
                     int d = 5 * m + 4;
                     auto param = get_improper_type(ftype, &iparams_[itype]);
-                    data_->impropers.push_back(
-                        {
-                            1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                            1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
-                            param.first, param.second
-                        }
+                    data_->impropers.emplace_back(
+                        1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
+                        1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
+                        param.first, param.second
                     );
                 }
             }
@@ -554,13 +545,88 @@ bool TprReader::tpr_dihedrals()
     return TPR_SUCCESS;
 }
 
+bool TprReader::tpr_nonbonded()
+{
+    // get LJ
+    std::vector<NonBonded> tempLJ;
+    for (size_t i = 0; i < functype_.size(); i++)
+    {
+        if (functype_[i] == F_LJ)
+        {
+            auto param = get_nonbonded_type(functype_[i], &iparams_[i]);
+            tempLJ.emplace_back(param.first, param.second);
+        }
+    }
+    
+    int atnr = data_->atnr;
+    myassert(tempLJ.size() == atnr * atnr,
+        "Assert failed: The size of tempLJ must be square of data_->atnr");
+    data_->atomtypesLJ.resize(atnr);
+    for (int i = 0; i < atnr; i++)
+    {
+        for (int j = 0; j < atnr; j++)
+        {
+            if (i == j)
+            {
+                int idx = i * atnr + j;
+                data_->atomtypesLJ[i].ifunc = tempLJ[idx].ifunc;
+                // convert C6 and C12 to sigma and epsion
+                float sigma = 0, epsion = 0;
+                auto C6 = tempLJ[idx].ff[0];
+                auto C12 = tempLJ[idx].ff[1];
+                if (C6 * C12 != 0)
+                {
+                    sigma = std::powf(C12 / C6, 1.0f / 6);
+                    epsion = C6 * C6 / (4 * C12);
+                }
+                data_->atomtypesLJ[i].ff = { sigma, epsion };
+            }
+        }
+    }
+    
+    int aoffset = 0;
+    unsigned int idx = 0;
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int mtype = data_->molbtype[i];
+        for (int j = 0; j < data_->molbnmol[i]; j++)
+        {
+            // LJ for each atoms
+            for (int k = 0; k < data_->molbnatoms[i]; k++)
+            {
+                int itype = data_->types[mtype][k];
+                data_->ljparams.emplace_back(data_->atomtypesLJ[itype]);
+            }
+
+            // [ pairs ] 
+            constexpr int ftype = F_LJ14;
+            for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 3; m++)
+            {
+                int itype = data_->ilist.interactionlist[ftype][mtype][3 * m];
+                int a = 3 * m + 1;
+                int b = 3 * m + 2;
+                auto param = get_nonbonded_type(ftype, &iparams_[itype]);
+                data_->pairs.emplace_back(
+                    1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                    1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                    param.first, param.second
+                );
+            }
+            aoffset += data_->atomsinmol[mtype];
+        }
+    }
+
+    return TPR_SUCCESS;
+}
+
+
 bool TprReader::tpr_readff()
 {
-    int		            atnr, ntypes;
+    int		            ntypes;
 	double              reppow = 12.0;
 	float	            fudge = 0.5;
 
-	if (!tpr_.do_int(&atnr)) return TPR_FAILED;
+	if (!tpr_.do_int(&data_->atnr)) return TPR_FAILED;
 	if (!tpr_.do_int(&ntypes)) return TPR_FAILED;
 	msg("ntypes= %d\n", ntypes);
 
@@ -2616,6 +2682,41 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
         }
         return data_->impropers;
     }
+    default:
+        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        break;
+    }
+}
+
+const std::vector<NonBonded>& TprReader::get_nonbonded(const char* type) const
+{
+    // check input
+    NonBondedType evec;
+    if ((evec = check_string<NonBondedType>(type, c_nonbonded_type)) == NonBondedType::Count)
+    {
+        throw std::runtime_error(std::string("Unknown nonbonded property: ") + type);
+    }
+
+    switch (evec)
+    {
+    case NonBondedType::LJ:
+        if (data_->ljparams.empty())
+        {
+            throw std::runtime_error("Can not get LJ information from tpr");
+        }
+        return data_->ljparams;
+    case NonBondedType::atomtype:
+        if (data_->atomtypesLJ.empty())
+        {
+            throw std::runtime_error("Can not get atomtype LJ information from tpr");
+        }
+        return data_->atomtypesLJ;
+    case NonBondedType::LJ_14:
+        if (data_->pairs.empty())
+        {
+            throw std::runtime_error("Can not get LJ_14(pairs) information from tpr");
+        }
+        return data_->pairs;
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);
         break;

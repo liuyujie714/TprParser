@@ -125,6 +125,19 @@ static const char* c_bonded_type[static_cast<int>(BondedType::Count)] =
 	"bonds", "angles", "dihedrals", "impropers"
 };
 
+//< Non bonded type
+enum class NonBondedType : int
+{
+	LJ, 
+	atomtype,	// only [ atomtypes ]  
+	LJ_14,		// that is [ pairs ]
+	Count
+};
+static const char* c_nonbonded_type[static_cast<int>(NonBondedType::Count)] =
+{
+	"lj", "type", "pairs"
+};
+
 
 //< check key words in a c_string ignore case, return enum value if find, else return ENUM::Count
 template<typename ENUM, const int count = static_cast<int>(ENUM::Count)>

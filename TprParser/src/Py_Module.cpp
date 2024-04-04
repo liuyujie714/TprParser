@@ -359,43 +359,11 @@ static PyObject* get_name(PyObject* self, PyObject* args)
 	return list;
 }
 
-//< get bonds/angles/dihedrals/impropers (1-based index) pair of tpr
-static PyObject* get_bonded(PyObject* self, PyObject* args)
+
+//< get force field paramaters from vector
+template <typename T>
+static inline PyObject* get_ffparams(int nat, const std::vector<T> &vec)
 {
-	PyObject* capsule = NULL;
-	const char* type = NULL;
-
-	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
-	{
-		return NULL;
-	}
-
-	// get vector from handle
-	std::vector<Bonded> vec;
-	
-	TRY_THROW_EXCEPTION_FROM_OBJ(get_bonded, vec, type);
-
-	// type to releated the number of atoms
-	Py_ssize_t nat = 2;
-	switch (std::toupper(type[0]))
-	{
-		// bonds
-	case 'B':
-		nat = 2;
-		break;
-		// angles
-	case 'A':
-		nat = 3;
-		break;
-		// dihedrals/impropers
-	case 'D':
-	case 'I':
-		nat = 4;
-		break;
-	default:
-		break;
-	}
-
 	// coords to python list
 	PyObject* list = PyList_New(vec.size());
 	if (!list)
@@ -436,7 +404,7 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
 		PyList_SET_ITEM(ffparams, count++, value);
 
 		// append true ff parameters in float for all
-		for (Py_ssize_t k = 0; k < it.ff.size(); k++)
+		for (size_t k = 0; k < it.ff.size(); k++)
 		{
 			PyObject* value = PyFloat_FromDouble(static_cast<double>(it.ff[k]));
 			if (!value)
@@ -452,8 +420,79 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
 		// final obj
 		PyList_SET_ITEM(list, i++, ffparams);
 	}
-
 	return list;
+}
+
+//< get bonds/angles/dihedrals/impropers (1-based index) pair of tpr
+static PyObject* get_bonded(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = NULL;
+	const char* type = NULL;
+
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
+	{
+		return NULL;
+	}
+
+	// get vector from handle
+	std::vector<Bonded> vec;
+	TRY_THROW_EXCEPTION_FROM_OBJ(get_bonded, vec, type);
+
+	// type to releated the number of atoms
+	Py_ssize_t nat = 2;
+	switch (std::toupper(type[0]))
+	{
+		// bonds
+	case 'B':
+		nat = 2;
+		break;
+		// angles
+	case 'A':
+		nat = 3;
+		break;
+		// dihedrals/impropers
+	case 'D':
+	case 'I':
+		nat = 4;
+		break;
+	default:
+		break;
+	}
+
+	return get_ffparams<Bonded>(nat, vec);
+}
+
+//< get pairs (1-based index)/LJ parameters of each atom information from tpr
+static PyObject* get_nonbonded(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = NULL;
+	const char* type = NULL;
+
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
+	{
+		return NULL;
+	}
+
+	// get vector from handle
+	std::vector<NonBonded> vec;
+	TRY_THROW_EXCEPTION_FROM_OBJ(get_nonbonded, vec, type);
+
+	// type to releated the number of atoms
+	Py_ssize_t nat = 2;
+	switch (std::toupper(type[0]))
+	{
+	case 'P': // pairs
+		nat = 2;
+		break;
+	case 'L': // LJ for each atoms
+	case 'T': // LJ for unique atomtype
+		nat = 0;
+		break;
+	default:
+		break;
+	}
+
+	return get_ffparams<NonBonded>(nat, vec);
 }
 
 //< set atom coords/velocity/force
@@ -491,10 +530,11 @@ static PyMethodDef methods[] =
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
 	{"get_prec", get_prec, METH_VARARGS, "Get precision of tpr, float(4) or double(8)"},
-	{"get_mdp_integer", get_mdp_integer, METH_VARARGS, "get int value of keyword"},
+	{"get_mdp_integer", get_mdp_integer, METH_VARARGS, "Get int value of keyword"},
 	{"get_name", get_name, METH_VARARGS, "Get resname/atomname/atomtype from tpr"},
 	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
 	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers pairs (1-based index) information from tpr"},
+	{"get_nonbonded", get_nonbonded, METH_VARARGS, "Get pairs (1-based index)/LJ parameters of each atom information from tpr"},
 	{NULL, NULL, 0, NULL}
 };
 

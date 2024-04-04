@@ -146,6 +146,7 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
     default:
         break;
     }
+
     return std::make_pair(-1, ffparam);
 }
 
@@ -205,6 +206,28 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
         ffparam.push_back(param->harmonic.rB);
         ffparam.push_back(param->harmonic.krB);
         return std::make_pair(4, ffparam);
+    default:
+        break;
+    }
+    return std::make_pair(-1, ffparam);
+}
+
+std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams* param)
+{
+    std::vector<float> ffparam;
+
+    switch (ftype)
+    {
+    case F_LJ: // I set up functyepe=3
+        ffparam.push_back(param->lj.c6);
+        ffparam.push_back(param->lj.c12);
+        return std::make_pair(3, ffparam);
+    case F_LJ14: // [ pairs ], functype 1
+        ffparam.push_back(param->lj14.c6A);
+        ffparam.push_back(param->lj14.c12A);
+        ffparam.push_back(param->lj14.c6B);
+        ffparam.push_back(param->lj14.c12B);
+        return std::make_pair(1, ffparam);
     default:
         break;
     }
