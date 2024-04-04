@@ -133,11 +133,11 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
         ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
         ffparam.push_back(param->tab.kB);
         return std::make_pair(8, ffparam);
-    case F_LINEAR_ANGLES:
-        ffparam.push_back(param->linangle.klinA);
+    case F_LINEAR_ANGLES: // the order is different from tpr
         ffparam.push_back(param->linangle.aA);
-        ffparam.push_back(param->linangle.klinB);
+        ffparam.push_back(param->linangle.klinA);
         ffparam.push_back(param->linangle.aB);
+        ffparam.push_back(param->linangle.klinB);
         return std::make_pair(9, ffparam);
     case F_RESTRANGLES:
         ffparam.push_back(param->harmonic.rA);

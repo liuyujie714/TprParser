@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 		}
 
 		{
-			TprReader reader("test/md.tpr", false, false);
+			TprReader reader("test/CO2_LineAngle.tpr", false, false);
 			//auto ret = reader.get_nonbonded("pairs");
 		}
 	}

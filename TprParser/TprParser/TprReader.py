@@ -235,17 +235,16 @@ class TprReader:
     def get_nonbonded(self, type:NonBondedType):
         
         """ @brief get pairs (1-based index)/LJ parameters of each atom/atomtype LJ information from tpr.
-
-        Returns
-        -------
-        return a np.array(dtype=object), the length is the number of nonbonded. 
-
+        
         type='pairs', the length is the number of nonbonded, composed of [atomid pairs + force field parameters] (ifunc=1)
 
         type='lj', the length is the number of atoms, composed of [force field parameters] (ifunc=3)
 
         type='type', the length is the number of atomtypes, composed of [force field parameters] (ifunc=3)
 
+        Returns
+        -------
+        return a np.array(dtype=object), the length is the number of nonbonded. 
         """
         nonbonded = TprParser_.get_nonbonded(self.tprCapsule, type)
         return np.array(nonbonded, dtype=object)

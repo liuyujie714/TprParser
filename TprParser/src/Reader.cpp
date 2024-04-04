@@ -692,6 +692,7 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
         tpr_.do_real(&iparams->linangle.aA, prec);
         tpr_.do_real(&iparams->linangle.klinB, prec);
         tpr_.do_real(&iparams->linangle.aB, prec);
+
         break;
     case F_FENEBONDS:
         tpr_.do_real(&iparams->fene.bm, prec);
