@@ -141,6 +141,9 @@ public:
 	//< 2. get box info in vector 9
 	const std::vector<float>& get_xvf(const char* type) const;
 
+	//< get int vector, such resid, atomid...
+	const std::vector<int>& get_ivector(const char* type) const;
+
 	//< get resname, atomname
 	const std::vector<std::string>& get_name(const char *type) const;
 

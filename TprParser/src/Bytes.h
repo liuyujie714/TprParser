@@ -9,11 +9,7 @@
 #include "endianswap.h"
 
 #define TPR_SUCCESS true
-#define CPT_SUCCESS true
-#define EDR_SUCCESS true
 #define TPR_FAILED  false
-#define CPT_FAILED  false
-#define EDR_FAILED  false
 #define MIN(a, b) ((a)<(b)? (a):(b))
 #define SAVELEN 512
 #define CPT_MAGIC1 171817

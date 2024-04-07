@@ -135,6 +135,14 @@ with SimSettings('input.tpr', 'output.tpr') as writer:
     writer.set_nsteps(2000000)
 ```
 
+# Make a gromacs top 
+Note: `TprParser` must be >= `0.1.51`
+
+```python
+from TprParser.TprMakeTop import make_top_from_tpr
+
+make_top_from_tpr('md.tpr', 'out.top')
+```
 
 ## Other
 

@@ -97,6 +97,17 @@ static const char* c_mdp_vector[static_cast<int>(VecProps::Count)] =
 	"x", "v", "f", "m", "q", "box"
 };
 
+// int vector of tpr, such resid
+enum class IVectorProps : int
+{
+	resid,
+	Count
+};
+static const char* c_int_vector[static_cast<int>(IVectorProps::Count)] =
+{
+	"resid"
+};
+
 // vector of tpr, resname / atomname / atomtype name
 enum class StringType : int
 {

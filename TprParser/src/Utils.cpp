@@ -70,7 +70,7 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams *par
         ffparam.push_back(param->settle.doh);
         ffparam.push_back(param->settle.dhh);
         return std::make_pair(1, ffparam);
-    // 有些成键关系会转换成约束Constraint
+    // 有些成键关系会转换成约束Constraint，取决于mdp约束设置
     case F_CONSTR:
         ffparam.push_back(param->constr.dA); // 距离
         ffparam.push_back(param->constr.dB);

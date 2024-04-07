@@ -2600,6 +2600,30 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
     }
 }
 
+const std::vector<int>& TprReader::get_ivector(const char* type) const
+{
+    IVectorProps evec;
+    if ((evec = check_string<IVectorProps>(type, c_int_vector)) == IVectorProps::Count)
+    {
+        throw std::runtime_error(std::string("Unknown int vector property: ") + type);
+    }
+
+    switch (evec)
+    {
+    case IVectorProps::resid:
+    {
+        if (data_->atoms.resid.empty())
+        {
+            throw std::runtime_error("Can not get resid information");
+        }
+        return data_->atoms.resid;
+    }
+    default:
+        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        break;
+    }
+}
+
 const std::vector<std::string>& TprReader::get_name(const char* type) const
 {
     // check input, res, atom name
