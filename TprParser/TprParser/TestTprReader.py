@@ -6,30 +6,33 @@ from glob import glob
 import sys
 import numpy as np
 
+# All test tpr file: [natoms, prec]
 tprlist = {
     # No dihedrals
-    'md.tpr' : [2520], 
-    'md_cg.tpr' : [8], 
-    'semiP.tpr' : [4608],
-    'CO2_LineAngle.tpr' : [3000],
+    'md.tpr' :              [2520, 4], 
+    'md_cg.tpr' :           [8, 4], 
+    'semiP.tpr' :           [4608, 4],
+    'CO2_LineAngle.tpr' :   [3000, 4],
 
-    '1EBZ.tpr' : [3218], 
-    '2020.4_gra.tpr' : [4536], 
-    '2022.tpr' : [165706], 
-    '2023demo.tpr' : [165766],
-    '2lyz_gmx_2021.tpr' : [2263], 
-    '2lyz_gmx_2021_double.tpr' : [2263], 
-    '2lyz_gmx_4.0.tpr' : [2263], 
-    'ab42_gmx_4.6.1.tpr' : [44052], 
-    'annealing.tpr' : [347443], 
-    'benchMEM.tpr' : [81743], 
-    'double_2023.tpr' : [16844], 
-    'em.tpr' : [252], 
-    'Inter-2019.6.tpr' : [157488], 
-    'inter-md.tpr' : [13749], 
-    'large_2021_aa_posres.tpr' : [34466], 
-    'md2024.tpr' : [58385], 
-    'pull.tpr' : [94560],
+    '1EBZ.tpr' :            [3218, 4], 
+    '2020.4_gra.tpr' :      [4536, 4], 
+    '2022.tpr' :            [165706, 4], 
+    '2023demo.tpr' :        [165766, 4],
+    '2lyz_gmx_2021.tpr' :   [2263, 4], 
+    '2lyz_gmx_2021_double.tpr' : [2263, 8], 
+    '2lyz_gmx_4.0.tpr' :    [2263, 4], 
+    'ab42_gmx_4.6.1.tpr' :  [44052, 4], 
+    'annealing.tpr' :       [347443, 4], 
+    'benchMEM.tpr' :        [81743, 4], 
+    'double_2023.tpr' :     [16844, 8], 
+    'em.tpr' :              [252, 4], 
+    'Inter-2019.6.tpr' :    [157488, 4], 
+    'inter-md.tpr' :        [13749, 4], 
+    'large_2021_aa_posres.tpr' : [34466, 4], 
+    'md2024.tpr' :          [58385, 4], 
+    'pull.tpr' :            [94560, 4],
+    'nobox.tpr' :           [13, 4],
+    'cg_big.tpr':           [290482, 4]
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:4]]
 
@@ -61,6 +64,9 @@ def test_get_name(handle, ftype):
 def test_tot_atoms(handle, natoms, fname):
     assert natoms == len(handle.get_name('res')), f"The number of atoms is wrong in file {fname}"
 
+def test_precision(handle:TprReader, fname, prec=4):
+    assert prec == handle.get_prec(), f"The precision is not euqal to {prec} for file: {fname}"
+
 def test_make_top_from_tpr(tpr, top):
     from TprParser.TprMakeTop import make_top_from_tpr
     try:
@@ -80,9 +86,17 @@ def do_test():
         # total atoms
         test_tot_atoms(reader, tprlist[name][0], fname)
 
+        # test tpr precision
+        if 'double' in fname:
+            test_precision(reader, fname, 8)
+        else:
+            test_precision(reader, fname, 4)
+
+        # test coords/velocity
         test_get_xvf(reader, 'x')
         test_get_xvf(reader, 'v')
         
+        # test bonded
         test_get_bonded(reader, 'bonds')
         # pure water use settle, no angle
         if 'semiP.tpr' not in fname:
@@ -92,16 +106,19 @@ def do_test():
             test_get_bonded(reader, 'dihedrals')
             test_get_bonded(reader, 'impropers')
 
+        # test atomic mass and charge
         test_get_mq(reader, 'm')
         test_get_mq(reader, 'q')
 
+        # tets resname, atomname, atomtype
         test_get_name(reader, 'res')
         test_get_name(reader, 'atom')
+        test_get_name(reader, 'type')
         
         # need delete obj
         del reader
 
-        # top testing
+        # test write gromacs top from tpr
         test_make_top_from_tpr(fname, 'md.top')
 
 def do_test2():

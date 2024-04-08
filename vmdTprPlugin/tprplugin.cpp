@@ -97,7 +97,7 @@ static int read_tpr_structure(void* mydata, int* optflags, molfile_atom_t* atoms
 		auto atom = atoms + i; // to next pointer
 		atom->mass		= mass[i];
 		atom->charge	= charge[i];
-		atom->resid		= resid[i];
+		atom->resid		= resid[i] % 100000; // fix must be <= 99999 for gro format
 		strcpy(atom->name, atomname[i].c_str());
 		strcpy(atom->resname, resname[i].c_str());
 		strcpy(atom->type, atype[i].c_str());
