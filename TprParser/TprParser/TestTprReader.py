@@ -119,7 +119,9 @@ def do_test():
         del reader
 
         # test write gromacs top from tpr
-        test_make_top_from_tpr(fname, 'md.top')
+        # 2023demo.tpr not include atomnumber of atomtype, so skip it 
+        if '2023demo' not in fname:
+            test_make_top_from_tpr(fname, 'md.top')
 
 def do_test2():
     fout = 'output.tpr'
