@@ -24,6 +24,7 @@ class TprReader:
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
     VecType3: TypeAlias = Literal['res', 'atom', 'type']
+    VecType4: TypeAlias = Literal['resid', 'atnum']
     BondedType: TypeAlias = Literal['bonds', 'angles', 'dihedrals', 'impropers']
     NonBondedType: TypeAlias = Literal['pairs', 'lj', 'type']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
@@ -169,6 +170,20 @@ class TprReader:
         vec = TprParser_.get_xvf(self.tprCapsule, type)
         return np.array(vec, np.float32)
     
+    def get_ivector(self, type:VecType4):
+        """ @brief get resid/atomtypenumber from tpr
+
+        Parameters
+        ----------
+        type: must be 'resid', 'atnum', represents resid/atomtypenumber to get
+
+        Return
+        ------
+        return a np.array(dtype='<i'), the length is natoms for resid, the atomtypes for atnum
+        """
+        vec = TprParser_.get_ivector(self.tprCapsule, type)
+        return np.array(vec, np.int32)
+
     def get_name(self, type:VecType3):
         """ @brief get resname/atomname/atomtype from tpr
 
@@ -178,7 +193,7 @@ class TprReader:
 
         Returns
         -------
-        return a np.array(dtype='<U'), the lengths is natoms
+        return a np.array(dtype='<U'), the length is natoms
         """
         vec = TprParser_.get_name(self.tprCapsule, type)
         return np.array(vec, dtype='<U')
@@ -240,7 +255,7 @@ class TprReader:
 
         type='lj', the length is the number of atoms, composed of [force field parameters] (ifunc=3)
 
-        type='type', the length is the number of atomtypes, composed of [force field parameters] (ifunc=3)
+        type='type', the length is the number of [ atomtypes ], composed of [force field parameters] (ifunc=3)
 
         Returns
         -------

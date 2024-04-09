@@ -1181,8 +1181,10 @@ bool TprReader::do_atomtypes()
         if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
         if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
     }
-    std::vector<int> atomnumbers(nr);
-    if (!tpr_.do_vector(atomnumbers.data(), nr, data_->prec)) return TPR_FAILED;
+
+    // read atomtype number [ atomtypes ]
+    data_->atoms.atomtypenumber.resize(nr);
+    if (!tpr_.do_vector(data_->atoms.atomtypenumber.data(), nr, data_->prec)) return TPR_FAILED;
 
     if (data_->filever >= 60 && data_->filever < tpxv_RemoveImplicitSolvation)
     {
@@ -2617,6 +2619,14 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
             throw std::runtime_error("Can not get resid information");
         }
         return data_->atoms.resid;
+    }
+    case IVectorProps::atnum:
+    {
+        if (data_->atoms.atomtypenumber.empty())
+        {
+            throw std::runtime_error("Can not get atomtype number information");
+        }
+        return data_->atoms.atomtypenumber;
     }
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);

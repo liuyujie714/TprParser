@@ -101,11 +101,12 @@ static const char* c_mdp_vector[static_cast<int>(VecProps::Count)] =
 enum class IVectorProps : int
 {
 	resid,
+	atnum, // atomtype number
 	Count
 };
 static const char* c_int_vector[static_cast<int>(IVectorProps::Count)] =
 {
-	"resid"
+	"resid", "atnum"
 };
 
 // vector of tpr, resname / atomname / atomtype name

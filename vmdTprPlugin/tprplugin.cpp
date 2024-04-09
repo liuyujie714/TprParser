@@ -220,8 +220,8 @@ static int read_tpr_bonds(void* mydata, int* nbonds, int** from, int** to, float
 		*to = emalloc<int>(nb);
 		for (int i = 0; i < nb; i++)
 		{
-			(*from)[i] = bonds[i][0];
-			(*to)[i]   = bonds[i][1];
+			(*from)[i]     = bonds[i].a;
+			(*to)[i]       = bonds[i].b;
 		}
 	}
 	catch (...)
@@ -269,11 +269,12 @@ static int read_tpr_angles(void* mydata, int* numangles, int** angles, int** ang
 		int nA = static_cast<int>(ang.size());
 		*numangles = nA;
 		*angles = emalloc<int>(nA * 3L);
+
 		for (int i = 0; i < nA; i++)
 		{
-			(*angles)[3L * i] = ang[i][0];
-			(*angles)[3L * i + 1] = ang[i][1];
-			(*angles)[3L * i + 2] = ang[i][2];
+			(*angles)[3L * i]     = ang[i].a;
+			(*angles)[3L * i + 1] = ang[i].b;
+			(*angles)[3L * i + 2] = ang[i].c;
 		}
 	}
 	catch (...)
@@ -290,9 +291,10 @@ static int read_tpr_angles(void* mydata, int* numangles, int** angles, int** ang
 		*dihedrals = emalloc<int>(nD * 4L);
 		for (int i = 0; i < nD; i++)
 		{
-			(*dihedrals)[4L * i] = dih[i][0];
-			(*dihedrals)[4L * i + 1] = dih[i][1];
-			(*dihedrals)[4L * i + 2] = dih[i][2];
+			(*dihedrals)[4L * i]     = dih[i].a;
+			(*dihedrals)[4L * i + 1] = dih[i].b;
+			(*dihedrals)[4L * i + 2] = dih[i].c;
+			(*dihedrals)[4L * i + 3] = dih[i].d;
 		}
 	}
 	catch (...)
@@ -310,9 +312,10 @@ static int read_tpr_angles(void* mydata, int* numangles, int** angles, int** ang
 		*impropers = emalloc<int>(nImp * 4L);
 		for (int i = 0; i < nImp; i++)
 		{
-			(*impropers)[4L * i] = improper[i][0];
-			(*impropers)[4L * i + 1] = improper[i][1];
-			(*impropers)[4L * i + 2] = improper[i][2];
+			(*impropers)[4L * i]     = improper[i].a;
+			(*impropers)[4L * i + 1] = improper[i].b;
+			(*impropers)[4L * i + 2] = improper[i].c;
+			(*impropers)[4L * i + 3] = improper[i].d;
 		}
 	}
 	catch (...)

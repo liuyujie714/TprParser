@@ -6,6 +6,7 @@
 #include <array>
 #include <utility>
 #include <cassert>
+#include <stdexcept>
 #include <tuple> // std::tie
 
 
@@ -15,6 +16,18 @@
 using vecI2D = std::vector<std::vector<int>>;
 using vecF2D = std::vector<std::vector<float>>;
 using vecU2D = std::vector<std::vector<unsigned short>>;
+
+
+//< code can reach
+static inline void unreachable() {
+#if HAS_BUILTIN_UNREACHABLE
+	__builtin_unreachable();
+#elif defined(_MSC_VER)
+	__assume(false);
+#else
+	throw std::runtime_error("entered unreachable code");
+#endif
+}
 
 // bonded pairs and ff parameters, such as bonds, angle, dihedrals
 struct Bonded
@@ -46,7 +59,7 @@ struct Bonded
 	}
 
 	// return a, b, c, d according to index 0-3
-	int operator[](size_t idx)
+	int &operator[](size_t idx)
 	{
 		assert(idx >= 0 && idx < 4);
 		switch (idx)
@@ -56,7 +69,7 @@ struct Bonded
 		case 2: return c;
 		case 3: return d;
 		}
-		return 2;
+		unreachable();
 	}
 	// const version
 	const int operator[](size_t idx) const
@@ -69,7 +82,7 @@ struct Bonded
 		case 2: return c;
 		case 3: return d;
 		}
-		return 2;
+		unreachable();
 	}
 
 	// 不去重复用vector
@@ -106,7 +119,7 @@ struct NonBonded
 		ff = rhs.ff;
 	}
 
-	int operator[](size_t idx)
+	int &operator[](size_t idx)
 	{
 		assert(idx >= 0 && idx < 2);
 		return idx == 0 ? a : b;
@@ -304,6 +317,7 @@ struct TprData
 		std::vector<std::string>	atomname;
 		std::vector<std::string>	resname;
 		std::vector<std::string>	atomtypename; // atom type name from .ff
+		std::vector<int>			atomtypenumber; // atomtype number
 		std::vector<int>			resid;
 		std::vector<float>			mass;
 		std::vector<float>			charge;

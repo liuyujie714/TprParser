@@ -298,6 +298,53 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
 	return list;
 }
 
+
+// get resid, atomtype number 
+static PyObject* get_ivector(PyObject* self, PyObject* args)
+{
+	PyObject* capsule = NULL;
+	const char* type = NULL;
+
+	// get object handle
+	if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
+	{
+		return NULL;
+	}
+
+	TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, "TprParser_"));
+	if (!reader)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");
+		return NULL;
+	}
+
+	std::vector<int> vec;
+	TRY_THROW_EXCEPTION_FROM_OBJ(get_ivector, vec, type);
+
+	// ivector to python list
+	PyObject* list = PyList_New(vec.size());
+	if (!list)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not new list for ivector");
+		return NULL;
+	}
+	Py_ssize_t i = 0;
+	for (const auto& it : vec)
+	{
+		PyObject* value = PyLong_FromLong(static_cast<long>(it));
+		if (!value)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Can not convert ivector to list");
+			Py_DECREF(list); // free list
+			return NULL;
+		}
+		PyList_SET_ITEM(list, i++, value);
+	}
+
+	return list;
+}
+
+
 // get precision of tpr
 static PyObject* get_prec(PyObject* self, PyObject* args)
 {
@@ -533,6 +580,7 @@ static PyMethodDef methods[] =
 	{"get_mdp_integer", get_mdp_integer, METH_VARARGS, "Get int value of keyword"},
 	{"get_name", get_name, METH_VARARGS, "Get resname/atomname/atomtype from tpr"},
 	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
+	{"get_ivector", get_ivector, METH_VARARGS, "Get resid/atomtypenumber from tpr"},
 	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers pairs (1-based index) information from tpr"},
 	{"get_nonbonded", get_nonbonded, METH_VARARGS, "Get pairs (1-based index)/LJ parameters of each atom information from tpr"},
 	{NULL, NULL, 0, NULL}
