@@ -103,7 +103,7 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
     charge   = rd.get_mq('q')
     mass     = rd.get_mq('m')
     resids   = rd.get_ivector('resid')
-    atnums   = rd.get_ivector('atnum')
+    # atnums   = rd.get_ivector('atnum') # some tpr not include atomnumber!
     ljparams = _get_atomtypes(rd)
     natoms   = len(atomname)
 
