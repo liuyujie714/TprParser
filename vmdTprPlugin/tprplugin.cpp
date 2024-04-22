@@ -28,18 +28,54 @@ T* emalloc(size_t nelem)
 	return p;
 }
 
+struct TprPlugin
+{
+	TprPlugin() : tpr(NULL), from(NULL), to(NULL),
+		angles(NULL), dihedrals(NULL), impropers(NULL), has_read(false)
+	{
+	}
+
+	~TprPlugin()
+	{
+		if (tpr) {
+			delete tpr; tpr = NULL;
+		}
+		if (from) {
+			free(from); from = NULL;
+		}
+		if (to) {
+			free(to); to = NULL;
+		}
+		if (angles) {
+			free(angles); angles = NULL;
+		}
+		if (dihedrals) {
+			free(dihedrals); dihedrals = NULL;
+		}
+		if (impropers) {
+			free(impropers); impropers = NULL;
+		}
+	}
+
+	TprReader	* tpr = NULL; // tpr handle
+	//! some pointer to record address, for free memory
+	int			* from, * to;
+	int			*angles, *dihedrals, *impropers;
+	bool		has_read = false; //< if read coords
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif // _cplusplus
 
-static bool has_read = false;
 // get tpr total atoms
 static void* open_tpr_read(const char* fname, const char* ftype, int* natoms)
 {
-	TprReader* tpr = nullptr;
+	TprPlugin * tprplugin = nullptr;
 	try
 	{
-		tpr = new TprReader(fname);
+		tprplugin = new TprPlugin;
+		tprplugin->tpr = new TprReader(fname);
 	}
 	catch (const std::exception&e)
 	{
@@ -53,17 +89,17 @@ static void* open_tpr_read(const char* fname, const char* ftype, int* natoms)
 	}
 
 	// return natoms and tpr class
-	*natoms = static_cast<int>(tpr->get_name("atom").size());
+	*natoms = static_cast<int>(tprplugin->tpr->get_name("atom").size());
 	// init value
-	has_read = false;
+	tprplugin->has_read = false;
 
-	return tpr;
+	return tprplugin;
 }
 
 static void close_tpr_read(void* mydata)
 {
-	TprReader* tpr = static_cast<TprReader*>(mydata);
-	delete tpr;
+	TprPlugin * tprplugin = static_cast<TprPlugin*>(mydata);
+	delete tprplugin;
 }
 
 // get atom mass, charge, resname, atomname, atomtype
@@ -72,7 +108,8 @@ static int read_tpr_structure(void* mydata, int* optflags, molfile_atom_t* atoms
 	// 提供原子属性
 	*optflags = MOLFILE_ATOMICNUMBER | MOLFILE_MASS | MOLFILE_CHARGE;
 
-	TprReader* tpr = static_cast<TprReader*> (mydata);
+	TprPlugin* tprplugin = static_cast<TprPlugin*> (mydata);
+	auto tpr = tprplugin->tpr;
 	std::vector<float> mass, charge;
 	std::vector<int> resid;
 	std::vector<std::string> resname, atomname, atype;
@@ -111,14 +148,14 @@ static int read_tpr_structure(void* mydata, int* optflags, molfile_atom_t* atoms
 //< check if has velocity
 static int read_tpr_timestep_metadata(void* mydata, molfile_timestep_metadata_t* meta) {
 
-	TprReader* tpr = static_cast<TprReader*> (mydata);
+	TprPlugin* tprplugin = static_cast<TprPlugin*> (mydata);
 	meta->count = -1;
 	meta->has_velocities = 0;
 
 	// determine if has velocity
 	try
 	{
-		const auto &velocities = tpr->get_xvf("v");
+		const auto &velocities = tprplugin->tpr->get_xvf("v");
 		meta->has_velocities = !velocities.empty();
 	}
 	catch (...)
@@ -132,15 +169,16 @@ static int read_tpr_timestep_metadata(void* mydata, molfile_timestep_metadata_t*
 // read coords !
 static int read_tpr_timestep(void* mydata, int natoms, molfile_timestep_t* ts)
 {
-	if (has_read) return MOLFILE_ERROR;
+	TprPlugin* tprplugin = static_cast<TprPlugin*>(mydata);
 
-	TprReader* tpr = static_cast<TprReader*>(mydata);
+	if (tprplugin->has_read) return MOLFILE_ERROR;
+
 	if (ts != NULL)
 	{
 		try
 		{
 			std::vector<float> coords;
-			coords = tpr->get_xvf("x");
+			coords = tprplugin->tpr->get_xvf("x");
 			for (size_t i = 0; i < 3L * natoms; i++)
 			{
 				ts->coords[i] = coords[i] * 10; // to A
@@ -156,7 +194,7 @@ static int read_tpr_timestep(void* mydata, int natoms, molfile_timestep_t* ts)
 		try
 		{
 			std::vector<float> velocity;
-			velocity = tpr->get_xvf("v");
+			velocity = tprplugin->tpr->get_xvf("v");
 			for (size_t i = 0; i < 3L * natoms; i++)
 			{
 				ts->velocities[i] = velocity[i] * 10; // to A/ps
@@ -171,7 +209,7 @@ static int read_tpr_timestep(void* mydata, int natoms, molfile_timestep_t* ts)
 		//box if exist
 		try
 		{
-			std::vector<float> box = tpr->get_xvf("box");
+			std::vector<float> box = tprplugin->tpr->get_xvf("box");
 
 			ts->A = sqrt(box[0] * box[0] + box[1] * box[1] + box[2] * box[2]) * 10;
 			ts->B = sqrt(box[3] * box[3] + box[4] * box[4] + box[5] * box[5]) * 10;
@@ -195,7 +233,7 @@ static int read_tpr_timestep(void* mydata, int natoms, molfile_timestep_t* ts)
 		}
 	}
 
-	has_read = true;
+	tprplugin->has_read = true;
 	return MOLFILE_SUCCESS;
 }
 
@@ -210,14 +248,14 @@ static int read_tpr_bonds(void* mydata, int* nbonds, int** from, int** to, float
 	*nbondtypes = 0;
 	*bondtypename = NULL;
 
-	TprReader* tpr = static_cast<TprReader*>(mydata);
+	TprPlugin* tprplugin = static_cast<TprPlugin*>(mydata);
 	try
 	{
-		const std::vector<Bonded> &bonds = tpr->get_bonded("bonds");
+		const std::vector<Bonded> &bonds = tprplugin->tpr->get_bonded("bonds");
 		int nb = static_cast<int>(bonds.size());
 		*nbonds = nb;
-		*from = emalloc<int>(nb);
-		*to = emalloc<int>(nb);
+		*from = tprplugin->from = emalloc<int>(nb);
+		*to = tprplugin->to = emalloc<int>(nb);
 		for (int i = 0; i < nb; i++)
 		{
 			(*from)[i]     = bonds[i].a;
@@ -262,13 +300,13 @@ static int read_tpr_angles(void* mydata, int* numangles, int** angles, int** ang
 	*ctermcols = 0;
 
 	// angles
-	TprReader* tpr = static_cast<TprReader*>(mydata);
+	TprPlugin* tprplugin = static_cast<TprPlugin*>(mydata);
 	try
 	{
-		const std::vector<Bonded>& ang = tpr->get_bonded("angles");
+		const std::vector<Bonded>& ang = tprplugin->tpr->get_bonded("angles");
 		int nA = static_cast<int>(ang.size());
 		*numangles = nA;
-		*angles = emalloc<int>(nA * 3L);
+		*angles = tprplugin->angles = emalloc<int>(nA * 3L);
 
 		for (int i = 0; i < nA; i++)
 		{
@@ -285,10 +323,10 @@ static int read_tpr_angles(void* mydata, int* numangles, int** angles, int** ang
 	// dihedrals
 	try
 	{
-		const std::vector<Bonded>& dih = tpr->get_bonded("dihedrals");
+		const std::vector<Bonded>& dih = tprplugin->tpr->get_bonded("dihedrals");
 		int nD = static_cast<int>(dih.size());
 		*numdihedrals = nD;
-		*dihedrals = emalloc<int>(nD * 4L);
+		*dihedrals = tprplugin->dihedrals = emalloc<int>(nD * 4L);
 		for (int i = 0; i < nD; i++)
 		{
 			(*dihedrals)[4L * i]     = dih[i].a;
@@ -306,10 +344,10 @@ static int read_tpr_angles(void* mydata, int* numangles, int** angles, int** ang
 	// impropers
 	try
 	{
-		const std::vector<Bonded>& improper = tpr->get_bonded("impropers");
+		const std::vector<Bonded>& improper = tprplugin->tpr->get_bonded("impropers");
 		int nImp = static_cast<int>(improper.size());
 		*numimpropers = nImp;
-		*impropers = emalloc<int>(nImp * 4L);
+		*impropers = tprplugin->impropers = emalloc<int>(nImp * 4L);
 		for (int i = 0; i < nImp; i++)
 		{
 			(*impropers)[4L * i]     = improper[i].a;
