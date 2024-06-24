@@ -71,7 +71,7 @@ extern "C" {
 // get tpr total atoms
 static void* open_tpr_read(const char* fname, const char* ftype, int* natoms)
 {
-	TprPlugin * tprplugin = nullptr;
+	TprPlugin * tprplugin = NULL;
 	try
 	{
 		tprplugin = new TprPlugin;
@@ -80,12 +80,12 @@ static void* open_tpr_read(const char* fname, const char* ftype, int* natoms)
 	catch (const std::exception&e)
 	{
 		fprintf(stderr, "tprplugin) ERROR: %s\n", e.what());
-		return nullptr;
+		return NULL;
 	}
 	catch (...)
 	{
 		fprintf(stderr, "tprplugin) Unknown exception\n");
-		return nullptr;
+		return NULL;
 	}
 
 	// return natoms and tpr class

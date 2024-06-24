@@ -120,13 +120,14 @@ public:
 	//< change tpr atomic coordinates
 	bool set_xvf(const char* type, std::vector<float>& vec);
 
-	//< set pressure coupling parts
+	//< set pressure coupling parts, includes deform
 	bool set_pressure(
 		const char* method,
 		const char* type,
 		float tau_p,
 		std::vector<float>& ref_p,
-		std::vector<float>& compress);
+		std::vector<float>& compress,
+		std::vector<float>& deform);
 
 	//< set temperature coupling parts. Have not yet set groups name
 	bool set_temperature(

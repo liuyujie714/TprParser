@@ -41,11 +41,12 @@ enum class PressureCouplingType : int
 {
 	Isotropic,
 	SemiIsotropic,
+	Anisotropic,
 	Count
 };
 static const char* c_PressureCouplingType[static_cast<int>(PressureCouplingType::Count)] =
 {
-	"Isotropic", "SemiIsotropic"
+	"Isotropic", "SemiIsotropic", "Anisotropic"
 };
 
 //< temperature coupling methods

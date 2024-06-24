@@ -71,22 +71,23 @@ class TprReader:
         """
         return TprParser_.set_xvf(self.tprCapsule, type, np.array(vec, dtype=np.float32).flatten())
     
-    def set_pressure(self, epc, epct, tau_p, ref_p, compress):
+    def set_pressure(self, epc, epct, tau_p, ref_p, compress, deform=np.zeros(9, dtype=np.float32)):
         """ @brief set up pressure coulping parts of tpr
 
         Parameters
         ----------
         epc: pressure coupling method, No, Berendsen, ParrinelloRahman, CRescale
-        epct: pressure coupling type, Isotropic, SemiIsotropic
+        epct: pressure coupling type, Isotropic, SemiIsotropic, Anisotropic
         tau_p: the pressure coupling constant
         ref_p: a list of pressure in bar, the length must be 9
         compress: a list of compressibility in bar^-1, the length must be 9
+        deform: optional, a list of deform value in nm/ps, the length must be 9, default all zero
 
         Returns
         -------
         return True if succeed
         """
-        return TprParser_.set_pressure(self.tprCapsule, epc, epct, tau_p, ref_p, compress)
+        return TprParser_.set_pressure(self.tprCapsule, epc, epct, tau_p, ref_p, compress, deform)
     
     def set_temperature(self, etc, tau_t:list, ref_t:list):
         """ @brief set up temperature coulping parts of tpr
@@ -315,9 +316,9 @@ class SimSettings():
         reader = None
         self.__movefile()
 
-    def set_pressure(self, epc, epct, tau_p, ref_p, compress):
+    def set_pressure(self, epc, epct, tau_p, ref_p, compress, deform=np.zeros(9, dtype=np.float32)):
         reader = TprReader(self.tempname)
-        reader.set_pressure(epc, epct, tau_p, ref_p, compress)
+        reader.set_pressure(epc, epct, tau_p, ref_p, compress, deform)
         reader = None
         self.__movefile()
 

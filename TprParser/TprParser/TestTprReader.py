@@ -158,6 +158,24 @@ def do_test2():
                                         0,0,1,
                                     ]
                                     )
+                # add deform
+                writer.set_pressure('Berendsen', 'Anisotropic', 1.0, 
+                                    [
+                                        100,0, 0,
+                                        0, 100,0,
+                                        0, 0, 100
+                                    ],
+                                    [
+                                        1,0,0,
+                                        0,1,0,
+                                        0,0,1,
+                                    ],
+                                    [
+                                        0, 0, 0,
+                                        0, 0, 0,
+                                        0.01, 0, 0
+                                    ]
+                                    )
                 newX = 152*np.ones(shape=(tprlist[name][0], 3))
                 newV = 110*np.ones(shape=(tprlist[name][0], 3))
                 writer.set_xvf('x', newX)

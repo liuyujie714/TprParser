@@ -1740,6 +1740,7 @@ bool TprReader::do_ir()
     }
     msg("ld_seed= %lld\n", ir->ld_seed);
 
+    INSERT_POS(press.deform); // for change deform = 
     if (!tpr_.do_vector(ir->deform, DIM*DIM, data_->prec)) return TPR_FAILED;
     print_vec("deform= ", ir->deform);
 
@@ -2250,8 +2251,18 @@ bool TprReader::set_dt(double dt)
 }
 
 
-//< set up box rel
-static inline void do_box_rel(int ndim, const float deform[DIM][DIM], float box_rel[DIM][DIM], float b[DIM][DIM], bool bInit)
+//< set up relative box
+// \param[in] deform: the ir->deform 
+// \param[out] box_rel: the relative box 
+// \param[in/out] b: the system box
+// \param[in] bInit: get box_rel if true, else return b
+static inline void do_box_rel(
+             int ndim,
+             const float deform[DIM][DIM], 
+             float box_rel[DIM][DIM], 
+             float b[DIM][DIM],
+             bool bInit
+)
 {
     for (int d = YY; d <= ZZ; ++d)
     {
@@ -2279,7 +2290,11 @@ static inline void do_box_rel(int ndim, const float deform[DIM][DIM], float box_
 
 
 
-bool TprReader::set_pressure(const char* method, const char* type, float tau_p, std::vector<float>& ref_p, std::vector<float>& compress)
+bool TprReader::set_pressure(
+    const char* method, const char* type, float tau_p, 
+    std::vector<float>& ref_p, 
+    std::vector<float>& compress,
+    std::vector<float>& deform)
 {
     // check data type float must be same as data_->prec
     if (sizeof(float) != data_->prec)
@@ -2306,6 +2321,11 @@ bool TprReader::set_pressure(const char* method, const char* type, float tau_p, 
     if (compress.size() != DIM * DIM)
     {
         throw std::runtime_error("The size of compressibility must be 9");
+    }
+    // deform
+    if (deform.size() != DIM * DIM)
+    {
+        throw std::runtime_error("The size of deform must be 9");
     }
 
     // only for fileversion >= 51
@@ -2335,7 +2355,7 @@ bool TprReader::set_pressure(const char* method, const char* type, float tau_p, 
         {
             const int ndim = (epct == PressureCouplingType::SemiIsotropic) ? 2 : 3;
             do_box_rel(ndim,
-                (float(*)[DIM])data_->ir.deform,
+                (const float(*)[DIM])data_->ir.deform,
                 (float(*)[DIM])box_rel,
                 (float(*)[DIM])data_->box.data(),
                 true);
@@ -2374,12 +2394,22 @@ bool TprReader::set_pressure(const char* method, const char* type, float tau_p, 
         // write compress in vector
         if (!newtpr.do_vector(compress.data(), DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
 
-        // write compress after
+        // write compress after and deform before
         constexpr size_t size = sizeof(float) * DIM * DIM;
-        len = fsize - data_->property.press.compress - size;
+        len = data_->property.press.deform - data_->property.press.compress - size;
         if (newtpr.fwrite_(&buffer[data_->property.press.compress + size], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_pressure after");
+            throw std::runtime_error("fwrite_ error in set_pressure after and deform before");
+        }
+
+        // write deform in vector
+        if (!newtpr.do_vector(deform.data(), DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+
+        // write deform after
+        len = fsize - data_->property.press.deform - size;
+        if (newtpr.fwrite_(&buffer[data_->property.press.deform + size], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in set_pressure deform after");
         }
 
         return TPR_SUCCESS;

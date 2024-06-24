@@ -360,11 +360,12 @@ struct TprData
 			long	tau_p = 0; //< the started tau_p position
 			long	ref_p = 0; //< the started ref pressure value position, is DIM*DIM vector
 			long	compress = 0; //< the started compressibility value position, is DIM*DIM vector
+			long	deform = 0;//< the started deform value positon, is DIM*DIM vector
 
 			//< return False if get all parameters
 			bool empty() const
 			{
-				return !(box_rel && epc && epct && tau_p && ref_p && compress);
+				return !(box_rel && epc && epct && tau_p && ref_p && compress && deform);
 			}
 		} press;
 		

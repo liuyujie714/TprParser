@@ -169,10 +169,11 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 	float			tau_p;
 	PyObject		* ref_p = NULL;
 	PyObject		* compress = NULL;
+	PyObject		* deform = NULL;
 
-	static const char* keywords[] = { "capsule", "epc", "epct", "tau_p", "ref_p", "compress", NULL };
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OssfOO",
-		(char**)keywords, &capsule, &epc, &epct, &tau_p, &ref_p, &compress))
+	static const char* keywords[] = { "capsule", "epc", "epct", "tau_p", "ref_p", "compress", "deform", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OssfOOO",
+		(char**)keywords, &capsule, &epc, &epct, &tau_p, &ref_p, &compress, &deform))
 	{
 		return NULL;
 	}
@@ -185,8 +186,12 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 	std::vector<float> vec_compress;
 	if (!get_vector_float(compress, vec_compress)) return NULL;
 
+	// get deform
+	std::vector<float> vec_deform;
+	if (!get_vector_float(deform, vec_deform)) return NULL;
+
 	int ret;
-	TRY_THROW_EXCEPTION_FROM_OBJ(set_pressure, ret, epc, epct, tau_p, vec_press, vec_compress);
+	TRY_THROW_EXCEPTION_FROM_OBJ(set_pressure, ret, epc, epct, tau_p, vec_press, vec_compress, vec_deform);
 
 	Py_RETURN_TRUE;
 }

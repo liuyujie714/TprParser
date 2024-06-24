@@ -114,8 +114,19 @@ def Pressure(fname):
     assert len(compress) == 9
     # use ParrinelloRahman algorithm and Isotropic pressure coupling method
     reader.set_pressure('ParrinelloRahman', 'Isotropic', 1.0, ref_p, compress)
-
 ```
+
+Also can change deform parameters for `TprParser` must be >= `0.1.52`
+```python
+# optional modify deform
+deform = [
+  0, 0, 0,
+  0, 0, 0,
+  0.01, 0, 0
+]
+reader.set_pressure('Berendsen', 'anisotropic', 1.0, ref_p, compress, deform)
+```
+
 
 # Modify system temperature
 ```python
