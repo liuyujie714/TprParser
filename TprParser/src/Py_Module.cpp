@@ -121,7 +121,7 @@ static inline PyObject * get_vector_float(PyObject* vec_obj, std::vector<float> 
 			PyErr_SetString(PyExc_RuntimeError, "Input numpy dimension is not equal 1");
 			return NULL;
 		}
-		float* data = (float*)PyArray_DATA(vec_obj);
+		float* data = (float*)PyArray_DATA(arr);
 		vec.assign(data, data + dims[0]);
 	}
 	// if is list
