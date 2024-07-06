@@ -21,7 +21,7 @@ class TprReader:
         bCharge: bool, default ``False``
             If output a plain text file contained atom mass and charge
     """
-    VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX']
+    VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX', 'ef', 'EF']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
     VecType3: TypeAlias = Literal['res', 'atom', 'type']
     VecType4: TypeAlias = Literal['resid', 'atnum']
@@ -143,19 +143,20 @@ class TprReader:
         return TprParser_.get_mdp_integer(self.tprCapsule, keyword)
         
     def get_xvf(self, type:VecType) -> np.array:
-        """ @brief get atomic coordinates/velocity/force/box from tpr if exist. 
-        the unit is nm, nm/ps, kJ/mol/nm, nm
+        """ @brief get atomic coordinates/velocity/force/box/electric-field from tpr if exist. 
+        the unit is nm, nm/ps, kJ/mol/nm, nm, gmx unit
 
         Parameters
         ----------
-        type: must be 'X', 'V', 'F', 'BOX', represents atomic coordinates/velocity/force/box to get
+        type: must be 'X', 'V', 'F', 'BOX', 'EF' represents atomic coordinates/velocity/force/box/electric-field to get
 
         Returns
         -------
-        return a np.array(dtype=np.float32), the dimension is natoms * 3, except box is 3*3
+        return a np.array(dtype=np.float32), the dimension is natoms * 3, except box is 3*3, electric-field is 3*4
         """
         vec = TprParser_.get_xvf(self.tprCapsule, type)
-        return np.array(vec, np.float32).reshape(-1, 3)
+        ncol = 4 if type=='ef' or type=='EF' else 3
+        return np.array(vec, np.float32).reshape(-1, ncol)
     
     def get_mq(self, type:VecType2):
         """ @brief get atomic mass/charge from tpr

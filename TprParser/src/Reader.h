@@ -142,6 +142,7 @@ public:
 
 	//< 1. get coords/velocity/force/mass/charge
 	//< 2. get box info in vector 9
+	//< 3. get electric field in vector DIM * 4 = 12
 	const std::vector<float>& get_xvf(const char* type) const;
 
 	//< get int vector, such resid, atomid...
@@ -163,7 +164,7 @@ public:
 	int get_mdp_integer(const char* prop) const;
 
 	//< get electric field parts, throw error if can not find electric field
-	const std::array<std::array<float, 4>, DIM> &get_ef() const;
+	const std::vector<float> &get_ef() const;
 
 private:
 	//< assistant func to write tpr given new coords, velocity or force

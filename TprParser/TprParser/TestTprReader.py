@@ -32,7 +32,9 @@ tprlist = {
     'md2024.tpr' :          [58385, 4], 
     'pull.tpr' :            [94560, 4],
     'nobox.tpr' :           [13, 4],
-    'cg_big.tpr':           [290482, 4]
+    'cg_big.tpr':           [290482, 4],
+    'elec.tpr':             [45, 4],
+    'elecxyz.tpr':          [45, 4],
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:4]]
 
@@ -95,7 +97,11 @@ def do_test():
         # test coords/velocity
         test_get_xvf(reader, 'x')
         test_get_xvf(reader, 'v')
-        
+
+        # test electric field to get
+        if 'elec' in fname:
+            test_get_xvf(reader, 'ef')
+
         # test bonded
         test_get_bonded(reader, 'bonds')
         # pure water use settle, no angle

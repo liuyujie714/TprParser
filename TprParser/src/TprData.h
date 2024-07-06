@@ -297,8 +297,8 @@ struct TprData
 		std::vector<std::array<float, DIM>> acceleration; // 每个组在三个方向时候被冻结，维度ngacc
 		std::vector<int>	egp_flags; // 能量组每对之间的Exclusions/tables，维度ngener*ngener
 
-		// 新电场部分，不支持旧版本gmx电场参数保存. 每个维度四个数：E0, omega, t0, sigma
-		std::array<std::array<float, 4>, DIM> elec_field = {};
+		// 新电场部分，不支持旧版本gmx电场参数保存. DIM*4 每个维度四个数：E0, omega, t0, sigma
+		std::vector<float>	elec_field;
 	} ir;
 
 

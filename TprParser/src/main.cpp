@@ -32,12 +32,8 @@ int main(int argc, char *argv[])
 			TprReader reader("test/elecxyz.tpr");
 			auto &ef = reader.get_ef();
 			std::cout << "Electric field:\n";
-			char axis = 'X';
 			for (auto& e : ef) {
-				std::cout << axis++ << "\t" << e[0] << "\t";
-				std::cout << e[1] << "\t";
-				std::cout << e[2] << "\t";
-				std::cout << e[3] << std::endl;
+				std::cout << e << "\t";
 			}
 		}
 

@@ -2029,6 +2029,7 @@ bool TprReader::do_ir()
     if (data_->filever >= tpxv_GenericParamsForElectricField)
     {
         // 目前只针对applied-forces中含有电场部分，如果有其他部分，则读取失败，直接返回成功状态，因为我不想让tpr读取功能崩溃
+        ir->elec_field.resize(12, 0);
         try
         {
             char tempstr[MAX_LEN];
@@ -2080,7 +2081,7 @@ bool TprReader::do_ir()
                             if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                             msg("typeTag= '%c'\n", typeTag); // 'f' -> float
 
-                            if (!tpr_.do_real(&ir->elec_field[k][m], data_->prec)) return TPR_FAILED;
+                            if (!tpr_.do_real(&ir->elec_field[k * nd + m], data_->prec)) return TPR_FAILED;
                         }
                     }
 
@@ -2094,9 +2095,9 @@ bool TprReader::do_ir()
             msg("Warning! Electric field paramaters can not be read: %s\n", e.what());
             return TPR_SUCCESS;
         }
-        print_vec("ElecX= ", ir->elec_field[0].data(), 4);
-        print_vec("ElecY= ", ir->elec_field[1].data(), 4);
-        print_vec("ElecZ= ", ir->elec_field[2].data(), 4);
+        print_vec("ElecX= ", ir->elec_field.data()+0, 4);
+        print_vec("ElecY= ", ir->elec_field.data()+4, 4);
+        print_vec("ElecZ= ", ir->elec_field.data()+8, 4);
     }
 
 #endif // 0
@@ -2730,7 +2731,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
 
 const std::vector<float>& TprReader::get_xvf(const char* type) const
 {
-    // check input type, must X, or V or F or M or Q or box
+    // check input type, must X, or V or F or M or Q or box or electric field
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
@@ -2792,6 +2793,10 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
             throw std::runtime_error("Have not box information in tpr");
         }
         return data_->box;
+    }
+    case VecProps::ef:
+    {
+        return get_ef();
     }
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);
@@ -2991,13 +2996,16 @@ int TprReader::get_mdp_integer(const char* prop) const
     return -1;
 }
 
-const std::array<std::array<float, 4>, DIM> & TprReader::get_ef() const
+const std::vector<float> &TprReader::get_ef() const
 {
-    bool no_ef = std::all_of(data_->ir.elec_field.begin(), data_->ir.elec_field.end(),
-        [](std::array<float, 4>& elec) {
-            return elec[0] == 0.0f; // 场强E0全0
-        });
-    if (no_ef) throw std::runtime_error("Error! Have not electric field in tpr");
+    // 场强E0全0
+    if (data_->ir.elec_field.empty() || 
+        (data_->ir.elec_field[0] == 0.0f &&
+         data_->ir.elec_field[4] == 0.0f &&
+         data_->ir.elec_field[8] == 0.0f) )
+    {
+        throw std::runtime_error("Error! Have not electric field in tpr");
+    }
     return data_->ir.elec_field;
 }
 
