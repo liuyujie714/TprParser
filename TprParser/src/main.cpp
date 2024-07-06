@@ -1,8 +1,10 @@
 /*
 * update: 
 * 2024.06.24 - support set up deform 
+* 2024.07.07 - support read electric field
 */
 
+#include <iostream>
 #include "Reader.h"
 
 int main(int argc, char *argv[])
@@ -22,6 +24,22 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/2lyz_gmx_2021.tpr");
 		//TprReader reader("test/2020.4_gra.tpr");
 		//TprReader reader("test/annealing.tpr");
+
+		// 电场测试
+		{
+			//TprReader reader("test/2022.tpr");
+			//TprReader reader("test/elec.tpr");
+			TprReader reader("test/elecxyz.tpr");
+			auto &ef = reader.get_ef();
+			std::cout << "Electric field:\n";
+			char axis = 'X';
+			for (auto& e : ef) {
+				std::cout << axis++ << "\t" << e[0] << "\t";
+				std::cout << e[1] << "\t";
+				std::cout << e[2] << "\t";
+				std::cout << e[3] << std::endl;
+			}
+		}
 
 		// 修改MD总步数(模拟时长)
 		{
@@ -59,7 +77,7 @@ int main(int argc, char *argv[])
 		}
 
 		{
-			TprReader reader("test/CO2_LineAngle.tpr", false, false);
+			//TprReader reader("test/CO2_LineAngle.tpr", false, false);
 			//auto ret = reader.get_nonbonded("pairs");
 		}
 	}

@@ -21,7 +21,7 @@ do { \
 
 #ifdef _DEBUG
 #include <assert.h>
-#define myassert(cond, message) do {msg(message); assert(cond);} while(0)
+#define myassert(cond, message) do {assert(cond);} while(0)
 #else
 #define myassert(cond, message) do {if (!(cond)) {puts(message);exit(8);}} while(0)
 #endif // _DEBUG

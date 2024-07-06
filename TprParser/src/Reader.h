@@ -93,21 +93,23 @@ public:
 	//< dump charges and mass
 	bool tpr_chargemass();
 
-	//< dump bonds of tpr, can only store angle and harmonic force constant
+	//< dump bonds of tpr, can store angle and harmonic force constant
 	bool tpr_bonds();
 
-	//< dump angles of tpr, can only store angle and harmonic force constant
+	//< dump angles of tpr, can store angle and harmonic force constant
 	bool tpr_angles();
 
-	/*  \brief dump ALL dihedrals of tpr.
-	* Can not store dihedrals parameters
+	/*  \brief dump ALL dihedrals of tpr, can store dihedrals parameters
 	*/
 	bool tpr_dihedrals();
 
 	//< dump non-bonded parameters, includes LJ and paris
 	bool tpr_nonbonded();
 
-	//< do_ir
+	/*< do_ir, have not yet completely completed
+	* Unfinished: 
+	* Pull, AWH, Enforced rotation, IMD, ComputationalElectrophysiology, etc.
+	*/
 	bool do_ir();
 
 public:
@@ -159,6 +161,9 @@ public:
 
 	//< get integer mdp parameters
 	int get_mdp_integer(const char* prop) const;
+
+	//< get electric field parts, throw error if can not find electric field
+	const std::array<std::array<float, 4>, DIM> &get_ef() const;
 
 private:
 	//< assistant func to write tpr given new coords, velocity or force

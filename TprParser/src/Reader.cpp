@@ -31,11 +31,11 @@ bool TprReader::tpr_header()
 
 static void print_vec(const char *name, float *arr, int len = DIM*DIM)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
     msg(name);
     for (int i = 0; i < len; i++) fprintf(stderr, "%f ", arr[i]);
     printf("\n");
-#endif // DEBUG
+#endif // _DEBUG
 }
 
 bool TprReader::tpr_body()
@@ -57,16 +57,16 @@ bool TprReader::tpr_body()
 	if (!tpr_.do_int(&data_->vergen)) return TPR_FAILED;
 	msg("file generator: %d\n", data_->vergen);
 
-	// string ?
+	// release string ?
 	if (data_->filever >= 81)
 	{
 		char buf[MAX_LEN];
-		int tempint;
-		// 前4个字节未使用
-		if (!tpr_.do_int(&tempint)) return TPR_FAILED;
+        int tempint;
+        // 前4个字节未使用
+        if (!tpr_.do_int(&tempint)) return TPR_FAILED;
 
 		if (!tpr_.xdr_string(buf, MAX_LEN)) return TPR_FAILED;
-		msg("%s\n", buf);
+		msg("fileTag= %s\n", buf);
 	}
 
 	// natoms and ngtc
@@ -172,7 +172,7 @@ bool TprReader::tpr_mtop()
 	// 原子类型名称和组名
 	for (int i = 0; i < data_->symtablen; i++)
 	{
-		tpr_.tpr_save_string(&data_->symtab[SAVELEN * i], data_->vergen);
+		if (!tpr_.save_string(&data_->symtab[SAVELEN * i], data_->vergen)) return TPR_FAILED;
 
 		// print symb
 		if constexpr (0)
@@ -1930,9 +1930,176 @@ bool TprReader::do_ir()
         if (!tpr_.do_vector(ir->anneal_temp[i].data(), k, data_->prec, data_->vergen)) return TPR_FAILED;
 
     }
-#endif // 0
 
-    // 墙, TODO
+    // 墙
+    {
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        msg("The number of wall= %d\n", idum);
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to enum
+        msg("The type of wall= %d\n", idum);
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        msg("wall_r_linpot= %g\n", rdum);
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        msg("wall_atomtype[0]= %d\n", idum);
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        msg("wall_atomtype[1]= %d\n", idum);
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        msg("wall_density[0]= %g\n", rdum);
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        msg("wall_density[1]= %g\n", rdum);
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        msg("wall_ewald_zfac= %g\n", rdum);
+    }
+
+    // 低版本gmx电场
+    if (data_->filever < tpxv_GenericParamsForElectricField)
+    {
+        for (int i = 0; i < DIM; i++)
+        {
+            // n和nt不可大于1
+            int n, nt;
+            if (!tpr_.do_int(&n)) return TPR_FAILED;
+            if (!tpr_.do_int(&nt)) return TPR_FAILED;
+            // +1 确保容器正常
+            std::vector<float> aa(n + 1), phi(nt + 1), at(nt + 1), phit(nt + 1);
+            if (!tpr_.do_vector(aa.data(),  n, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_vector(phi.data(), n, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_vector(at.data(),  nt,data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_vector(phit.data(),nt,data_->prec)) return TPR_FAILED;
+            msg("n= %d, nt= %d\n", n, nt);
+            if (n > 0)
+            {
+                if (n > 1 || nt > 1)
+                {
+                    throw std::runtime_error("Can not handle tpr files with more than one electric field term per direction.");
+                }
+                msg("dim=%d, E0=    %g\n", i, aa[0]);
+                msg("dim=%d, omega= %g\n", i, at[0]);
+                msg("dim=%d, t0=    %g\n", i, phi[0]);
+                msg("dim=%d, sigma= %g\n", i, phit[0]);
+            }
+        }
+    }
+
+    // 计算电生理学: 未完成
+    if (data_->filever >= tpxv_ComputationalElectrophysiology)
+    {
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to enum
+        msg("swapcoords= %d\n", idum); // No=0, X, Y, Z
+        if (idum != 0)
+        {
+            // do_swapcoords_tpx 
+            return TPR_SUCCESS;
+            throw std::runtime_error("Unsupport Computational Electrophysiology");
+        }
+    }
+
+    // QMMM
+    bool bQMMM = false;
+    if (!tpr_.do_bool(&bQMMM, data_->vergen)) return TPR_FAILED;
+    msg("bQMMM= %d\n", bQMMM ? 1 : 0);
+    if (!tpr_.do_int(&idum)) return TPR_FAILED; // qmmmScheme
+    msg("qmmmScheme= %d\n", idum);
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; // unusedScalefactor
+    msg("unusedScalefactor= %g\n", rdum);
+    int ngQM = 0;
+    if (!tpr_.do_int(&ngQM)) return TPR_FAILED;
+    msg("ngQM= %d\n", ngQM);
+    // 读旧的QMMM参数
+    if (bQMMM && ngQM > 0)
+    {
+        std::vector<int> dumi(4 * ngQM, 0);
+        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec)) return TPR_FAILED;
+
+        // std::vector<bool> has no data()
+        std::vector<char> dumc(ngQM * sizeof(bool) / sizeof(char));
+        if (!tpr_.do_vector(reinterpret_cast<bool*>(dumc.data()), (int)dumc.size(), data_->prec)) return TPR_FAILED;
+
+        dumi.resize(2 * ngQM, 0);
+        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec)) return TPR_FAILED;
+
+        std::vector<float> dumf(2 *ngQM, 0);
+        if (!tpr_.do_vector(dumf.data(), (int)dumf.size(), data_->prec)) return TPR_FAILED;
+
+        dumi.resize(3 * ngQM, 0);
+        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec)) return TPR_FAILED;
+    }
+
+    // 高版本gmx电场：此处为树结构
+    if (data_->filever >= tpxv_GenericParamsForElectricField)
+    {
+        // 目前只针对applied-forces中含有电场部分，如果有其他部分，则读取失败，直接返回成功状态，因为我不想让tpr读取功能崩溃
+        try
+        {
+            char tempstr[MAX_LEN];
+            unsigned char typeTag;
+
+            int nf;
+            if (!tpr_.do_int(&nf)) return TPR_FAILED;
+            msg("nf count= %d\n", nf);
+            // 'applied-forces' item
+            for (int i = 0; i < nf; i++)
+            {
+                if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                msg("name= '%s'\n", tempstr);
+                if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
+                msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
+
+                // 'electric-field' when j==0
+                int ne;
+                if (!tpr_.do_int(&ne)) return TPR_FAILED;
+                msg("ne count= %d\n", ne);
+                for (int j = 0; j < ne; j++)
+                {
+                    if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                    msg("name= '%s'\n", tempstr);
+                    if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
+                    msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
+
+                    // x or y or z
+                    int ndim;
+                    if (!tpr_.do_int(&ndim)) return TPR_FAILED;
+                    msg("nx count= %d\n", ndim); // == DIM
+                    for (int k = 0; k < ndim; k++)
+                    {
+                        if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                        msg("name= '%s'\n", tempstr);
+                        if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
+                        msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
+
+                        // E0, omega, t0, sigma
+                        int nd;
+                        if (!tpr_.do_int(&nd)) return TPR_FAILED;
+                        msg("nd count= %d\n", nd); // == 4
+                        myassert(nd == 4, "The electricfield size must have four parameters");
+
+                        for (int m = 0; m < nd; m++)
+                        {
+                            if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                            msg("name= '%s'\n", tempstr);
+                            if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
+                            msg("typeTag= '%c'\n", typeTag); // 'f' -> float
+
+                            if (!tpr_.do_real(&ir->elec_field[k][m], data_->prec)) return TPR_FAILED;
+                        }
+                    }
+
+                    // TODO: when ne>1 for high gromacs tpr, support 'density-guided-simulation', 'qmmm-cp2k:' to read
+                    break;
+                }
+            }
+        }
+        catch (const std::exception&e)
+        {
+            msg("Warning! Electric field paramaters can not be read: %s\n", e.what());
+            return TPR_SUCCESS;
+        }
+        print_vec("ElecX= ", ir->elec_field[0].data(), 4);
+        print_vec("ElecY= ", ir->elec_field[1].data(), 4);
+        print_vec("ElecZ= ", ir->elec_field[2].data(), 4);
+    }
+
+#endif // 0
 
     return TPR_SUCCESS;
 }
@@ -2113,13 +2280,13 @@ bool TprReader::do_groups()
         for (const auto& id : gid[i])
         {
             const char* gpname = &data_->symtab[SAVELEN * gpos[id]];
-#ifdef DEBUG
+#ifdef _DEBUG
             fprintf(stderr, " %s", gpname);
         }
         fprintf(stderr, "]\n");
 #else
         }
-#endif // DEBUG
+#endif // _DEBUG
     }
 
     return TPR_SUCCESS;
@@ -2822,6 +2989,16 @@ int TprReader::get_mdp_integer(const char* prop) const
         break;
     }
     return -1;
+}
+
+const std::array<std::array<float, 4>, DIM> & TprReader::get_ef() const
+{
+    bool no_ef = std::all_of(data_->ir.elec_field.begin(), data_->ir.elec_field.end(),
+        [](std::array<float, 4>& elec) {
+            return elec[0] == 0.0f; // 场强E0全0
+        });
+    if (no_ef) throw std::runtime_error("Error! Have not electric field in tpr");
+    return data_->ir.elec_field;
 }
 
 bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const

@@ -309,7 +309,11 @@ public:
 	{
 		for (int i = 0; i < len; i++)
 		{
-			if constexpr (std::is_same_v<T, unsigned char>)
+			if constexpr (std::is_same_v<T, bool>)
+			{
+				if (!do_bool(&arr[i], vergen)) return TPR_FAILED;
+			}
+			else if constexpr (std::is_same_v<T, unsigned char>)
 			{
 				if (!do_uchar(&arr[i], vergen)) return TPR_FAILED;
 			}
@@ -331,7 +335,7 @@ public:
 			}
 			else
 			{
-				throw std::runtime_error("Unsupport type for do_vector\n");
+				throw std::runtime_error(std::string("Unsupport type for do_vector: ") + typeid(T).name());
 			}
 		}
 		return TPR_SUCCESS;
@@ -376,8 +380,8 @@ public:
 		}
 	}
 
-	// save string to saveloc
-	bool tpr_save_string(char* saveloc, int genversion) 
+	// Save string to saveloc, use this function used in gmx::ISerializer class
+	bool save_string(char* saveloc, int genversion) 
 	{
 		int			i;
 		char		buf[MAX_LEN];
