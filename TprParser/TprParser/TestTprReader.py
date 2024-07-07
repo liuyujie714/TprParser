@@ -193,10 +193,10 @@ def do_test2():
                     # E0, omega, t0, sigma for each dim
                     ef = [
                         10, 0, 0,   0,
-                        10, 0, 1.2, 0,
+                        10, 0, 1.5, 0,
                         10, 0, 0,   2.0
                     ]
-                    ef = np.array(ef)
+                    ef = np.array(ef, dtype=np.float32)
                     writer.set_xvf('ef', ef)
             
         # assert modify parameters
@@ -209,7 +209,7 @@ def do_test2():
             assert np.all(newV==v)  
             # assert electric-field
             if 'elecxyz' in fname:
-                assert np.all(ef==reader.get_xvf('ef'))
+                assert np.all(ef==reader.get_xvf('ef').flatten)
             
         if '4.0' not in name:
             assert reader.get_mdp_integer('nstxout') == 100
