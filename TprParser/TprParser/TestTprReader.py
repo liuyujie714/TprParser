@@ -209,7 +209,7 @@ def do_test2():
             assert np.all(newV==v)  
             # assert electric-field
             if 'elecxyz' in fname:
-                assert np.all(ef==reader.get_xvf('ef').flatten)
+                assert np.all(ef==reader.get_xvf('ef').flatten())
             
         if '4.0' not in name:
             assert reader.get_mdp_integer('nstxout') == 100
