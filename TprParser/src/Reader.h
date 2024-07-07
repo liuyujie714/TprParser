@@ -108,7 +108,7 @@ public:
 
 	/*< do_ir, have not yet completely completed
 	* Unfinished: 
-	* Pull, AWH, Enforced rotation, IMD, ComputationalElectrophysiology, etc.
+	*	- Pull, AWH, Enforced rotation, IMD, ComputationalElectrophysiology, etc.
 	*/
 	bool do_ir();
 
@@ -119,7 +119,7 @@ public:
 	//< change tpr file dt (ps)
 	bool set_dt(double dt);
 
-	//< change tpr atomic coordinates
+	//< change tpr vector property
 	bool set_xvf(const char* type, std::vector<float>& vec);
 
 	//< set pressure coupling parts, includes deform
@@ -169,6 +169,9 @@ public:
 private:
 	//< assistant func to write tpr given new coords, velocity or force
 	bool write_xvf(std::vector<float>& vec, long pos, long prec) const;
+
+	//< assistant func to write electric field to tpr
+	bool write_ef(std::vector<float>& vec, long pos, long prec) const;
 
 	//< read forcefield parameters
 	bool tpr_readff();

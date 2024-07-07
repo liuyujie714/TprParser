@@ -172,7 +172,7 @@ bool TprReader::tpr_mtop()
 	// 原子类型名称和组名
 	for (int i = 0; i < data_->symtablen; i++)
 	{
-		if (!tpr_.save_string(&data_->symtab[SAVELEN * i], data_->vergen)) return TPR_FAILED;
+		if (!tpr_.do_string(&data_->symtab[SAVELEN * i], data_->vergen)) return TPR_FAILED;
 
 		// print symb
 		if constexpr (0)
@@ -1954,12 +1954,17 @@ bool TprReader::do_ir()
     // 低版本gmx电场
     if (data_->filever < tpxv_GenericParamsForElectricField)
     {
+        ir->elec_field.resize(12, 0.0f); // init zero
+        INSERT_POS(ef);
         for (int i = 0; i < DIM; i++)
         {
             // n和nt不可大于1
             int n, nt;
             if (!tpr_.do_int(&n)) return TPR_FAILED;
             if (!tpr_.do_int(&nt)) return TPR_FAILED;
+            ir->elec_old_gmx[i].n = n;
+            ir->elec_old_gmx[i].nt = nt;
+
             // +1 确保容器正常
             std::vector<float> aa(n + 1), phi(nt + 1), at(nt + 1), phit(nt + 1);
             if (!tpr_.do_vector(aa.data(),  n, data_->prec)) return TPR_FAILED;
@@ -1977,8 +1982,17 @@ bool TprReader::do_ir()
                 msg("dim=%d, omega= %g\n", i, at[0]);
                 msg("dim=%d, t0=    %g\n", i, phi[0]);
                 msg("dim=%d, sigma= %g\n", i, phit[0]);
+
+                // store ef
+                ir->elec_field[i * 4 + 0] = aa[0];
+                ir->elec_field[i * 4 + 1] = at[0];
+                ir->elec_field[i * 4 + 2] = phi[0];
+                ir->elec_field[i * 4 + 3] = phit[0];
             }
         }
+        print_vec("ElecX= ", ir->elec_field.data() + 0, 4);
+        print_vec("ElecY= ", ir->elec_field.data() + 4, 4);
+        print_vec("ElecZ= ", ir->elec_field.data() + 8, 4);
     }
 
     // 计算电生理学: 未完成
@@ -2029,30 +2043,29 @@ bool TprReader::do_ir()
     if (data_->filever >= tpxv_GenericParamsForElectricField)
     {
         // 目前只针对applied-forces中含有电场部分，如果有其他部分，则读取失败，直接返回成功状态，因为我不想让tpr读取功能崩溃
-        ir->elec_field.resize(12, 0);
+        ir->elec_field.resize(12, 0.0f);
+        INSERT_POS(ef);
         try
         {
             char tempstr[MAX_LEN];
             unsigned char typeTag;
 
-            int nf;
-            if (!tpr_.do_int(&nf)) return TPR_FAILED;
-            msg("nf count= %d\n", nf);
+            if (!tpr_.do_int(&data_->ir.elec_nf)) return TPR_FAILED;
+            msg("nf count= %d\n", data_->ir.elec_nf);
             // 'applied-forces' item
-            for (int i = 0; i < nf; i++)
+            for (int i = 0; i < data_->ir.elec_nf; i++)
             {
-                if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                 msg("name= '%s'\n", tempstr);
                 if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                 msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
 
                 // 'electric-field' when j==0
-                int ne;
-                if (!tpr_.do_int(&ne)) return TPR_FAILED;
-                msg("ne count= %d\n", ne);
-                for (int j = 0; j < ne; j++)
+                if (!tpr_.do_int(&data_->ir.elec_ne)) return TPR_FAILED;
+                msg("ne count= %d\n", data_->ir.elec_ne);
+                for (int j = 0; j < data_->ir.elec_ne; j++)
                 {
-                    if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                    if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                     msg("name= '%s'\n", tempstr);
                     if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                     msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
@@ -2063,7 +2076,7 @@ bool TprReader::do_ir()
                     msg("nx count= %d\n", ndim); // == DIM
                     for (int k = 0; k < ndim; k++)
                     {
-                        if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                        if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                         msg("name= '%s'\n", tempstr);
                         if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                         msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
@@ -2076,7 +2089,7 @@ bool TprReader::do_ir()
 
                         for (int m = 0; m < nd; m++)
                         {
-                            if (!tpr_.save_string(tempstr, data_->vergen)) return TPR_FAILED;
+                            if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                             msg("name= '%s'\n", tempstr);
                             if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                             msg("typeTag= '%c'\n", typeTag); // 'f' -> float
@@ -2085,7 +2098,7 @@ bool TprReader::do_ir()
                         }
                     }
 
-                    // TODO: when ne>1 for high gromacs tpr, support 'density-guided-simulation', 'qmmm-cp2k:' to read
+                    // TODO: when ir.elec_ne>1 for high gromacs , support 'density-guided-simulation', 'qmmm-cp2k:' to read
                     break;
                 }
             }
@@ -3025,7 +3038,7 @@ bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
         }
 
         // write new vector
-        if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_SUCCESS;
+        if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_FAILED;
 
         // write vector after
         size_t size = vec.size() * sizeof(float);
@@ -3034,6 +3047,117 @@ bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
         {
             throw std::runtime_error("fwrite_ error in write_xvf after");
         }
+        return TPR_SUCCESS;
+    }
+
+    return TPR_FAILED;
+}
+
+bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
+{
+    long            fsize = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+
+    if (!(fsize && pos)) return TPR_FAILED;
+
+    // 低版本电场
+    if (data_->filever < tpxv_GenericParamsForElectricField)
+    {
+        FileSerializer  newtpr(fout_, "wb");
+        // write ef before 
+        if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in write_ef before");
+        }
+
+        auto tempvec(vec); // copy 
+        // ajdust order, vec：E0, omega, t0, sigma
+        for (int i = 0; i < DIM; i++) {
+            std::swap(tempvec[i * 4 + 1], tempvec[i * 4 + 2]);
+        }
+        long nskip = 0; // how many bytes to write for electric field
+        for (int i = 0; i < DIM; i++)
+        {
+            // write n, nt
+            int n = data_->ir.elec_old_gmx[i].n;
+            int nt = data_->ir.elec_old_gmx[i].nt;
+            if (!newtpr.do_int(&n))  return TPR_FAILED;
+            if (!newtpr.do_int(&nt)) return TPR_FAILED;
+            nskip += (n + nt) * (2 * sizeof(float) + sizeof(int));
+
+            // write E0, t0, omega, sigma in DIM of tpr, n or nt may be zero
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 0, n, prec)) return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 1, n, prec)) return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 2, nt, prec)) return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 3, nt, prec)) return TPR_FAILED;
+        }
+        
+        // write ef after 
+        long len = fsize - pos - nskip;
+        if (newtpr.fwrite_(&buffer[pos + nskip], len * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in write_ef after");
+        }
+
+        return TPR_SUCCESS;
+    }
+    // 高版本电场
+    else if (data_->filever >= tpxv_GenericParamsForElectricField &&
+            data_->ir.elec_nf == 1 && data_->ir.elec_ne >= 1)
+    {
+        FileSerializer  newtpr(fout_, "wb");
+        // write ef before 
+        if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
+        {
+            throw std::runtime_error("fwrite_ error in write_ef before");
+        }
+
+        //! write electric field
+        // 1. Firstly write nf,  'applied-forces' string and type
+        if (!newtpr.do_int(&data_->ir.elec_nf)) return TPR_FAILED;
+        char str[] = "applied-forces";
+        unsigned char otype = 'O'; // obj
+        if (!newtpr.do_string(str, data_->vergen)) return TPR_FAILED;
+        if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
+
+        // 2. Then write ne and 'electric-field' and type
+        if (!newtpr.do_int(&data_->ir.elec_ne)) return TPR_FAILED;
+        char str2[] = "electric-field";
+        if (!newtpr.do_string(str2, data_->vergen)) return TPR_FAILED;
+        if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
+
+        // 3. write ndim and electric field value in three dimension
+        int ndim = DIM;
+        if (!newtpr.do_int(&ndim)) return TPR_FAILED;
+        const char* direct[] = { "x", "y", "z" };
+        const char* items[] = { "E0", "omega", "t0", "sigma"};
+        unsigned char ftype = 'f'; // float
+        for (int i = 0; i < DIM; i++)
+        {
+            if (!newtpr.do_string((char *)direct[i], data_->vergen)) return TPR_FAILED;
+            if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
+
+            int nd = 4; // E0, Omega, t0, sigma
+            if (!newtpr.do_int(&nd)) return TPR_FAILED;
+            for (int j = 0; j < nd; j++)
+            {
+                if (!newtpr.do_string((char*)items[j], data_->vergen)) return TPR_FAILED;
+                if (!newtpr.do_uchar(&ftype, data_->vergen)) return TPR_FAILED;
+                // 电场实际值
+                if (!newtpr.do_real(&vec[i * nd + j], data_->prec)) return TPR_FAILED;
+            }
+        }
+
+        // write ef after
+        long currpos = newtpr.ftell_(); // 理论上应该当前位置就处于文件结尾了
+        if (currpos < fsize)
+        {
+            if (newtpr.fwrite_(&buffer[currpos], (fsize - currpos) * sizeof(char), 1) != 1)
+            {
+                throw std::runtime_error("fwrite_ error in write_ef after");
+            }
+        }
+
         return TPR_SUCCESS;
     }
 
@@ -3056,7 +3180,8 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
     }
 
     // check vector size 
-    if (evec != VecProps::box && (int)vec.size() != data_->natoms * DIM)
+    if (evec != VecProps::box && evec != VecProps::ef && 
+        (int)vec.size() != data_->natoms * DIM)
     {
         throw std::runtime_error("Input vector size is not equal to natoms * 3");
     }
@@ -3067,6 +3192,11 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         throw std::runtime_error("Input box size is not equal to 9");
     }
 
+    // check electric field
+    if (evec == VecProps::ef && (int)vec.size() != DIM * 4)
+    {
+        throw std::runtime_error("Input electric field size is not equal to 12");
+    }
 
     switch (evec)
     {
@@ -3108,6 +3238,11 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
             throw std::runtime_error("Input tpr has not box information");
         }
         if (write_xvf(vec, data_->property.box, data_->prec)) return TPR_SUCCESS;
+        break;
+    }
+    case VecProps::ef:
+    {
+        if (write_ef(vec, data_->property.ef, data_->prec)) return TPR_SUCCESS;
         break;
     }
     default:

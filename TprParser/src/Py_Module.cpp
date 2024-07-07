@@ -577,16 +577,16 @@ static PyMethodDef methods[] =
 	{"set_nsteps", set_nsteps, METH_VARARGS, "Set up nsteps"},
 	{"set_dt", set_dt, METH_VARARGS, "Set up dt"},
 	{"set_mdp_integer", set_mdp_integer, METH_VARARGS, "Set up int keyword"},
-	{"set_xvf", (PyCFunction)set_xvf, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates/velocity/force"},
+	{"set_xvf", (PyCFunction)set_xvf, METH_VARARGS | METH_KEYWORDS, "Set up atomic coordinates/velocity/force/box/electirc-field"},
 	{"set_pressure", (PyCFunction)set_pressure, METH_VARARGS | METH_KEYWORDS, "Set up pressure coupling parts"},
 	{"set_temperature", (PyCFunction)set_temperature, METH_VARARGS | METH_KEYWORDS, "Set up temperature coupling parts"},
 
 	{"get_prec", get_prec, METH_VARARGS, "Get precision of tpr, float(4) or double(8)"},
 	{"get_mdp_integer", get_mdp_integer, METH_VARARGS, "Get int value of keyword"},
 	{"get_name", get_name, METH_VARARGS, "Get resname/atomname/atomtype from tpr"},
-	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass from tpr"},
+	{"get_xvf", get_xvf, METH_VARARGS, "Get coords/velocity/force/charge/mass/box/electirc-field from tpr"},
 	{"get_ivector", get_ivector, METH_VARARGS, "Get resid/atomtypenumber from tpr"},
-	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers pairs (1-based index) information from tpr"},
+	{"get_bonded", get_bonded, METH_VARARGS, "Get bonds/angles/dihedrals/impropers (1-based index) forcefield paramaters information from tpr"},
 	{"get_nonbonded", get_nonbonded, METH_VARARGS, "Get pairs (1-based index)/LJ parameters of each atom information from tpr"},
 	{NULL, NULL, 0, NULL}
 };

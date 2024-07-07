@@ -4,12 +4,12 @@
 
 This module mainly aimed to modify **atom property** of `tpr` and create a new tpr file (named `new.tpr`) after use any one `set_` method. 
 
-The module only supports get atoms coordinates, velocity and force if exist in `tpr` by `module.get_xvf(...)` function. 
+The module only supports get atoms coordinates, velocity and force when it exists in `tpr` by `module.get_xvf(...)` function. 
 
-However, many properties can be set up by module, such as total simulation time `nsteps`, simulation integrator interval `dt`, output control parameters (`nstxout, nstvout, etc.`) and temperature/pressure coupling parameters.
+Many properties can be set up by this module, such as total simulation time `nsteps`, simulation integrator interval `dt`, output control parameters (`nstxout, nstvout, etc.`) and temperature/pressure coupling parameters.
 
 # Compatibility
-GROMACS tpr version should between `4.0` to `2024`, too old tpr can not be read by this module.
+GROMACS tpr version should between `4.0` to `2024`, too old tpr to be read by this module.
 
 # Install
 
@@ -63,7 +63,7 @@ atomnames = reader.get_name('atom')
 ```
 
 
-## Get bonds/angles/dihedrals(proper and impropers)
+## Get bonds/angles/dihedrals(proper and impropers) forcefield parameters
 ```python
 # get all bond pairs (1-based index)
 bonds = reader.get_bonded('bonds')
@@ -133,6 +133,20 @@ reader.set_pressure('Berendsen', 'anisotropic', 1.0, ref_p, compress, deform)
 # set Berendsen algorithm and tau_t=0.2, ref_t=400 K for one temperature coupling group
 reader.set_temperature(etc='Berendsen', tau_t=[0.2], ref_t=[400])
 ```
+
+# Modify electric field parameters
+NOTE: `TprParser` must be >= `0.1.53`
+```python
+# The modify must be matched to old tpr electric-field dimension
+# E0, omega, t0, sigma for each dimension, use gromacs unit
+newEF = [
+  10, 1, 0, 0.1,  # x direction
+  0,  0, 0, 0,    # y direction
+  0,  0, 0, 0     # z direction
+]
+reader.set_xvf('ef', newEF)
+```
+
 
 
 # Modify multiple parameters

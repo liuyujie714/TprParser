@@ -72,7 +72,7 @@ struct Bonded
 		unreachable();
 	}
 	// const version
-	const int operator[](size_t idx) const
+	int operator[](size_t idx) const
 	{
 		assert(idx >= 0 && idx < 4);
 		switch (idx)
@@ -297,8 +297,16 @@ struct TprData
 		std::vector<std::array<float, DIM>> acceleration; // 每个组在三个方向时候被冻结，维度ngacc
 		std::vector<int>	egp_flags; // 能量组每对之间的Exclusions/tables，维度ngener*ngener
 
-		// 新电场部分，不支持旧版本gmx电场参数保存. DIM*4 每个维度四个数：E0, omega, t0, sigma
+		// 支持新和旧版本gmx电场参数保存. DIM*4 每个维度四个数：E0, omega, t0, sigma
+		//! 即使mdp中没设置电场，tpr中依然有电场部分可读，但值都是0
 		std::vector<float>	elec_field;
+		struct
+		{
+			int n = 0, nt = 0; // 时间，空间项数，<=1
+		} elec_old_gmx[DIM]; //低版本tpr用
+		//! 高版本tpr用：
+		int					elec_nf = 0; // 电场项，必须是1
+		int					elec_ne = 0; // applied-forces项目，必须是>=1
 	} ir;
 
 
@@ -351,6 +359,7 @@ struct TprData
 		long		v = 0; //< the started atom velocity position in tpr
 		long		f = 0; //< the started atom force position in tpr
 		long		box = 0; //< the box position in tpr
+		long		ef = 0; //< the electric field started position in tpr
 
 
 		// 压力设置参数位置
@@ -412,6 +421,7 @@ struct TprData
 				return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed && nsttcouple && nstpcouple && nstcalcenergy);
 			}
 		} integer;
+
 	} property;
 };
 

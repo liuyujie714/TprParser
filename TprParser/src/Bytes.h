@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdexcept>
 #include <type_traits>
+#include <cstring> // strlen
 #include <string>
 
 #include "endianswap.h"
@@ -380,36 +381,67 @@ public:
 		}
 	}
 
-	// Save string to saveloc, use this function used in gmx::ISerializer class
-	bool save_string(char* saveloc, int genversion) 
+	// read/write string str according to given version, used this function in gmx::ISerializer class
+	bool do_string(char* str, int genversion) 
 	{
 		int			i;
-		char		buf[MAX_LEN];
 
 		// for gmx>=2020
 		if (genversion >= 27)
 		{
-			int64_t len;
-			if (!do_int64(&len)) return TPR_FAILED;
-			if (fread(buf, 1, (size_t)(len), fp) != (size_t)(len)) return TPR_FAILED;
-			for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
-				saveloc[i] = buf[i];
+			if (m_read) 
+			{
+				int64_t len;
+				if (!do_int64(&len)) return TPR_FAILED;
+				char *buf = new char[len];
+				if (fread(buf, 1, (size_t)(len), fp) != (size_t)(len)) return TPR_FAILED;
+				for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
+					str[i] = buf[i];
+				}
+				str[i] = '\0';
+				delete[] buf;
 			}
-			saveloc[i] = '\0';
+			else 
+			{
+				// write str to file stream
+				int64_t len = (int64_t)strlen(str);
+				if (!do_int64(&len)) return TPR_FAILED;
+				if (fwrite_(str, len * sizeof(char), 1) != 1) return TPR_FAILED;
+			}
 		}
 		else
 		{
-			int len;
-			// first byte not used
-			if (!do_int(&len)) return TPR_FAILED;
-			// actually len
-			if (!do_int(&len)) return TPR_FAILED;
-			if (len % 4) len += 4 - len % 4; // 字节对齐
-			if (fread(buf, 1, (size_t)len, fp) != (size_t)len) return TPR_FAILED;
-			for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
-				saveloc[i] = buf[i];
+			if (m_read)
+			{
+				int len;
+				// first byte not used
+				if (!do_int(&len)) return TPR_FAILED;
+				// actually len
+				if (!do_int(&len)) return TPR_FAILED;
+				if (len % 4) len += 4 - len % 4; // 字节对齐
+				char* buf = new char[len];
+				if (fread(buf, 1, (size_t)len, fp) != (size_t)len) return TPR_FAILED;
+				for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
+					str[i] = buf[i];
+				}
+				str[i] = '\0';
+				delete[] buf;
 			}
-			saveloc[i] = '\0';
+			else
+			{
+				// write str to file stream
+				int len = (int)strlen(str);
+				int tempint = 0;
+				if (len % 4) tempint = len + 4 - len % 4; // 4字节对齐
+				if (!do_int(&tempint)) return TPR_FAILED; // unused
+				// 实际长度
+				if (!do_int(&len)) return TPR_FAILED;
+				char* tempstr = new char[tempint];
+				strcpy(tempstr, str);
+
+				if (fwrite_(tempstr, tempint * sizeof(char), 1) != 1) return TPR_FAILED;
+				delete[] tempstr;
+			}
 		}
 
 		return TPR_SUCCESS;

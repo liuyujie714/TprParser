@@ -6,9 +6,9 @@ import shutil
 
 class TprReader:
     """ @brief A wrapper of TprParser
-        1. get atmic coordinates/velocity/force/box/mass/charge ... of tpr
-        2. get full force field parameters for bonds/angles/dihedrals/impropers
-        3. modify simulation nsteps/dt/integer/coordinates/velocity/force/box and save as new.tpr
+        1. get atomic properties of tpr
+        2. get full force field parameters for bonded parameters
+        3. modify simulation parameters and save new tpr for simulating
 
         Parameters
         ---------
@@ -57,13 +57,15 @@ class TprReader:
         return TprParser_.set_dt(self.tprCapsule, dt)
 
     def set_xvf(self, type:VecType, vec:np.array):
-        """ @brief set up atomic coordinates/velocity/force/box of tpr
+        """ @brief set up atomic coordinates/velocity/force/box/electric-field of tpr
 
         Parameters
         ----------
-        type: must be 'X', 'V', 'F', or 'BOX', represents atomic coordinates/velocity/force/box to set
-        vec: a np.array(dtype=np.float32) of atom coordinates/velocity/force/box, 
-        the dimension must be natoms * 3, except the box dimension is 9
+        type: must be 'X', 'V', 'F', 'BOX' or 'EF' represents atomic coordinates/velocity/force/box/electric-field to set
+        vec: a np.array(dtype=np.float32) of atom coordinates/velocity/force/box/electric-field, 
+        - The dimension of X/V/F is natoms * 3
+        - The dimension of box is 3 * 3
+        - The dimension of electric-field is 3 * 4, represent E0, Omega, t0, sigma for each direction
 
         Returns
         -------
@@ -152,7 +154,10 @@ class TprReader:
 
         Returns
         -------
-        return a np.array(dtype=np.float32), the dimension is natoms * 3, except box is 3*3, electric-field is 3*4
+        return a np.array(dtype=np.float32)
+        - The dimension of X/V/F is natoms * 3
+        - The dimension of box is 3 * 3
+        - The dimension of electric-field is 3 * 4, represent E0, Omega, t0, sigma for each direction
         """
         vec = TprParser_.get_xvf(self.tprCapsule, type)
         ncol = 4 if type=='ef' or type=='EF' else 3

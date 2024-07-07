@@ -27,14 +27,23 @@ int main(int argc, char *argv[])
 
 		// 电场测试
 		{
-			//TprReader reader("test/2022.tpr");
+			//TprReader reader("test/inter-md.tpr");
 			//TprReader reader("test/elec.tpr");
 			TprReader reader("test/elecxyz.tpr");
+			//TprReader reader("test/elec5.1.2.tpr");
 			auto &ef = reader.get_ef();
 			std::cout << "Electric field:\n";
 			for (auto& e : ef) {
 				std::cout << e << "\t";
 			}
+
+			// write new tpr
+			std::vector<float> efnew{
+				2, 8, 6, 4,
+				0, 0.225, 0, 0,
+				5, 0, 0, 0.11
+			};
+			reader.set_xvf("ef", efnew);
 		}
 
 		// 修改MD总步数(模拟时长)

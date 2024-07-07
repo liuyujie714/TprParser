@@ -2,7 +2,6 @@
 """
 
 from TprParser.TprReader import TprReader, SimSettings
-from glob import glob
 import sys
 import numpy as np
 
@@ -33,8 +32,10 @@ tprlist = {
     'pull.tpr' :            [94560, 4],
     'nobox.tpr' :           [13, 4],
     'cg_big.tpr':           [290482, 4],
-    'elec.tpr':             [45, 4],
-    'elecxyz.tpr':          [45, 4],
+    # electric-field
+    'elec5.1.2.tpr':        [45, 4], # along x
+    'elec2019.tpr':         [45, 4], # along z
+    'elecxyz.tpr':          [45, 4], # along xyz
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:4]]
 
@@ -186,6 +187,17 @@ def do_test2():
                 newV = 110*np.ones(shape=(tprlist[name][0], 3))
                 writer.set_xvf('x', newX)
                 writer.set_xvf('v', newV)
+
+                # test modify electric field
+                if 'elecxyz' in fname:
+                    # E0, omega, t0, sigma for each dim
+                    ef = [
+                        10, 0, 0,   0,
+                        10, 0, 1.2, 0,
+                        10, 0, 0,   2.0
+                    ]
+                    ef = np.array(ef)
+                    writer.set_xvf('ef', ef)
             
         # assert modify parameters
         reader = TprReader(fout)
@@ -195,6 +207,9 @@ def do_test2():
         if prec==4:
             assert np.all(newX==x)
             assert np.all(newV==v)  
+            # assert electric-field
+            if 'elecxyz' in fname:
+                assert np.all(ef==reader.get_xvf('ef'))
             
         if '4.0' not in name:
             assert reader.get_mdp_integer('nstxout') == 100
