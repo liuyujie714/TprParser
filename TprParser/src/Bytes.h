@@ -13,8 +13,6 @@
 #define TPR_FAILED  false
 #define MIN(a, b) ((a)<(b)? (a):(b))
 #define SAVELEN 512
-#define CPT_MAGIC1 171817
-#define CPT_MAGIC2 171819
 
 class FileSerializer
 {
@@ -304,7 +302,7 @@ public:
 		return TPR_SUCCESS;
 	}
 
-	//< read/write us, int, int64_t, float, double, ... in vector with len
+	//< read/write bool, unsigned char, int, int64_t, float, double, ... in vector with len
 	template<typename T>
 	bool do_vector(T* arr, int len, int prec = 4, int vergen = 26) const
 	{

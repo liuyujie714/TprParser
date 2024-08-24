@@ -126,7 +126,7 @@ struct NonBonded
 	}
 
 	// const version
-	const int operator[](size_t idx) const 
+	int operator[](size_t idx) const 
 	{
 		assert(idx >= 0 && idx < 2);
 		return idx == 0 ? a : b;
