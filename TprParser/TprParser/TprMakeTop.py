@@ -112,11 +112,13 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
     context = '; NOTE: Testing\n\n'
     context += '#include "amber99sb-ildn.ff/forcefield.itp"\n\n'
 
+    # Maybe not exist << 2024.09.30
     # [ atomtypes ]
     atypedict = defaultdict(list)
-    for atype, m, sigma, epsion in zip(atomtypename, mass, ljparams[:, 0], ljparams[:, 1]):
-        #print(atype, m, sigma, epsion)
-        atypedict[atype] = [m, sigma, epsion]
+    if (ljparams is not None) and ljparams.shape[1]>0:
+        for atype, m, sigma, epsion in zip(atomtypename, mass, ljparams[:, 0], ljparams[:, 1]):
+            #print(atype, m, sigma, epsion)
+            atypedict[atype] = [m, sigma, epsion]
 
     # print(len(atnums))
     # print(len(atypedict))

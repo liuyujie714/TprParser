@@ -36,6 +36,8 @@ tprlist = {
     'elec5.1.2.tpr':        [45, 4], # along x
     'elec2019.tpr':         [45, 4], # along z
     'elecxyz.tpr':          [45, 4], # along xyz
+    # No lj parameters
+    'extra-interactions-2018.tpr' : [17, 4],
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:4]]
 
@@ -127,6 +129,7 @@ def do_test():
 
         # test write gromacs top from tpr
         # not include atomnumber of atomtype ['double_2023.tpr', 'double_2023.tpr', 'md2024.tpr']:
+        # Not LJ parameters ['extra-interactions-2018.tpr']
         test_make_top_from_tpr(fname, 'md.top')
 
 def do_test2():

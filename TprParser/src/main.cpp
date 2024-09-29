@@ -2,6 +2,7 @@
 * update: 
 * 2024.06.24 - support set up deform 
 * 2024.07.07 - support read electric field
+* 2024.09.30 - fix empty lj parameters
 */
 
 #include <iostream>
@@ -27,23 +28,23 @@ int main(int argc, char *argv[])
 
 		// 电场测试
 		{
-			//TprReader reader("test/inter-md.tpr");
-			//TprReader reader("test/elec.tpr");
-			TprReader reader("test/elecxyz.tpr");
-			//TprReader reader("test/elec5.1.2.tpr");
-			auto &ef = reader.get_ef();
-			std::cout << "Electric field:\n";
-			for (auto& e : ef) {
-				std::cout << e << "\t";
-			}
+			////TprReader reader("test/inter-md.tpr");
+			////TprReader reader("test/elec.tpr");
+			//TprReader reader("test/elecxyz.tpr");
+			////TprReader reader("test/elec5.1.2.tpr");
+			//auto &ef = reader.get_ef();
+			//std::cout << "Electric field:\n";
+			//for (auto& e : ef) {
+			//	std::cout << e << "\t";
+			//}
 
-			// write new tpr
-			std::vector<float> efnew{
-				2, 8, 6, 4,
-				0, 0.225, 0, 0,
-				5, 0, 0, 0.11
-			};
-			reader.set_xvf("ef", efnew);
+			//// write new tpr
+			//std::vector<float> efnew{
+			//	2, 8, 6, 4,
+			//	0, 0.225, 0, 0,
+			//	5, 0, 0, 0.11
+			//};
+			//reader.set_xvf("ef", efnew);
 		}
 
 		// 修改MD总步数(模拟时长)
@@ -84,6 +85,12 @@ int main(int argc, char *argv[])
 		{
 			//TprReader reader("test/CO2_LineAngle.tpr", false, false);
 			//auto ret = reader.get_nonbonded("pairs");
+		}
+
+		// 无坐标测试
+		{
+			TprReader reader("test/extra-interactions-2018.tpr");
+			
 		}
 	}
 	catch (const std::exception&e)

@@ -559,10 +559,15 @@ bool TprReader::tpr_nonbonded()
     }
     
     int atnr = data_->atnr;
-    myassert(tempLJ.size() == atnr * atnr,
-        "Assert failed: The size of tempLJ must be square of data_->atnr");
+    msg("atnr= %d\n", atnr);
+    msg("tempLJ.size()= %d\n", (int)tempLJ.size());
+    if (!tempLJ.empty()) {
+        myassert(tempLJ.size() == atnr * atnr,
+            "Assert failed: The size of tempLJ must be square of data_->atnr");
+    }
     data_->atomtypesLJ.resize(atnr);
-    for (int i = 0; i < atnr; i++)
+    // Add tempLJ check, make sure is Not empty << 2024.09.03
+    for (int i = 0; i < atnr && !tempLJ.empty(); i++)
     {
         for (int j = 0; j < atnr; j++)
         {

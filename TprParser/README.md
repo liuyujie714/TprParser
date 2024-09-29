@@ -161,7 +161,7 @@ with SimSettings('input.tpr', 'output.tpr') as writer:
 ```
 
 # Make a gromacs top 
-Note: `TprParser` must be >= `0.1.51`
+Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Virtual Site, Restraint` is missing!
 
 ```python
 from TprParser.TprMakeTop import make_top_from_tpr
@@ -183,5 +183,5 @@ If `TprParser` is utilized in your work, please cite as follows in main text:
 ## TODO
 
 * More parameters can be modified
-* Get More essential parameters 
+* Get More essential parameters , such as `Virual Site`
 
