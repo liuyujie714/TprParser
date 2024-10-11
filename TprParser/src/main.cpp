@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/2022.tpr");
 		//TprReader reader("test/2lyz_gmx_2021.tpr");
 		//TprReader reader("test/2020.4_gra.tpr");
-		//TprReader reader("test/annealing.tpr");
+		TprReader reader("test/annealing.tpr");
 
 		// 电场测试
 		{
@@ -88,14 +88,14 @@ int main(int argc, char *argv[])
 		}
 
 		{
-			TprReader reader("test/2lyz_gmx_2021_double.tpr");
+			//TprReader reader("test/2lyz_gmx_2021_double.tpr");
 		}
 
 		// 无LJ参数测试
 		{
-			TprReader reader("test/extra-interactions-2018.tpr");
-			auto &ret = reader.get_nonbonded("lj");
-			std::cout << ret[0].ifunc << std::endl;
+			//TprReader reader("test/extra-interactions-2018.tpr");
+			//auto &ret = reader.get_nonbonded("lj");
+			//std::cout << ret[0].ifunc << std::endl;
 		}
 	}
 	catch (const std::exception&e)
