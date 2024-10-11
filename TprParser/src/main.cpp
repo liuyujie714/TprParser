@@ -87,6 +87,10 @@ int main(int argc, char *argv[])
 			//auto ret = reader.get_nonbonded("pairs");
 		}
 
+		{
+			TprReader reader("test/2lyz_gmx_2021_double.tpr");
+		}
+
 		// ÎŞLJ²ÎÊı²âÊÔ
 		{
 			TprReader reader("test/extra-interactions-2018.tpr");
