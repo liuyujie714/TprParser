@@ -262,38 +262,16 @@ public:
 	//< read/write float/double according to given prec (4/8)
 	bool do_real(void * val, int prec) const
 	{
-		float	f;
-		double	d;
 		switch (prec)
 		{
 			case sizeof(float) :
 			{
-				if (m_read)
-				{
-					if (!do_float(&f)) return TPR_FAILED;
-					*(static_cast<float*>(val)) = f;
-				}
-				else
-				{
-					f = *(static_cast<float*>(val));
-					if (!do_float(&f)) return TPR_FAILED;
-				}
-
+				if (!do_float(reinterpret_cast<float*>(val))) return TPR_FAILED;
 				break;
 			}
 			case sizeof(double) :
 			{
-				if (m_read)
-				{
-					if (!do_double(&d)) return TPR_FAILED;
-					*(static_cast<float*>(val)) = static_cast<float>(d); // double to float
-				}
-				else
-				{
-					d = *(static_cast<double*>(val));
-					if (!do_double(&d)) return TPR_FAILED;
-				}
-
+				if (!do_double(reinterpret_cast<double*>(val))) return TPR_FAILED;
 				break;
 			}
 			default:
@@ -326,7 +304,7 @@ public:
 			}
 			else if constexpr (std::is_same_v <T, float>)
 			{
-				if (!do_real(&arr[i], prec)) return TPR_FAILED;
+				if (!do_float(&arr[i])) return TPR_FAILED;
 			}
 			else if constexpr (std::is_same_v <T, double>)
 			{

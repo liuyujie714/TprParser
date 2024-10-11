@@ -87,10 +87,11 @@ int main(int argc, char *argv[])
 			//auto ret = reader.get_nonbonded("pairs");
 		}
 
-		// 无坐标测试
+		// 无LJ参数测试
 		{
 			TprReader reader("test/extra-interactions-2018.tpr");
-			
+			auto &ret = reader.get_nonbonded("lj");
+			std::cout << ret[0].ifunc << std::endl;
 		}
 	}
 	catch (const std::exception&e)
