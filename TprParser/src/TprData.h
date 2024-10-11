@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <tuple> // std::tie
 
-
 #include "define.h"
 #include "Enum.h"
 
@@ -144,10 +143,7 @@ struct TprData
 	// POD clear zero
 	TprData() = default;
 
-	~TprData()
-	{
-		if (symtab) delete[] symtab;
-	}
+	~TprData() {}
 
 	int					prec; //< the precision of tpr, 4 or 8
 	int					filever; //< the version of file format, fver
@@ -164,8 +160,8 @@ struct TprData
 	bool				bBox; //< if has box 
 	bool				bInter; //< if has inter-molecular bonds
 	std::vector<float>	box = {}; //< box size
-	char				* symtab;//< symb name, truncate to 8 characters
-	int					symtablen, nmoltypes, nmolblock;
+	std::vector<char>   symtab;//< symb name, truncate to SAVELEN characters
+	int					nmoltypes, nmolblock;
 	int					atnr; // the number of LJ type 
 
 	std::vector<int>	atomsinmol;

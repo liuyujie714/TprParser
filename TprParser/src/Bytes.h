@@ -49,7 +49,9 @@ public:
 	~FileSerializer()
 	{
 		if (m_buffer) delete [] m_buffer;
-		if (fp) fclose(fp);
+		if (fp) {
+			fclose(fp); fp = nullptr;
+		}
 		//fprintf(stderr, "NOTE) End of %s to %s\n", m_fname.c_str(), m_read ? "read" : "write");
 	}
 

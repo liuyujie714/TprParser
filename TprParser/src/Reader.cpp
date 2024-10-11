@@ -3,7 +3,6 @@
 #include <cmath> // pow
 #include <algorithm>
 
-
 #include "Reader.h"
 #include "Utils.h"
 
@@ -163,14 +162,13 @@ bool TprReader::tpr_body()
 bool TprReader::tpr_mtop()
 {
 	//do_mtop starts here, which starts by reading the symtab (do_symtab)
-	if (!tpr_.do_int(&data_->symtablen)) return TPR_FAILED;
-    msg("symtablen= %d\n", data_->symtablen);
-	data_->symtab = new char[SAVELEN * data_->symtablen];
-	// clear data
-	memset(data_->symtab, 0, sizeof(char) * SAVELEN * data_->symtablen);
+    int symtablen;
+	if (!tpr_.do_int(&symtablen)) return TPR_FAILED;
+    msg("symtablen= %d\n", symtablen);
+    data_->symtab.resize(symtablen * SAVELEN, '\0'); // clear zero
 
 	// 原子类型名称和组名
-	for (int i = 0; i < data_->symtablen; i++)
+	for (int i = 0; i < symtablen; i++)
 	{
 		if (!tpr_.do_string(&data_->symtab[SAVELEN * i], data_->vergen)) return TPR_FAILED;
 
