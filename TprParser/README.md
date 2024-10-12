@@ -4,12 +4,13 @@
 
 This module mainly aimed to modify **atom property** of `tpr` and create a new tpr file (named `new.tpr`) after use any one `set_` method. 
 
-The module only supports get atoms coordinates, velocity and force when it exists in `tpr` by `module.get_xvf(...)` function. 
+The module supports many functions to get topology properties, such as atoms coordinates, velocity and force by `module.get_xvf(...)` function. 
 
 Many properties can be set up by this module, such as total simulation time `nsteps`, simulation integrator interval `dt`, output control parameters (`nstxout, nstvout, etc.`) and temperature/pressure coupling parameters.
 
 # Compatibility
-GROMACS tpr version should between `4.0` to `2024`, too old tpr to be read by this module.
+
+GROMACS tpr version should between `4.0` to `2025-dev`, too old tpr to be read by this module.
 
 # Install
 
