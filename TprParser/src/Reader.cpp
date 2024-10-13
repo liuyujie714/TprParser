@@ -3152,7 +3152,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         }
 
         // write ef after
-        long currpos = newtpr.ftell_(); // 理论上应该当前位置就处于文件结尾了
+        long currpos = static_cast<long>(newtpr.ftell_()); // 理论上应该当前位置就处于文件结尾了
         if (currpos < fsize)
         {
             if (newtpr.fwrite_(&buffer[currpos], (fsize - currpos) * sizeof(char), 1) != 1)

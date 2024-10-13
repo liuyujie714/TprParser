@@ -1,6 +1,9 @@
 #ifndef BYTES_H
 #define BYTES_H
 
+// 64 bit fileseek operations
+#define _FILE_OFFSETS_BITS 64
+
 #include <stdio.h>
 #include <stdexcept>
 #include <type_traits>
@@ -14,29 +17,33 @@
 #define MIN(a, b) ((a)<(b)? (a):(b))
 #define SAVELEN 512
 
+/* \brief A class for file Serializer in binary mode.
+* Supports big file operator in different system, considered data endianism
+*/
 class FileSerializer
 {
 public:
 	FileSerializer(const char *fname, const char *mode) : m_fname(fname)
 	{
-		fp = fopen(fname, mode);
-		if (!fp)
-		{
-			throw std::runtime_error("Can not open/write file: " + std::string(fname));
-		}
-		// is read model
+		// check file mode, must be binary mode
+		char bmode[3] = "xb";
 		switch (mode[0])
 		{
 		case 'r':
-			m_read = true;
+			m_read = true; bmode[0] = 'r';
 			break;
 		case 'w':
-			m_read = false;
+			m_read = false; bmode[0] = 'w';
 			break;
+		default:
+			throw std::invalid_argument(std::string("Unknown file open mode: ") + mode);
 		}
 
-		// note
-		//fprintf(stderr, "NOTE) Open file %s to %s\n", fname, m_read ? "read" : "write");
+		m_fp = fopen(fname, bmode);
+		if (!m_fp)
+		{
+			throw std::runtime_error("Can not open/write file: " + std::string(fname));
+		}
 
 		// need endianism swap?
 		m_rev = is_litendian();
@@ -49,8 +56,8 @@ public:
 	~FileSerializer()
 	{
 		if (m_buffer) delete [] m_buffer;
-		if (fp) {
-			fclose(fp); fp = nullptr;
+		if (m_fp) {
+			fclose(m_fp); m_fp = nullptr;
 		}
 		//fprintf(stderr, "NOTE) End of %s to %s\n", m_fname.c_str(), m_read ? "read" : "write");
 	}
@@ -58,12 +65,12 @@ public:
 	//< get a pointer to file char *buffer
 	const char* get_file_buffer(long *fsize) const
 	{
-		*fsize = m_fsize;
+		*fsize = (long)m_fsize;
 		return m_buffer;
 	}
 
 	// if is little endian
-	bool is_litendian() const
+	static bool is_litendian()
 	{
 		union 
 		{
@@ -82,12 +89,12 @@ public:
 			// read 1 byte
 			if (vergen >= 27)
 			{
-				if (fread(val, 1, 1, fp) != 1) return TPR_FAILED;
+				if (fread_(val, 1, 1) != 1) return TPR_FAILED;
 			}
 			else
 			{
 				int tempint = 0;
-				if (fread(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
+				if (fread_(&tempint, 4, 1) != 1) return TPR_FAILED;
 				if (m_rev) swap4_aligned(&tempint, 1);
 				*val = (tempint != 0); // return bool
 			}
@@ -97,14 +104,14 @@ public:
 			// write 1 byte
 			if (vergen >= 27)
 			{
-				if (fwrite(val, 1, 1, fp) != 1) return TPR_FAILED;
+				if (fwrite_(val, 1, 1) != 1) return TPR_FAILED;
 			}
 			else
 			{
 				// bool to int
 				int tempint = static_cast<int>(*val);
 				if (m_rev) swap4_aligned(&tempint, 1);
-				if (fwrite(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
+				if (fwrite_(&tempint, 4, 1) != 1) return TPR_FAILED;
 			}
 		}
 		return TPR_SUCCESS;
@@ -120,13 +127,13 @@ public:
 			// for gmx2020
 			if (vergen >= 27)
 			{
-				if (fread(val, 2, 1, fp) != 1) return TPR_FAILED;
+				if (fread_(val, 2, 1) != 1) return TPR_FAILED;
 				if (m_rev) swap2_aligned(val, 1);
 			}
 			else
 			{
 				int temp;
-				if (fread(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+				if (fread_(&temp, 4, 1) != 1) return TPR_FAILED;
 				if (m_rev) swap4_aligned(&temp, 1);
 				*val = static_cast<unsigned short>(temp);
 			}
@@ -138,13 +145,13 @@ public:
 			{
 				unsigned short tempui = *val;
 				if (m_rev) swap2_aligned(&tempui, 1);
-				if (fwrite(&tempui, 2, 1, fp) != 1) return TPR_FAILED;
+				if (fwrite_(&tempui, 2, 1) != 1) return TPR_FAILED;
 			}
 			else
 			{
 				int temp = static_cast<int>(*val);
 				if (m_rev) swap4_aligned(&temp, 1);
-				if (fwrite(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+				if (fwrite_(&temp, 4, 1) != 1) return TPR_FAILED;
 			}
 		}
 
@@ -161,12 +168,12 @@ public:
 			// for gmx>=2020, only read 1 byte
 			if (vergen >= 27)
 			{
-				if (fread(val, 1, 1, fp) != 1) return TPR_FAILED;
+				if (fread_(val, 1, 1) != 1) return TPR_FAILED;
 			}
 			else
 			{
 				int temp;
-				if (fread(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+				if (fread_(&temp, 4, 1) != 1) return TPR_FAILED;
 				if (m_rev) swap4_aligned(&temp, 1);
 				*val = static_cast<unsigned char>(temp);
 			}
@@ -176,13 +183,13 @@ public:
 			// for gmx>=2020, only write 1 byte
 			if (vergen >= 27)
 			{
-				if (fwrite(val, 1, 1, fp) != 1) return TPR_FAILED;
+				if (fwrite_(val, 1, 1) != 1) return TPR_FAILED;
 			}
 			else
 			{
 				int temp = static_cast<int>(*val);
 				if (m_rev) swap4_aligned(&temp, 1);
-				if (fwrite(&temp, 4, 1, fp) != 1) return TPR_FAILED;
+				if (fwrite_(&temp, 4, 1) != 1) return TPR_FAILED;
 			}
 		}
 
@@ -195,14 +202,14 @@ public:
 		static_assert(sizeof(int) == 4, "sizeof int must be 4");
 		if (m_read)
 		{
-			if (fread(val, 4, 1, fp) != 1) return TPR_FAILED;
+			if (fread_(val, 4, 1) != 1) return TPR_FAILED;
 			if (m_rev) swap4_aligned(val, 1);
 		}
 		else
 		{
 			int tempint = *val; // avoid change *val binary order
 			if (m_rev) swap4_aligned(&tempint, 1);
-			if (fwrite(&tempint, 4, 1, fp) != 1) return TPR_FAILED;
+			if (fwrite_(&tempint, 4, 1) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -213,14 +220,14 @@ public:
 		static_assert(sizeof(int64_t) == 8, "sizeof int64_t must be 8");
 		if (m_read)
 		{
-			if (fread(val, 8, 1, fp) != 1) return TPR_FAILED;
+			if (fread_(val, 8, 1) != 1) return TPR_FAILED;
 			if (m_rev) swap8_aligned(val, 1);
 		}
 		else
 		{
 			int64_t tempint64 = *val; // avoid change *val
 			if (m_rev) swap8_aligned(&tempint64, 1);
-			if (fwrite(&tempint64, 8, 1, fp) != 1) return TPR_FAILED;
+			if (fwrite_(&tempint64, 8, 1) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -231,14 +238,14 @@ public:
 		static_assert(sizeof(float) == 4, "sizeof float must be 4");
 		if (m_read)
 		{
-			if (fread(val, 4, 1, fp) != 1) return TPR_FAILED;
+			if (fread_(val, 4, 1) != 1) return TPR_FAILED;
 			if (m_rev) swap4_aligned(val, 1);
 		}
 		else
 		{
 			float tempfloat = *val; // avoid change *val
 			if (m_rev) swap4_aligned(&tempfloat, 1);
-			if (fwrite(&tempfloat, 4, 1, fp) != 1) return TPR_FAILED;
+			if (fwrite_(&tempfloat, 4, 1) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -249,14 +256,14 @@ public:
 		static_assert(sizeof(double) == 8, "sizeof double must be 8");
 		if (m_read)
 		{
-			if (fread(val, 8, 1, fp) != 1) return TPR_FAILED;
+			if (fread_(val, 8, 1) != 1) return TPR_FAILED;
 			if (m_rev) swap8_aligned(val, 1);
 		}
 		else
 		{
 			double tempdouble = *val;
 			if (m_rev) swap8_aligned(&tempdouble, 1);
-			if (fwrite(&tempdouble, 8, 1, fp) != 1) return TPR_FAILED;
+			if (fwrite_(&tempdouble, 8, 1) != 1) return TPR_FAILED;
 		}
 		return TPR_SUCCESS;
 	}
@@ -344,23 +351,23 @@ public:
 		size_t ssize = static_cast<size_t>(size); // ignore warning
 		if (str && size < max)
 		{
-			if (fread(str, 1, ssize, fp) != ssize) return TPR_FAILED;
+			if (fread_(str, 1, ssize) != ssize) return TPR_FAILED;
 			str[ssize] = '\0';
 			return TPR_SUCCESS;
 		}
 		// size >= max
 		else if (str)
 		{
-			if (fread(str, 1, (size_t)max, fp) != (size_t)max) return TPR_FAILED;
+			if (fread_(str, 1, (size_t)max) != (size_t)max) return TPR_FAILED;
 			str[max - 1] = '\0';
 			// skip next string
-			if (fseek(fp, size - max, SEEK_CUR) != 0) return TPR_FAILED;
+			if (fseek_(size - max, SEEK_CUR) != 0) return TPR_FAILED;
 			return TPR_SUCCESS;
 		}
 		else
 		{
 			// skip all string and don not store
-			if (fseek(fp, size, SEEK_CUR) != 0) return TPR_FAILED;
+			if (fseek_(size, SEEK_CUR) != 0) return TPR_FAILED;
 			return TPR_SUCCESS;
 		}
 	}
@@ -378,7 +385,7 @@ public:
 				int64_t len;
 				if (!do_int64(&len)) return TPR_FAILED;
 				char *buf = new char[len];
-				if (fread(buf, 1, (size_t)(len), fp) != (size_t)(len)) return TPR_FAILED;
+				if (fread_(buf, 1, (size_t)(len)) != (size_t)(len)) return TPR_FAILED;
 				for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
 					str[i] = buf[i];
 				}
@@ -404,7 +411,7 @@ public:
 				if (!do_int(&len)) return TPR_FAILED;
 				if (len % 4) len += 4 - len % 4; // ×Ö½Ú¶ÔÆë
 				char* buf = new char[len];
-				if (fread(buf, 1, (size_t)len, fp) != (size_t)len) return TPR_FAILED;
+				if (fread_(buf, 1, (size_t)len) != (size_t)len) return TPR_FAILED;
 				for (i = 0; i < MIN(len, (SAVELEN - 1)); i++) {
 					str[i] = buf[i];
 				}
@@ -431,21 +438,39 @@ public:
 		return TPR_SUCCESS;
 	}
 
-	int fseek_(long offset, int orig)
+	int fseek_(int64_t offset, int orig) const
 	{
-		return fseek(fp, offset, orig);
+#ifndef _WIN32
+		return fseeko(m_fp, offset, orig);
+#elif defined(_MSC_VER) && !__INTEL_COMPILER
+		return _fseeki64(m_fp, offset, orig);
+#else
+		return fseek(m_fp, offset, orig);
+#endif
 	}
 
 	//< report file pointer position
-	long ftell_() const
+	int64_t ftell_() const
 	{
-		return ftell(fp);
+#ifndef _WIN32
+		return ftello(m_fp);
+#elif defined(_MSC_VER) && !__INTEL_COMPILER
+		return _ftelli64(m_fp);
+#else
+		return ftell(m_fp);
+#endif 
+	}
+
+	//< fread 
+	size_t fread_(void *buffer, size_t elemsize, size_t count) const
+	{
+		return fread(buffer, elemsize, count, m_fp);
 	}
 
 	//< fwrite
-	size_t fwrite_(const void* buffer, size_t elementsize, size_t count)
+	size_t fwrite_(const void* buffer, size_t elementsize, size_t count) const
 	{
-		return fwrite(buffer, elementsize, count, fp);
+		return fwrite(buffer, elementsize, count, m_fp);
 	}
 
 private:
@@ -453,29 +478,27 @@ private:
 	void get_buffer()
 	{
 		fseek_(0, SEEK_END); // file end
-		long fsize = ftell_();
-		m_buffer = new char[fsize];
+		m_fsize = ftell_();
+		m_buffer = new char[m_fsize];
 
 		fseek_(0, SEEK_SET); // file start
-		if (fread(m_buffer, fsize, 1, fp) != 1)
+		if (fread_(m_buffer, m_fsize, 1) != 1)
 		{
 			throw std::runtime_error("Can not read all binary stream to m_buffer");
 		}
 		// restore
 		fseek_(0, SEEK_SET);
-
-		// filesize
-		m_fsize = fsize;
 	}
 
 private:
-	FILE		*fp = nullptr; //< file pointer
+	FILE		*m_fp = nullptr; //< file pointer
 	std::string m_fname = {}; //< file name
 	bool		m_read = true; //< if read mode
 	bool		m_rev = false; //< if Reverse endiannism?
 	char		* m_buffer = nullptr; //< all file binary data in char *
-	long		m_fsize = 0; // the file size in char
+	int64_t		m_fsize = 0; // the file size in char
 };
 
 
 #endif // !BYTES_H
+

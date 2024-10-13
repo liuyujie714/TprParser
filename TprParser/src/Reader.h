@@ -9,7 +9,7 @@
 #include "Bytes.h"
 #include "TprData.h"
 
-#define INSERT_POS(prop) data_->property.prop = tpr_.ftell_()
+#define INSERT_POS(prop) data_->property.prop = static_cast<long>(tpr_.ftell_())
 
 class TprReader
 {
@@ -17,7 +17,6 @@ public:
 	const char* fout_ = nullptr;
 
 public:
-	// data_ 不能用memset清零含有模板类的结构体
 	TprReader(
 		const char* fname,
 		bool bGRO = false,
