@@ -133,7 +133,10 @@ def do_test():
         # test resid, atomtypenumber(filever>128 not do_atomtypes), atomic number
         test_get_ivector(reader, "resid")
 #        test_get_ivector(reader, "atnum")
-        test_get_ivector(reader, "atomicnum")
+        
+        # elec tpr all atom number == -1
+        if 'elec' not in fname:
+            test_get_ivector(reader, "atomicnum")
         
         # need delete obj
         del reader

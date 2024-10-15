@@ -228,7 +228,7 @@ bool TprReader::tpr_mtop()
 
                 data_->atoms.mass[idx]      = data_->masses[m][k];
                 data_->atoms.charge[idx]    = data_->charges[m][k];
-                data_->atoms.atomnumber[idx] = data_->atomicnumbers[m][k];
+                data_->atoms.atomnumber[idx]= data_->atomicnumbers[m][k];
                 data_->atoms.type[idx]      = data_->types[m][k];
                 idx++;
             }

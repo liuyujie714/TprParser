@@ -327,7 +327,7 @@ struct TprData
 		std::vector<int>			resid;
 		std::vector<float>			mass;
 		std::vector<float>			charge;
-		std::vector<int>			atomnumber; // atomic number, -1=unknown, 0=VSite
+		std::vector<int>			atomnumber; // atomic number, -1=unknown, 0=VSite/CG_bead
 		std::vector<unsigned short>	type; // unused ?
 	} atoms;
 
