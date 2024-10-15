@@ -205,6 +205,7 @@ bool TprReader::tpr_mtop()
     data_->atoms.resid.resize(data_->natoms);
     data_->atoms.mass.resize(data_->natoms);
     data_->atoms.charge.resize(data_->natoms);
+    data_->atoms.atomnumber.resize(data_->natoms);
     data_->atoms.type.resize(data_->natoms);
     unsigned int idx = 0;
     int startedresindex = 1;
@@ -227,6 +228,7 @@ bool TprReader::tpr_mtop()
 
                 data_->atoms.mass[idx]      = data_->masses[m][k];
                 data_->atoms.charge[idx]    = data_->charges[m][k];
+                data_->atoms.atomnumber[idx] = data_->atomicnumbers[m][k];
                 data_->atoms.type[idx]      = data_->types[m][k];
                 idx++;
             }
@@ -1019,7 +1021,8 @@ bool TprReader::do_atoms()
         data_->types[i].resize(data_->atomsinmol[i]);
         data_->ptypes[i].resize(data_->atomsinmol[i]);
         data_->resids[i].resize(data_->atomsinmol[i]);
-        data_->atomicnumbers[i].resize(data_->atomsinmol[i]);
+        // initial -1 because data_->filever >= 52
+        data_->atomicnumbers[i].resize(data_->atomsinmol[i], -1); 
         for (int j = 0; j < data_->atomsinmol[i]; j++)
         {
             // 读原子质量，电荷
@@ -2845,6 +2848,17 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
             throw std::runtime_error("Can not get atomtype number information");
         }
         return data_->atoms.atomtypenumber;
+    }
+    case IVectorProps::atomicnum:
+    {
+        if (data_->atoms.atomnumber.empty() || 
+            std::all_of(data_->atoms.atomnumber.begin(), data_->atoms.atomnumber.end(),
+                [](int val) {return val == -1; })
+            )
+        {
+            throw std::runtime_error("Can not get atomic number information or all -1");
+        }
+        return data_->atoms.atomnumber;
     }
     default:
         throw std::invalid_argument(std::string("Unknown keyword: ") + type);

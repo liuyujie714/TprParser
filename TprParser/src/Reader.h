@@ -144,7 +144,7 @@ public:
 	//< 3. get electric field in vector DIM * 4 = 12
 	const std::vector<float>& get_xvf(const char* type) const;
 
-	//< get int vector, such resid, atomid...
+	//< get int vector, such resid, atomtypenumber, atomnumber...
 	const std::vector<int>& get_ivector(const char* type) const;
 
 	//< get resname, atomname

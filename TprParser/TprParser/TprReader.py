@@ -178,15 +178,15 @@ class TprReader:
         return np.array(vec, np.float32)
     
     def get_ivector(self, type:VecType4):
-        """ @brief get resid/atomtypenumber from tpr
+        """ @brief get resid/atomtypenumber/atomicnumber from tpr
 
         Parameters
         ----------
-        type: must be 'resid', 'atnum', represents resid/atomtypenumber to get
+        type: must be 'resid', 'atnum', 'atomicnum' represents resid/atomtypenumber/atomicnumber to get
 
         Return
         ------
-        return a np.array(dtype='<i'), the length is natoms for resid, the atomtypes for atnum
+        return a np.array(dtype='<i'), the length is natoms for resid/atomicnum, the atomtypes for atnum
         """
         vec = TprParser_.get_ivector(self.tprCapsule, type)
         return np.array(vec, np.int32)

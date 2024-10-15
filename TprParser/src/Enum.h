@@ -104,11 +104,12 @@ enum class IVectorProps : int
 {
 	resid,
 	atnum, // atomtype number
+	atomicnum, // atomic number
 	Count
 };
 static const char* c_int_vector[static_cast<int>(IVectorProps::Count)] =
 {
-	"resid", "atnum"
+	"resid", "atnum", "atomicnum"
 };
 
 // vector of tpr, resname / atomname / atomtype name

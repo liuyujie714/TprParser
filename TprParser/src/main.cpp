@@ -19,20 +19,25 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/md_cg.tpr");
 		//TprReader reader("test/2lyz_gmx_4.0.tpr");
 		//TprReader reader("test/inter-md.tpr");
-		//TprReader reader("test/md2024.tpr");
+		TprReader reader("test/md2024.tpr");
 		//TprReader reader("test/2023demo.tpr");
 		//TprReader reader("test/2022.tpr");
 		//TprReader reader("test/2lyz_gmx_2021.tpr");
 		//TprReader reader("test/2020.4_gra.tpr");
 		//TprReader reader("test/annealing.tpr");
-		TprReader reader("test/npt2025-dev.tpr");
+		//TprReader reader("test/npt2025-dev.tpr");
+		for (auto& a : reader.get_ivector("atomicnum"))
+		{
+			std::cout << a << std::endl;
+		}
 
 		// µç³¡²âÊÔ
 		{
 			////TprReader reader("test/inter-md.tpr");
 			////TprReader reader("test/elec.tpr");
 			//TprReader reader("test/elecxyz.tpr");
-			////TprReader reader("test/elec5.1.2.tpr");
+			//TprReader reader("test/elec5.1.2.tpr");
+
 			//auto &ef = reader.get_ef();
 			//std::cout << "Electric field:\n";
 			//for (auto& e : ef) {

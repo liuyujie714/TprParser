@@ -323,10 +323,11 @@ struct TprData
 		std::vector<std::string>	atomname;
 		std::vector<std::string>	resname;
 		std::vector<std::string>	atomtypename; // atom type name from .ff
-		std::vector<int>			atomtypenumber; // atomtype number
+		std::vector<int>			atomtypenumber; // atomtype number, -1=unknown, 0=VSite
 		std::vector<int>			resid;
 		std::vector<float>			mass;
 		std::vector<float>			charge;
+		std::vector<int>			atomnumber; // atomic number, -1=unknown, 0=VSite
 		std::vector<unsigned short>	type; // unused ?
 	} atoms;
 

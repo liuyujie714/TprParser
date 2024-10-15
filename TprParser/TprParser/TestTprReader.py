@@ -66,6 +66,12 @@ def test_get_name(handle, ftype):
     except:
         sys.exit(f'Can not execute get_name("{ftype}") function')
 
+def test_get_ivector(handle, ftype):
+    try:
+        ret = handle.get_name(ftype)
+    except:
+        sys.exit(f'Can not execute test_get_ivector("{ftype}") function')
+
 def test_tot_atoms(handle, natoms, fname):
     assert natoms == len(handle.get_name('res')), f"The number of atoms is wrong in file {fname}"
 
@@ -119,10 +125,15 @@ def do_test():
         test_get_mq(reader, 'm')
         test_get_mq(reader, 'q')
 
-        # tets resname, atomname, atomtype
+        # test resname, atomname, atomtype
         test_get_name(reader, 'res')
         test_get_name(reader, 'atom')
         test_get_name(reader, 'type')
+        
+        # test resid, atomtypenumber(filever>128 not do_atomtypes), atomic number
+        test_get_ivector(reader, "resid")
+#        test_get_ivector(reader, "atnum")
+        test_get_ivector(reader, "atomicnum")
         
         # need delete obj
         del reader
