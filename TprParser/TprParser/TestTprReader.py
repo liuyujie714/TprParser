@@ -23,7 +23,7 @@ tprlist = {
     'ab42_gmx_4.6.1.tpr' :  [44052, 4], 
     'annealing.tpr' :       [347443, 4], 
     'benchMEM.tpr' :        [81743, 4], 
-    'double_2023.tpr' :     [16844, 8], 
+    'double_2023_cg.tpr' :     [16844, 8], 
     'em.tpr' :              [252, 4], 
     'Inter-2019.6.tpr' :    [157488, 4], 
     'inter-md.tpr' :        [13749, 4], 
@@ -66,11 +66,11 @@ def test_get_name(handle, ftype):
     except:
         sys.exit(f'Can not execute get_name("{ftype}") function')
 
-def test_get_ivector(handle, ftype):
+def test_get_ivector(handle, ftype, fname:str=""):
     try:
         ret = handle.get_ivector(ftype)
     except:
-        sys.exit(f'Can not execute get_ivector("{ftype}") function')
+        sys.exit(f'Can not execute get_ivector("{ftype}") function for {fname}')
 
 def test_tot_atoms(handle, natoms, fname):
     assert natoms == len(handle.get_name('res')), f"The number of atoms is wrong in file {fname}"
@@ -134,9 +134,11 @@ def do_test():
         test_get_ivector(reader, "resid")
 #        test_get_ivector(reader, "atnum")
         
-        # elec tpr all atom number == -1
-        if 'elec' not in fname:
-            test_get_ivector(reader, "atomicnum")
+        # elec/cg/some low version tpr all atom number == -1 or 0
+        if ('elec' not in fname) and ('cg' not in fname) and \
+            ('benchMEM' not in fname) and ('nobox' not in fname) and \
+            ('extra' not in fname):
+            test_get_ivector(reader, "atomicnum", fname)
         
         # need delete obj
         del reader
