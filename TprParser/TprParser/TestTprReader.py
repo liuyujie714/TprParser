@@ -68,9 +68,9 @@ def test_get_name(handle, ftype):
 
 def test_get_ivector(handle, ftype):
     try:
-        ret = handle.get_name(ftype)
+        ret = handle.get_ivector(ftype)
     except:
-        sys.exit(f'Can not execute test_get_ivector("{ftype}") function')
+        sys.exit(f'Can not execute get_ivector("{ftype}") function')
 
 def test_tot_atoms(handle, natoms, fname):
     assert natoms == len(handle.get_name('res')), f"The number of atoms is wrong in file {fname}"
