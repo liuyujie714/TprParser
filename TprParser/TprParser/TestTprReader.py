@@ -36,6 +36,10 @@ tprlist = {
     'elec5.1.2.tpr':        [45, 4], # along x
     'elec2019.tpr':         [45, 4], # along z
     'elecxyz.tpr':          [45, 4], # along xyz
+    # FEP
+    'benchBFC_FEP.tpr' :    [43952,4],
+    # gmx2025-beta
+    'npt2025-beta.tpr' :    [2652,4],
     # No lj parameters
     'extra-interactions-2018.tpr' : [17, 4],
 }

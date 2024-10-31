@@ -691,6 +691,19 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
     case F_RESTRANGLES:
         tpr_.do_real(&iparams->harmonic.rA, prec);
         tpr_.do_real(&iparams->harmonic.krA, prec);
+        if (filever < tpxv_HandleMartiniBondedBStateParametersProperly)
+        {
+            // Makes old tpr files work, because it's very likely
+            // that FEP on such interactions was never intended
+            // because such FEP is not implemented.
+            iparams->harmonic.rB = iparams->harmonic.rA;
+            iparams->harmonic.krB = iparams->harmonic.krA;
+        }
+        else
+        {
+            tpr_.do_real(&iparams->harmonic.rB, prec);
+            tpr_.do_real(&iparams->harmonic.krB, prec);
+        }
         break;
     case F_LINEAR_ANGLES:
         tpr_.do_real(&iparams->linangle.klinA, prec);
@@ -848,6 +861,16 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
     case F_RESTRDIHS:
         tpr_.do_real(&iparams->pdihs.phiA, prec);
         tpr_.do_real(&iparams->pdihs.cpA, prec);
+        if (filever < tpxv_HandleMartiniBondedBStateParametersProperly)
+        {
+            iparams->pdihs.phiB = iparams->pdihs.phiA;
+            iparams->pdihs.cpB = iparams->pdihs.cpA;
+        }
+        else
+        {
+            tpr_.do_real(&iparams->pdihs.phiB, prec);
+            tpr_.do_real(&iparams->pdihs.cpB, prec);
+        }
         break;
     case F_DISRES:
         tpr_.do_int(&iparams->disres.label);
@@ -901,6 +924,14 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
         break;
     case F_CBTDIHS: 
         tpr_.do_vector(iparams->cbtdihs.cbtcA, NR_CBTDIHS, data_->prec);
+        if (filever < tpxv_HandleMartiniBondedBStateParametersProperly)
+        {
+            std::copy(std::begin(iparams->cbtdihs.cbtcA), std::end(iparams->cbtdihs.cbtcA), std::begin(iparams->cbtdihs.cbtcB));
+        }
+        else
+        {
+            tpr_.do_vector(iparams->cbtdihs.cbtcB, NR_CBTDIHS, data_->prec);
+        }
         break;
     case F_RBDIHS:
         // Fall-through intended
@@ -1603,10 +1634,22 @@ bool TprReader::do_ir()
     print_vec("compress= ", ir->compress);
     if (!tpr_.do_int(&ir->refcoord_scaling)) return TPR_FAILED;
     msg("refcoord_scaling= %d\n", ir->refcoord_scaling);
-    if (!tpr_.do_vector(ir->posres_com, DIM, data_->prec)) return TPR_FAILED;
-    print_vec("posres_com= ", ir->posres_com, DIM);
-    if (!tpr_.do_vector(ir->posres_comB, DIM, data_->prec)) return TPR_FAILED;
-    print_vec("posres_comB= ", ir->posres_comB, DIM);
+
+    // 多质心缩放
+    int numPosresComGroups = 1;
+    if (data_->filever >= tpxv_RefScaleMultipleCOMs)
+    {
+        if (!tpr_.do_int(&numPosresComGroups)) return TPR_FAILED;
+    }
+    ir->posres_com.resize(numPosresComGroups);
+    ir->posres_comB.resize(numPosresComGroups);
+    for (int i = 0; i < numPosresComGroups; ++i)
+    {
+        if (!tpr_.do_vector(ir->posres_com[i].data(), DIM, data_->prec)) return TPR_FAILED;
+        print_vec("posres_com= ", ir->posres_com[i].data(), DIM);
+        if (!tpr_.do_vector(ir->posres_comB[i].data(), DIM, data_->prec)) return TPR_FAILED;
+        print_vec("posres_comB= ", ir->posres_comB[i].data(), DIM);
+    }
 
     //andersen_seed
     if (data_->filever < 79)
@@ -1666,8 +1709,11 @@ bool TprReader::do_ir()
             {
                 std::vector<float> init_lambda_weights(ir->n_lambda);
                 if (!tpr_.do_vector(init_lambda_weights.data(), ir->n_lambda, data_->prec)) return TPR_FAILED;
-                //bInit_weights
-                if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
+                if (data_->filever < tpxv_InputHistogramCounts)
+                {
+                    //bInit_weights
+                    if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
+                }
             }
 
             if (!tpr_.do_int(&idum)) return TPR_FAILED;
@@ -1692,6 +1738,29 @@ bool TprReader::do_ir()
             if (!tpr_.do_int(&idum)) return TPR_FAILED;
             if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
             if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        }
+
+        // gromacs2025 used, current use real instead of int
+        if (data_->filever >= tpxv_InputHistogramCounts)
+        {
+            if (ir->n_lambda > 0)
+            {
+                std::vector<float> initLambdaCounts(ir->n_lambda);
+                if (!tpr_.do_vector(initLambdaCounts.data(), ir->n_lambda, data_->prec)) return TPR_FAILED;
+                std::vector<float> initWlHistogramCounts(ir->n_lambda);
+                if (!tpr_.do_vector(initWlHistogramCounts.data(), ir->n_lambda, data_->prec)) return TPR_FAILED;
+            }
+        }
+        else
+        {
+            if (ir->n_lambda > 0)
+            {
+                // zero
+                std::vector<float> initLambdaCounts(ir->n_lambda);
+                std::vector<float> initWlHistogramCounts(ir->n_lambda);
+                initLambdaCounts.resize(ir->n_lambda, 0);
+                initWlHistogramCounts.resize(ir->n_lambda, 0);
+            }
         }
     }
 

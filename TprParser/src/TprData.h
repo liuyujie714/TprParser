@@ -248,8 +248,9 @@ struct TprData
 		float				tau_p;
 		float				ref_p[DIM * DIM] = { 0 };
 		float				compress[DIM * DIM] = { 0 };
-		float				posres_com[DIM] = { 0 };
-		float				posres_comB[DIM] = { 0 };
+		// can multiple com group
+		std::vector<std::array<float, DIM>> posres_com;
+		std::vector<std::array<float, DIM>> posres_comB;
 		int					refcoord_scaling; // int to enum,0=No,1=All,2=Com
 
 		float				shake_tol; // tolerance of shake

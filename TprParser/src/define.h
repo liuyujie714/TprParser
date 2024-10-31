@@ -184,9 +184,12 @@ enum tpxv
     tpxv_MassRepartitioning,          /**< Add mass repartitioning */
     tpxv_AwhTargetMetricScaling,      /**< Add AWH friction optimized target distribution */
     tpxv_VerletBufferPressureTol,     /**< Add Verlet buffer pressure tolerance */
+    tpxv_HandleMartiniBondedBStateParametersProperly, /**< Handle restraint angles, restraint dihedrals, and combined bending-torsion parameters properly */
+    tpxv_RefScaleMultipleCOMs,        /**< Add multiple COM groups for refcoord-scale */
+    tpxv_InputHistogramCounts,        /**< Provide input histogram counts for current expanded ensemble state */
     tpxv_Count                        /**< the total number of tpxv versions */
 };
-static const int tpx_version = tpxv_Count - 1;
+static constexpr int tpx_version = tpxv_Count - 1;
 
 enum class TpxGeneration : int
 {
@@ -211,7 +214,7 @@ typedef struct
     int ftype; /* function type */
 } t_ftupd;
 
-// ��ͬ�������Ͷ�Ӧ���ļ��汾
+// tpx compatibility version with added function types
 static const t_ftupd ftupd[] = {
     { 70, F_RESTRBONDS },
     { tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES },

@@ -25,12 +25,13 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/2lyz_gmx_2021.tpr");
 		//TprReader reader("test/2020.4_gra.tpr");
 		//TprReader reader("test/annealing.tpr");
-		//TprReader reader("test/npt2025-dev.tpr");
-		TprReader reader("test/elecxyz.tpr");
-		for (auto& a : reader.get_ivector("atomicnum"))
-		{
-			std::cout << a << std::endl;
-		}
+		//TprReader reader("test/npt2025-beta.tpr");
+		TprReader reader("test/benchBFC_FEP.tpr");
+		//TprReader reader("test/elecxyz.tpr");
+		//for (auto& a : reader.get_ivector("atomicnum"))
+		//{
+		//	std::cout << a << std::endl;
+		//}
 
 		// µç³¡²âÊÔ
 		{
