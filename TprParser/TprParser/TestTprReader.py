@@ -10,8 +10,10 @@ tprlist = {
     # No dihedrals
     'md.tpr' :              [2520, 4], 
     'md_cg.tpr' :           [8, 4], 
-    'semiP.tpr' :           [4608, 4],
+    'semiP_water.tpr' :     [4608, 4],
     'CO2_LineAngle.tpr' :   [3000, 4],
+    # gmx2025-beta
+    'npt2025-beta_water.tpr':[2652,4],
 
     '1EBZ.tpr' :            [3218, 4], 
     '2020.4_gra.tpr' :      [4536, 4], 
@@ -38,12 +40,10 @@ tprlist = {
     'elecxyz.tpr':          [45, 4], # along xyz
     # FEP
     'benchBFC_FEP.tpr' :    [43952,4],
-    # gmx2025-beta
-    'npt2025-beta.tpr' :    [2652,4],
     # No lj parameters
     'extra-interactions-2018.tpr' : [17, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:4]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:5]]
 
 
 def test_get_xvf(handle, ftype):
@@ -118,7 +118,7 @@ def do_test():
         # test bonded
         test_get_bonded(reader, 'bonds')
         # pure water use settle, no angle
-        if 'semiP.tpr' not in fname:
+        if 'water' not in fname:
             test_get_bonded(reader, 'angles')
         # these tpr has not dihedrals
         if name not in NoDihedrals:
