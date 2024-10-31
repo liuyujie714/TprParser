@@ -58,7 +58,7 @@ jobs:
     - name: set python and gcc env
       run: |
         set -x
-        dnf install gcc gcc-c++ cmake python3 python3-devel.x86_64 -y
+        dnf install gcc gcc-c++ cmake python3 -y
         ln -sf /usr/bin/python3 /usr/bin/python
         pip install numpy
 
