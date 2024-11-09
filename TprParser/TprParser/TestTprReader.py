@@ -172,8 +172,10 @@ def do_test2():
                 writer.set_mdp_integer('nstxout', 100)
                 writer.set_mdp_integer('nstenergy', 100)
                 writer.set_mdp_integer('nsttcouple', 1)
-                writer.set_mdp_integer('nstpcouple', 1)
+                writer.set_mdp_integer('nstpcouple', 9)
                 writer.set_mdp_integer('nstxout_compressed', 1032)
+                writer.set_mdp_integer('nstlist', 666)
+                writer.set_mdp_integer('nstcomm', 888)
 
             if prec==4:
                 writer.set_pressure('CRescale', 'Isotropic', 3.0, 
@@ -238,8 +240,10 @@ def do_test2():
             assert reader.get_mdp_integer('nstxout') == 100
             assert reader.get_mdp_integer('nstenergy') == 100
             assert reader.get_mdp_integer('nsttcouple') == 1
-            assert reader.get_mdp_integer('nstpcouple') == 1
+            assert reader.get_mdp_integer('nstpcouple') == 9
             assert reader.get_mdp_integer('nstxout_compressed') == 1032
+            assert reader.get_mdp_integer('nstlist') == 666
+            assert reader.get_mdp_integer('nstcomm') == 888
         
         del reader
 

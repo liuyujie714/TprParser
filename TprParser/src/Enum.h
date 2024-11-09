@@ -73,13 +73,15 @@ enum class ParamsInteger : int
 	nstlog, nstxout, nstvout, nstfout,
 	nstenergy, nstxout_compressed,
 	nsttcouple, nstpcouple, nstcalcenergy,
+	nstlist, nstcomm,
 	Count,
 };
 static const char* c_mdp_integer[static_cast<int>(ParamsInteger::Count)] =
 {
 	"nstlog", "nstxout", "nstvout", "nstfout",
 	"nstenergy", "nstxout_compressed" ,
-	"nsttcouple", "nstpcouple", "nstcalcenergy"
+	"nsttcouple", "nstpcouple", "nstcalcenergy",
+	"nstlist", "nstcomm"
 };
 
 // vector of tpr, X or V or F

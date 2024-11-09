@@ -1362,6 +1362,7 @@ bool TprReader::do_ir()
 
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("ns_type= %d\n", idum);
+    INSERT_POS(integer.nstlist);
     if (!tpr_.do_int(&ir->nstlist)) return TPR_FAILED;
     msg("nstlist= %d\n", ir->nstlist);
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
@@ -1369,6 +1370,7 @@ bool TprReader::do_ir()
 
     if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     msg("rtpi= %f\n", rdum); // test particle radius
+    INSERT_POS(integer.nstcomm);
     if (!tpr_.do_int(&ir->nstcomm)) return TPR_FAILED;
     msg("nstcomm= %d\n", ir->nstcomm); 
     if (!tpr_.do_int(&ir->comm_mode)) return TPR_FAILED;
@@ -3089,6 +3091,10 @@ int TprReader::get_mdp_integer(const char* prop) const
         return data_->ir.nstpcouple;
     case ParamsInteger::nstcalcenergy:
         return data_->ir.nstcalcenergy;
+    case ParamsInteger::nstlist:
+        return data_->ir.nstlist;
+    case ParamsInteger::nstcomm:
+        return data_->ir.nstcomm;
     default:
         break;
     }

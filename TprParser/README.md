@@ -12,7 +12,7 @@ Many properties can be set up by this module, such as total simulation time `nst
 
 GROMACS tpr version should between `4.0` to `2025-dev`, too old tpr to be read by this module.
 
-# Install
+# Installation
 
 * Requirements
 
@@ -64,18 +64,20 @@ atomnames = reader.get_name('atom')
 ```
 
 
+
 ## Get bonds/angles/dihedrals(proper and impropers) forcefield parameters
+
 ```python
-# get all bond pairs (1-based index)
+# get all bond pairs (1-based index) and it's parameters
 bonds = reader.get_bonded('bonds')
 
-# get all angles pairs (1-based index)
+# get all angles pairs (1-based index) and it's parameters
 angles = reader.get_bonded('angles')
 
-# get all proper dihedrals pairs (1-based index)
+# get all proper dihedrals pairs (1-based index) and it's parameters
 propers = reader.get_bonded('dihedrals')
 
-# get all improper dihedrals pairs (1-based index)
+# get all improper dihedrals pairs (1-based index) and it's parameters
 impropers = reader.get_bonded('impropers')
 
 ```
@@ -94,7 +96,7 @@ reader.set_xvf('x', newcoords)
 
 # Modify system pressure
 
-you can define a function do this work:
+Such as define a function to do this work:
 
 ```Python
 def Pressure(fname):
@@ -129,13 +131,18 @@ reader.set_pressure('Berendsen', 'anisotropic', 1.0, ref_p, compress, deform)
 ```
 
 
+
 # Modify system temperature
+
 ```python
 # set Berendsen algorithm and tau_t=0.2, ref_t=400 K for one temperature coupling group
 reader.set_temperature(etc='Berendsen', tau_t=[0.2], ref_t=[400])
 ```
 
+
+
 # Modify electric field parameters
+
 NOTE: `TprParser` must be >= `0.1.53`
 ```python
 # The modify must be matched to old tpr electric-field dimension
@@ -161,7 +168,10 @@ with SimSettings('input.tpr', 'output.tpr') as writer:
     writer.set_nsteps(2000000)
 ```
 
-# Make a gromacs top 
+
+
+# Make a gromacs top
+
 Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Virtual Site, Restraint` is missing!
 
 ```python
@@ -170,15 +180,20 @@ from TprParser.TprMakeTop import make_top_from_tpr
 make_top_from_tpr('md.tpr', 'out.top')
 ```
 
+
+
 ## Other
 
 Please see `TprReader` and `SimSettings` module annotation
 
 
+
 # Cite
+
 If `TprParser` is utilized in your work, please cite as follows in main text:
 
 > Yujie Liu, TprParser, Version [xxx](), https://pypi.org/project/TprParser/
+
 
 
 ## TODO

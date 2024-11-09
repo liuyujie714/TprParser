@@ -413,10 +413,15 @@ struct TprData
 			//must be data_->filever >= 67
 			long			nstcalcenergy = 0;
 
+			long			nstlist = 0;
+			long			nstcomm = 0;
+
 			//< return True if can not read any one position
 			bool empty() const
 			{
-				return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed && nsttcouple && nstpcouple && nstcalcenergy);
+				return !(nstlog && nstxout && nstvout && nstfout && nstenergy &&
+					nstxout_compressed && nsttcouple && nstpcouple && nstcalcenergy &&
+					nstlist && nstcomm);
 			}
 		} integer;
 
