@@ -1,6 +1,6 @@
 # Description
 
-`TprParser` is a convenient Python module for reading and setting simulation parameters in gromacs `tpr` file.
+`TprParser` is a convenient Python module for reading and setting simulation parameters of gromacs `tpr` file. It does not rely on the GROMACS library and `only` requires C++ and pure Python environment.
 
 This module mainly aimed to modify **atom property** of `tpr` and create a new tpr file (named `new.tpr`) after use any one `set_` method. 
 
@@ -158,7 +158,7 @@ reader.set_xvf('ef', newEF)
 
 
 # Modify multiple parameters
-I write a `SimSettings` class to do this work
+Use `SimSettings` class to do this work
 ```python
 from TprParser.TprReader import SimSettings
 
@@ -199,5 +199,4 @@ If `TprParser` is utilized in your work, please cite as follows in main text:
 ## TODO
 
 * More parameters can be modified
-* Get More essential parameters , such as `Virual Site`
-
+* Get more essential parameters , such as `Virual Site`

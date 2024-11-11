@@ -112,7 +112,7 @@ class TprReader:
         Parameters
         ----------
         keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
-        nsttcouple, nstpcouple, nstcalcenergy
+        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm
         val: an int value for keyword
 
         Returns
@@ -136,7 +136,7 @@ class TprReader:
         Parameters
         ----------
         keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
-        nsttcouple, nstpcouple, nstcalcenergy
+        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm
 
         Returns
         -------
