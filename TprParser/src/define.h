@@ -123,6 +123,7 @@ enum
     F_COM_PULL,
     F_DENSITYFITTING,
     F_EQM,
+    F_ENNPOT,
     F_EPOT,
     F_EKIN,
     F_ETOT,
@@ -187,6 +188,7 @@ enum tpxv
     tpxv_HandleMartiniBondedBStateParametersProperly, /**< Handle restraint angles, restraint dihedrals, and combined bending-torsion parameters properly */
     tpxv_RefScaleMultipleCOMs,        /**< Add multiple COM groups for refcoord-scale */
     tpxv_InputHistogramCounts,        /**< Provide input histogram counts for current expanded ensemble state */
+    tpxv_NNPotIFuncType,              /**< Add interaction function type for neural network potential */
     tpxv_Count                        /**< the total number of tpxv versions */
 };
 static constexpr int tpx_version = tpxv_Count - 1;
@@ -200,12 +202,12 @@ enum class TpxGeneration : int
 };
 
 //! Value of Current TPR generation.
-static const int tpx_generation = static_cast<int>(TpxGeneration::Count) - 1;
+static constexpr int tpx_generation = static_cast<int>(TpxGeneration::Count) - 1;
 
 /* This number should be the most recent backwards incompatible version
  * I.e., if this number is 9, we cannot read tpx version 9 with this code.
  */
-static const int tpx_incompatible_version = 57; // GMX4.0 has version 58
+static constexpr int tpx_incompatible_version = 57; // GMX4.0 has version 58
 
 /* Struct used to maintain tpx compatibility when function types are added */
 typedef struct
@@ -215,7 +217,7 @@ typedef struct
 } t_ftupd;
 
 // tpx compatibility version with added function types
-static const t_ftupd ftupd[] = {
+static constexpr t_ftupd ftupd[] = {
     { 70, F_RESTRBONDS },
     { tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES },
     { 76, F_LINEAR_ANGLES },
@@ -233,6 +235,7 @@ static const t_ftupd ftupd[] = {
     { tpxv_VSite1, F_VSITE1 },
     { tpxv_VSite2FD, F_VSITE2FD },
     { tpxv_GenericInternalParameters, F_DENSITYFITTING },
+    { tpxv_NNPotIFuncType, F_ENNPOT},
     { 69, F_VTEMP_NOLONGERUSED },
     { 66, F_PDISPCORR },
     { 79, F_DVDL_COUL },
@@ -245,7 +248,7 @@ static const t_ftupd ftupd[] = {
 static constexpr int NFTUPD = asize(ftupd);
 
 // from ifunc.h
-#define DIM 3
+constexpr int DIM = 3;
 constexpr int MAXATOMLIST = 6;
 constexpr int MAXFORCEPARAM = 12;
 constexpr int NR_RBDIHS = 6;
