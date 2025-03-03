@@ -429,4 +429,82 @@ struct TprData
 };
 
 
+//! Pull code data, from pull_params.h
+	/*! \brief Struct that defines a pull group */
+struct t_pull_group
+{
+	std::vector<int>  ind;     /**< The global atoms numbers */
+	std::vector<float> weight;  /**< Weights (use all 1 when weight==NULL) */
+	int               pbcatom; /**< The reference atom for pbc (global number) */
+	int pbcatom_input; /**< The reference atom for pbc (global number) as specified in the input parameters */
+};
+
+/*! Maximum number of pull groups that can be used in a pull coordinate */
+static constexpr int c_pullCoordNgroupMax = 6;
+
+/*! \brief Struct that defines a pull coordinate */
+struct t_pull_coord
+{
+	//! The pull type: umbrella, constraint, ...
+	PullingAlgorithm eType = PullingAlgorithm::Umbrella;
+	//! Name of the module providing   the external potential, only used with eType==epullEXTERNAL
+	std::string externalPotentialProvider;
+	//! The pull geometry
+	PullGroupGeometry eGeom = PullGroupGeometry::Distance;
+	//! Mathematical expression evaluated by the pull code for transformation coordinates.
+	std::string expression;
+	//! The finite difference to use in numerical derivation of mathematical expressions
+	double dx = 1e-9;
+	//! The number of groups, depends on eGeom
+	int ngroup = 0;
+	/*! \brief The pull groups:
+	 *
+	 *  indices into the group arrays in pull_t and pull_params_t,
+	 *   ngroup indices are used
+	 */
+	std::array<int, c_pullCoordNgroupMax> group;
+	//! Used to select components for constraint
+	int  dim[DIM] = { 0, 0, 0 };
+	//! The origin for the absolute reference
+	int  origin[DIM] = { 0, 0, 0 };
+	//! The pull vector, direction or position
+	int  vec[DIM] = { 0, 0, 0 };
+	//! Set init based on the initial structure
+	bool bStart = false;
+	//! Initial reference displacement (nm) or (deg)
+	float init = 0.0;
+	//! Rate of motion (nm/ps) or (deg/ps)
+	float rate = 0.0;
+	/*! \brief Force constant
+	 *
+	 * For umbrella pull type this is (kJ/(mol nm^2) or kJ/(mol rad^2).
+	 * For constant force pull type it is kJ/(mol nm) or kJ/(mol rad).
+	 */
+	float k = 0.0;
+	//! Force constant for state B
+	float kB = 0.0;
+	//! The index of this coordinate in the list of coordinates
+	int coordIndex = -1;
+};
+
+struct PullData
+{
+	int     ngroup = 0;
+	int     ncoord = 0;
+	int     nstxout = 0;
+	int     nstfout = 0;
+	float   cylinder_r, constr_tol;
+	bool    bPrintCOM;
+	bool    bPrintRefValue;
+	bool    bPrintComp;
+	bool    bSetPbcRefToPrevStepCOM;
+	bool    bXOutAverage;
+	bool    bFOutAverage;
+
+	std::vector<t_pull_group> group;
+	std::vector<t_pull_coord> coord;
+};
+
+
+
 #endif // !TPRDATA_H

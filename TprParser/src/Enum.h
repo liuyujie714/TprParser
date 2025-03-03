@@ -168,5 +168,33 @@ static inline ENUM check_string(const char* str, const char* arr[])
 }
 
 
+//! Pulling algorithm.
+enum class PullingAlgorithm : int
+{
+	Umbrella,
+	Constraint,
+	ConstantForce,
+	FlatBottom,
+	FlatBottomHigh,
+	External,
+	Count,
+	Default = Umbrella
+};
+
+//! Control of pull groups
+enum class PullGroupGeometry : int
+{
+	Distance,
+	Direction,
+	Cylinder,
+	DirectionPBC,
+	DirectionRelative,
+	Angle,
+	Dihedral,
+	AngleAxis,
+	Transformation,
+	Count,
+	Default = Distance
+};
 
 #endif // !ENUM_H

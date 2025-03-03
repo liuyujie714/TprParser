@@ -1,10 +1,12 @@
 #include <set>
-#include <cstring> // memset
+#include <string.h> // memset
 #include <cmath> // pow
 #include <algorithm>
 
 #include "Reader.h"
+#include "TprException.h"
 #include "Utils.h"
+#include "TprData.h"
 
 bool TprReader::tpr_header()
 {
@@ -12,9 +14,13 @@ bool TprReader::tpr_header()
 	int tempint;
 	if (!tpr_.do_int(&tempint)) return TPR_FAILED;
 
-	// read string contains gmx version
+	// read string contains gmx version: VERSION xxx
 	char filever[MAX_LEN];
 	if (!tpr_.xdr_string(filever, MAX_LEN)) return TPR_FAILED;
+    // check it, make sure it's a valid tpr file
+    if (std::strncmp(filever, "VERSION", 7) != 0) {
+        THROW_TPR_EXCEPTION("Input file is not a valid tpr file, so can not be read by TprParser");
+    }
 	msg("gmx version: %s\n", filever);
 
 	// read precision int
@@ -22,18 +28,19 @@ bool TprReader::tpr_header()
 	msg("gmx precision: %s\n", data_->prec == sizeof(float) ? "float" : "double");
 	if (data_->prec != sizeof(float) && data_->prec != sizeof(double))
 	{
-        throw std::runtime_error("TpxSerializer unsupports precision: " + std::to_string(data_->prec));
+        THROW_TPR_EXCEPTION("TpxSerializer unsupports precision: " + std::to_string(data_->prec));
 	}
 	
 	return TPR_SUCCESS;
 }
 
-static void print_vec(const char *name, float *arr, int len = DIM*DIM)
+template <typename T>
+static void print_vec(const char *name, T *arr, int len = DIM*DIM)
 {
 #ifdef _DEBUG
     msg(name);
-    for (int i = 0; i < len; i++) fprintf(stderr, "%f ", arr[i]);
-    printf("\n");
+    for (int i = 0; i < len; i++) fprintf(stdout, "%f ", static_cast<float>(arr[i]));
+    fprintf(stdout, "\n");
 #endif // _DEBUG
 }
 
@@ -1877,6 +1884,7 @@ bool TprReader::do_ir()
     // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
     // TODO pull code
     bool bPull = false;
+    PullingAlgorithm ePullOld = PullingAlgorithm::Umbrella;
     if (data_->filever >= tpxv_PullCoordTypeGeom)
     {
         if (!tpr_.do_bool(&bPull, data_->vergen)) return TPR_FAILED;
@@ -1884,13 +1892,41 @@ bool TprReader::do_ir()
     else
     {
         if (!tpr_.do_int(&idum)) return TPR_FAILED;
-        bPull = (idum != 0);
+        ePullOld = static_cast<PullingAlgorithm>(idum);
+        bPull = (ePullOld != PullingAlgorithm::Umbrella);
+        switch (ePullOld)
+        {
+        case PullingAlgorithm::Umbrella:
+            break;
+        case PullingAlgorithm::Constraint:
+            ePullOld = PullingAlgorithm::Umbrella;
+            break;
+        case PullingAlgorithm::ConstantForce:
+            ePullOld = PullingAlgorithm::Constraint;
+            break;
+        case PullingAlgorithm::FlatBottom:
+            ePullOld = PullingAlgorithm::ConstantForce;
+            break;
+        case PullingAlgorithm::FlatBottomHigh:
+            ePullOld = PullingAlgorithm::FlatBottom;
+            break;
+        case PullingAlgorithm::External:
+            ePullOld = PullingAlgorithm::FlatBottomHigh;
+            break;
+        case PullingAlgorithm::Count:
+            ePullOld = PullingAlgorithm::External;
+            break;
+        default:
+            THROW_TPR_EXCEPTION("Unhandled old pull algorithm");
+            break;
+        }
     }
     if (bPull)
     {
-        return TPR_SUCCESS;
-        // TODO
-        throw std::runtime_error("Unsupport read pull code");
+        do_pull(ePullOld);
+        //return TPR_SUCCESS;
+        //// TODO
+        //THROW_TPR_EXCEPTION("Unsupport read pull code");
     }
 
     // read AWH
@@ -1902,7 +1938,7 @@ bool TprReader::do_ir()
     if (bDoAwh)
     {
         return TPR_SUCCESS;
-        throw std::runtime_error("Unsupport read AWH code");
+        THROW_TPR_EXCEPTION("Unsupport read AWH code");
     }
 
     // Enforced rotation
@@ -1914,7 +1950,7 @@ bool TprReader::do_ir()
     if (bRot)
     {
         return TPR_SUCCESS;
-        throw std::runtime_error("Unsupport read enforced rotation code");
+        THROW_TPR_EXCEPTION("Unsupport read enforced rotation code");
     }
 
     // IMD
@@ -1926,7 +1962,7 @@ bool TprReader::do_ir()
     if (bIMD)
     {
         return TPR_SUCCESS;
-        throw std::runtime_error("Unsupport read IMD code");
+        THROW_TPR_EXCEPTION("Unsupport read IMD code");
     }
 
     // 控温部分
@@ -2053,7 +2089,7 @@ bool TprReader::do_ir()
             {
                 if (n > 1 || nt > 1)
                 {
-                    throw std::runtime_error("Can not handle tpr files with more than one electric field term per direction.");
+                    THROW_TPR_EXCEPTION("Can not handle tpr files with more than one electric field term per direction.");
                 }
                 msg("dim=%d, E0=    %g\n", i, aa[0]);
                 msg("dim=%d, omega= %g\n", i, at[0]);
@@ -2081,7 +2117,7 @@ bool TprReader::do_ir()
         {
             // do_swapcoords_tpx 
             return TPR_SUCCESS;
-            throw std::runtime_error("Unsupport Computational Electrophysiology");
+            THROW_TPR_EXCEPTION("Unsupport Computational Electrophysiology");
         }
     }
 
@@ -2329,6 +2365,319 @@ bool TprReader::do_fepvals()
     return TPR_SUCCESS;
 }
 
+bool TprReader::do_pull(PullingAlgorithm ePullOld)
+{
+    PullGroupGeometry eGeomOld = PullGroupGeometry::Count;
+    PullData    pd; // local pull variable
+
+    int               dimOld[DIM];
+    float             fdum;
+    if (data_->filever >= 95)
+    {
+        if (!tpr_.do_int(&pd.ngroup)) return TPR_FAILED;
+    }
+    if (!tpr_.do_int(&pd.ncoord)) return TPR_FAILED;
+    msg("ncoord= %d\n", pd.ncoord);
+
+    if (data_->filever < 95)
+    {
+        pd.ngroup = pd.ncoord + 1; // ncoord + 1
+    }
+    msg("ngroup= %d\n", pd.ngroup);
+
+    if (data_->filever < tpxv_PullCoordTypeGeom)
+    {
+        if (!tpr_.do_int(reinterpret_cast<int*>(&eGeomOld))) return TPR_FAILED;
+        msg("eGeomOld= %d\n", static_cast<int>(eGeomOld));
+        if (!tpr_.do_vector(dimOld, DIM, data_->prec, data_->filever)) return TPR_FAILED;
+        print_vec("dimOld= ", dimOld, DIM);
+        // The inner cylinder radius
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        msg("cylinder radius= %g\n", fdum);
+    }
+    if (!tpr_.do_real(&pd.cylinder_r, data_->prec)) return TPR_FAILED;
+    msg("cylinder_r= %g\n", pd.cylinder_r);
+    if (!tpr_.do_real(&pd.constr_tol, data_->prec)) return TPR_FAILED;
+    msg("constr_tol= %g\n", pd.constr_tol);
+    if (data_->filever >= 95)
+    {
+        if(!tpr_.do_bool(&pd.bPrintCOM, data_->vergen)) return TPR_FAILED;
+        msg("bPrintCOM= %d\n", pd.bPrintCOM ? 1 : 0);
+    }
+    if (data_->filever >= tpxv_ReplacePullPrintCOM12)
+    {
+        if (!tpr_.do_bool(&pd.bPrintRefValue, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bPrintComp, data_->vergen)) return TPR_FAILED;
+    }
+    else if (data_->filever >= tpxv_PullCoordTypeGeom)
+    {
+        int idum;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // used to be bPrintCOM2
+        if (!tpr_.do_bool(&pd.bPrintRefValue, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bPrintComp, data_->vergen)) return TPR_FAILED;
+    }
+    else
+    {
+        pd.bPrintRefValue = false;
+        pd.bPrintComp = false;
+    }
+    msg("bPrintRefValue= %d\n", pd.bPrintRefValue ? 1 : 0);
+    msg("bPrintComp= %d\n", pd.bPrintComp ? 1 : 0);
+
+    if (!tpr_.do_int(&pd.nstxout)) return TPR_FAILED;
+    if (!tpr_.do_int(&pd.nstfout)) return TPR_FAILED;
+    msg("pull nstxout= %d\n", pd.nstxout);
+    msg("pull nstfout= %d\n", pd.nstfout);
+    if (data_->filever >= tpxv_PullPrevStepCOMAsReference)
+    {
+        if (!tpr_.do_bool(&pd.bSetPbcRefToPrevStepCOM, data_->vergen)) return TPR_FAILED;
+    }
+    else
+    {
+        pd.bSetPbcRefToPrevStepCOM = false;
+    }
+    // allcate
+    pd.group.resize(pd.ngroup);
+    pd.coord.resize(pd.ngroup);
+    if (data_->filever < 95)
+    {
+        if (eGeomOld == PullGroupGeometry::DirectionPBC)
+        {
+            THROW_TPR_EXCEPTION("pull-geometry=position is no longer supported");
+        }
+        if (eGeomOld > PullGroupGeometry::DirectionPBC)
+        {
+            switch (eGeomOld)
+            {
+            case PullGroupGeometry::DirectionRelative:
+                eGeomOld = PullGroupGeometry::DirectionPBC;
+                break;
+            case PullGroupGeometry::Angle:
+                eGeomOld = PullGroupGeometry::DirectionRelative;
+                break;
+            case PullGroupGeometry::Dihedral: 
+                eGeomOld = PullGroupGeometry::Angle; 
+                break;
+            case PullGroupGeometry::AngleAxis: 
+                eGeomOld = PullGroupGeometry::Dihedral; 
+                break;
+            case PullGroupGeometry::Count: 
+                eGeomOld = PullGroupGeometry::AngleAxis; 
+                break;
+            default:
+                THROW_TPR_EXCEPTION("Unhandled old pull type");
+            }
+        }
+
+        for (int g = 0; g < pd.ngroup; g++)
+        {
+            msg("pull-group %d:\n", g);
+            // read and ignore a pull coordinate for group 0
+            do_pullgrp_tpx_pre95(&pd.group[g], &pd.coord[std::max(g - 1, 0)]);
+            if (g > 0)
+            {
+                pd.coord[g - 1].group[0] = 0;
+                pd.coord[g - 1].group[1] = g;
+            }
+        }
+
+        pd.bPrintCOM = (!pd.group[0].ind.empty());
+    }
+    else
+    {
+        for (int g = 0; g < pd.ngroup; g++)
+        {
+            msg("pull-group %d:\n", g);
+            do_pull_group(&pd.group[g]);
+        }
+        for (int g = 0; g < pd.ncoord; g++)
+        {
+            do_pull_coord(&pd.coord[g], ePullOld, eGeomOld, dimOld);
+            pd.coord[g].coordIndex = g;
+        }
+    }
+    if (data_->filever >= tpxv_PullAverage)
+    {
+        if (!tpr_.do_bool(&pd.bXOutAverage, data_->vergen)) return TPR_FAILED;
+        msg("pull bXOutAverage= %d\n", pd.bXOutAverage ? 1 : 0);
+        if (!tpr_.do_bool(&pd.bFOutAverage, data_->vergen)) return TPR_FAILED;
+        msg("pull bFOutAverage= %d\n", pd.bFOutAverage ? 1 : 0);
+    }
+
+    return TPR_SUCCESS;
+}
+
+// old tpr
+bool TprReader::do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd)
+{
+    int numAtoms = static_cast<int>(pgrp->ind.size());
+    if (!tpr_.do_int(&numAtoms)) return TPR_FAILED;
+    msg("pull numAtoms= %d\n", numAtoms);
+    pgrp->ind.resize(numAtoms);
+    if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen)) return TPR_FAILED;
+    print_vec("pgrp->ind= ", pgrp->ind.data(), numAtoms);
+
+    int numWeights = static_cast<int>(pgrp->weight.size());
+    if (!tpr_.do_int(&numWeights)) return TPR_FAILED;
+    msg("pull numWeights= %d\n", numWeights);
+    pgrp->weight.resize(numWeights);
+    if (!tpr_.do_vector(pgrp->weight.data(), numWeights, data_->prec, data_->vergen)) return TPR_FAILED;
+    print_vec("pgrp->weight= ", pgrp->weight.data(), numWeights);
+
+
+    if (!tpr_.do_int(&pgrp->pbcatom)) return TPR_FAILED;
+    msg("pull pbcatom= %d\n", pgrp->pbcatom);
+    if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+    print_vec("pcrd->vec= ", pcrd->vec, DIM);
+
+    std::vector<float> tmp(DIM); // size=DIM
+    pcrd->origin[0] = pcrd->origin[1] = pcrd->origin[2] = 0;
+    if (!tpr_.do_vector(tmp.data(), DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+    pcrd->init = tmp[0];
+    if (!tpr_.do_real(&pcrd->rate, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->k, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->kB, data_->prec)) return TPR_FAILED;
+    msg("pcrd->init= %g\n", pcrd->init);
+    msg("pcrd->rate= %g\n", pcrd->rate);
+    msg("pcrd->k= %g\n", pcrd->k);
+    msg("pcrd->kB= %g\n", pcrd->kB);
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::do_pull_group(t_pull_group* pgrp)
+{
+    int numAtoms = static_cast<int>(pgrp->ind.size());
+    if (!tpr_.do_int(&numAtoms)) return TPR_FAILED;
+    pgrp->ind.resize(numAtoms);
+    if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen)) return TPR_FAILED;
+
+    int numWeights = static_cast<int>(pgrp->weight.size());
+    if (!tpr_.do_int(&numWeights)) return TPR_FAILED;
+    msg("pull numWeights= %d\n", numWeights);
+    pgrp->weight.resize(numWeights);
+    if (!tpr_.do_vector(pgrp->weight.data(), numWeights, data_->prec, data_->vergen)) return TPR_FAILED;
+    print_vec("pgrp->weight", pgrp->weight.data(), numWeights);
+
+    if (!tpr_.do_int(&pgrp->pbcatom)) return TPR_FAILED;
+    msg("pull pbcatom= %d\n", pgrp->pbcatom);
+    return TPR_SUCCESS;
+}
+
+bool TprReader::do_pull_coord(t_pull_coord* pcrd, PullingAlgorithm ePullOld, PullGroupGeometry eGeomOld, int dimOld[DIM])
+{
+    if (data_->filever >= tpxv_PullCoordNGroup)
+    {
+        if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eType))) return TPR_FAILED;
+        msg("pcrd->eType= %d\n", static_cast<int>(pcrd->eType));
+        if (data_->filever >= tpxv_PullExternalPotential)
+        {
+            if (pcrd->eType == PullingAlgorithm::External)
+            {
+                char temp[MAX_LEN];
+                if (!tpr_.do_string(temp, data_->vergen)) return TPR_FAILED;
+                pcrd->externalPotentialProvider = temp;
+            }
+            else
+            {
+                pcrd->externalPotentialProvider.clear();
+            }
+        }
+        else
+        {
+            pcrd->externalPotentialProvider.clear();
+        }
+        /* Note that we try to support adding new geometries without
+         * changing the tpx version. This requires checks when printing the
+         * geometry string and a check and fatal_error in init_pull.
+         */
+        if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eGeom))) return TPR_FAILED;
+        msg("pcrd->eGeom= %d\n", static_cast<int>(pcrd->eGeom));
+        if (!tpr_.do_int(&pcrd->ngroup)) return TPR_FAILED;
+        msg("pcrd->ngroup= %d\n", pcrd->ngroup);
+        if (pcrd->ngroup <= c_pullCoordNgroupMax)
+        {
+            if (!tpr_.do_vector(pcrd->group.data(), pcrd->ngroup, data_->prec, data_->vergen)) return TPR_FAILED;
+            print_vec("pcrd->ngroup= ", pcrd->group.data(), pcrd->ngroup);
+        }
+        else
+        {
+            /* More groups in file than supported, this must be a new geometry
+             * that is not supported by our current code. Since we will not
+             * use the groups for this coord (checks in the pull and WHAM code
+             * ensure this), we can ignore the groups and set ngroup=0.
+             */
+            std::vector<int> temp(pcrd->ngroup);
+            if (!tpr_.do_vector(temp.data(), pcrd->ngroup, data_->prec, data_->vergen)) return TPR_FAILED;
+            print_vec("pcrd->group_unused= ", temp.data(), pcrd->ngroup);
+
+            pcrd->ngroup = 0;
+        }
+        if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+        print_vec("pcrd->dim= ", pcrd->dim, DIM);
+        if (data_->filever >= tpxv_TransformationPullCoord)
+        {
+            char temp[MAX_LEN];
+            if (!tpr_.do_string(temp, data_->vergen)) return TPR_FAILED;
+            pcrd->expression = temp;
+        }
+        else
+        {
+            pcrd->expression.clear();
+        }
+    }
+    else
+    {
+        pcrd->ngroup = 2;
+        if (!tpr_.do_int(&pcrd->group[0])) return TPR_FAILED;
+        if (!tpr_.do_int(&pcrd->group[1])) return TPR_FAILED;
+        if (data_->filever >= tpxv_PullCoordTypeGeom)
+        {
+            pcrd->ngroup = (pcrd->eGeom == PullGroupGeometry::DirectionRelative ? 4 : 2);
+            if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eType))) return TPR_FAILED;
+            if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eGeom))) return TPR_FAILED;
+            msg("pcrd->ngroup= %d\n", pcrd->ngroup);
+            msg("pcrd->eType= %d\n", static_cast<int>(pcrd->eType));
+            msg("pcrd->eGeom= %d\n", static_cast<int>(pcrd->eGeom));
+
+            if (pcrd->ngroup == 4)
+            {
+                if (!tpr_.do_int(&pcrd->group[2])) return TPR_FAILED;
+                if (!tpr_.do_int(&pcrd->group[3])) return TPR_FAILED;
+            }
+            if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+            print_vec("pcrd->dim= ", pcrd->dim, DIM);
+        }
+        else
+        {
+            pcrd->eType = ePullOld;
+            pcrd->eGeom = eGeomOld;
+            std::copy(dimOld, dimOld + DIM, pcrd->dim);
+        }
+    }
+    if (!tpr_.do_vector(pcrd->origin, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+    if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+    if (data_->filever >= tpxv_PullCoordTypeGeom)
+    {
+        if (!tpr_.do_bool(&pcrd->bStart, data_->vergen)) return TPR_FAILED;
+    }
+    else
+    {
+        /* This parameter is only printed, but not actually used by mdrun */
+        pcrd->bStart = false;
+    }
+    if (!tpr_.do_real(&pcrd->init, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->rate, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->k, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->kB, data_->prec)) return TPR_FAILED;
+    msg("pcrd->init= %g\n", pcrd->init);
+    msg("pcrd->rate= %g\n", pcrd->rate);
+    msg("pcrd->k= %g\n", pcrd->k);
+    msg("pcrd->kB= %g\n", pcrd->kB);
+
+    return TPR_SUCCESS;
+}
+
 bool TprReader::do_groups()
 {
     //do_grps
@@ -2372,9 +2721,9 @@ bool TprReader::do_groups()
         {
             const char* gpname = &data_->symtab[SAVELEN * gpos[id]];
 #ifdef _DEBUG
-            fprintf(stderr, " %s", gpname);
+            fprintf(stdout, " %s", gpname);
         }
-        fprintf(stderr, "]\n");
+        fprintf(stdout, "]\n");
 #else
         }
 #endif // _DEBUG
@@ -2439,7 +2788,7 @@ bool TprReader::set_nsteps(int64_t nsteps)
         // write nsteps before 
         if (newtpr.fwrite_(buffer, data_->property.nsteps * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_nsteps before");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_nsteps before");
         }
 
         // write new nsteps
@@ -2458,7 +2807,7 @@ bool TprReader::set_nsteps(int64_t nsteps)
         long len = fsize - data_->property.nsteps - sizeof(int64_t);
         if (newtpr.fwrite_(&buffer[data_->property.nsteps + sizeof(int64_t)], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_nsteps after");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_nsteps after");
         }
 
         return TPR_SUCCESS;
@@ -2479,7 +2828,7 @@ bool TprReader::set_dt(double dt)
         // write dt before 
         if (newtpr.fwrite_(buffer, data_->property.dt * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_dt before");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_dt before");
         }
 
         // write new dt 
@@ -2500,7 +2849,7 @@ bool TprReader::set_dt(double dt)
         long len = fsize - data_->property.dt - realsize;
         if (newtpr.fwrite_(&buffer[data_->property.dt + realsize], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_dt after");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_dt after");
         }
 
         return TPR_SUCCESS;
@@ -2557,7 +2906,7 @@ bool TprReader::set_pressure(
     // check data type float must be same as data_->prec
     if (sizeof(float) != data_->prec)
     {
-        throw std::runtime_error("set_pressure only support single precision tpr");
+        THROW_TPR_EXCEPTION("set_pressure only support single precision tpr");
     }
 
     // check pressure coupling keywords
@@ -2565,31 +2914,31 @@ bool TprReader::set_pressure(
     PressureCouplingType epct;
     if ((epc = check_string<PressureCoupling>(method, c_PressureCoupling)) == PressureCoupling::Count)
     {
-        throw std::runtime_error(std::string("Unknown pressure coupling method: ") + method);
+        THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling method: ") + method);
     }
     if ((epct = check_string<PressureCouplingType>(type, c_PressureCouplingType)) == PressureCouplingType::Count)
     {
-        throw std::runtime_error(std::string("Unknown pressure coupling type: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling type: ") + type);
     }
     // ref_p and compress
     if (ref_p.size() != DIM * DIM)
     {
-        throw std::runtime_error("The size of ref_p must be 9");
+        THROW_TPR_EXCEPTION("The size of ref_p must be 9");
     }
     if (compress.size() != DIM * DIM)
     {
-        throw std::runtime_error("The size of compressibility must be 9");
+        THROW_TPR_EXCEPTION("The size of compressibility must be 9");
     }
     // deform
     if (deform.size() != DIM * DIM)
     {
-        throw std::runtime_error("The size of deform must be 9");
+        THROW_TPR_EXCEPTION("The size of deform must be 9");
     }
 
     // only for fileversion >= 51
     if (data_->filever < 51)
     {
-        throw std::runtime_error("Only support tpr file version >= 51 to write");
+        THROW_TPR_EXCEPTION("Only support tpr file version >= 51 to write");
     }
 
     long            fsize = 0;
@@ -2602,7 +2951,7 @@ bool TprReader::set_pressure(
         // write box_rel before 
         if (newtpr.fwrite_(buffer, data_->property.press.box_rel * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in box_rel before");
+            THROW_TPR_EXCEPTION("fwrite_ error in box_rel before");
         }
 
         // write box_rel
@@ -2626,7 +2975,7 @@ bool TprReader::set_pressure(
         long len = data_->property.press.epc - data_->property.press.box_rel - box_relsize;
         if (newtpr.fwrite_(&buffer[data_->property.press.box_rel + box_relsize], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_pressure before");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_pressure before");
         }
 
         // write epc as int enum
@@ -2657,7 +3006,7 @@ bool TprReader::set_pressure(
         len = data_->property.press.deform - data_->property.press.compress - size;
         if (newtpr.fwrite_(&buffer[data_->property.press.compress + size], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_pressure after and deform before");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_pressure after and deform before");
         }
 
         // write deform in vector
@@ -2667,7 +3016,7 @@ bool TprReader::set_pressure(
         len = fsize - data_->property.press.deform - size;
         if (newtpr.fwrite_(&buffer[data_->property.press.deform + size], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in set_pressure deform after");
+            THROW_TPR_EXCEPTION("fwrite_ error in set_pressure deform after");
         }
 
         return TPR_SUCCESS;
@@ -2685,23 +3034,23 @@ bool TprReader::set_temperature(
     // check data type float must be same as data_->prec
     if (sizeof(float) != data_->prec)
     {
-        throw std::runtime_error("set_temperature only support single precision tpr");
+        THROW_TPR_EXCEPTION("set_temperature only support single precision tpr");
     }
 
     // check temperature coupling keywords
     TemperatureCoupling etc;
     if ((etc = check_string<TemperatureCoupling>(method, c_TemperatureCoupling)) == TemperatureCoupling::Count)
     {
-        throw std::runtime_error(std::string("Unknown temperature coupling method: ") + method);
+        THROW_TPR_EXCEPTION(std::string("Unknown temperature coupling method: ") + method);
     }
     // ref_p and compress
     if (ref_t.size() != tau_t.size())
     {
-        throw std::runtime_error("The size of ref_t and tau_t must be same");
+        THROW_TPR_EXCEPTION("The size of ref_t and tau_t must be same");
     }
     if (static_cast<int>(ref_t.size()) != data_->ir.ngtc)
     {
-        throw std::runtime_error(std::string("The size of ref_t must be same as old tpr: ") + std::to_string(data_->ir.ngtc));
+        THROW_TPR_EXCEPTION(std::string("The size of ref_t must be same as old tpr: ") + std::to_string(data_->ir.ngtc));
     }
 
     long            fsize = 0;
@@ -2714,7 +3063,7 @@ bool TprReader::set_temperature(
         // write etc before 
         if (newtpr.fwrite_(buffer, data_->property.temperature.etc * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in ir->etc before");
+            THROW_TPR_EXCEPTION("fwrite_ error in ir->etc before");
         }
 
         // write etc type as enum
@@ -2726,7 +3075,7 @@ bool TprReader::set_temperature(
         long len = data_->property.temperature.ngtc - data_->property.temperature.etc - sizeInt;
         if (newtpr.fwrite_(&buffer[data_->property.temperature.etc + sizeInt], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in etc after and ir->ngtc before");
+            THROW_TPR_EXCEPTION("fwrite_ error in etc after and ir->ngtc before");
         }
 
         // write ir->ngtc 
@@ -2749,7 +3098,7 @@ bool TprReader::set_temperature(
         len = data_->property.temperature.ref_t - started - sizeInt;
         if (newtpr.fwrite_(&buffer[started + sizeInt], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in nhchainlength after and ref_t before");
+            THROW_TPR_EXCEPTION("fwrite_ error in nhchainlength after and ref_t before");
         }
 
         // write ref_t vector
@@ -2763,7 +3112,7 @@ bool TprReader::set_temperature(
         len = fsize - data_->property.temperature.tau_t - size;
         if (newtpr.fwrite_(&buffer[data_->property.temperature.tau_t + size], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in ir->tau_t after");
+            THROW_TPR_EXCEPTION("fwrite_ error in ir->tau_t after");
         }
 
         return TPR_SUCCESS;
@@ -2777,13 +3126,13 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
 	ParamsInteger epi;
 	if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
 	{
-        throw std::runtime_error(std::string("Unknown mdp property: ") + prop);
+        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop);
 	}
 
     // too old tpr unsupport
     if (data_->filever < 71)
     {
-        throw std::runtime_error(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
+        THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
     }
 
     long            fsize = 0;
@@ -2799,7 +3148,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         long keypos = *(pos + eIdx);
         if (newtpr.fwrite_(buffer, keypos * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in keyword before");
+            THROW_TPR_EXCEPTION("fwrite_ error in keyword before");
         }
 
         // write new epi in a int
@@ -2810,7 +3159,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         long len = fsize - keypos - size;
         if (newtpr.fwrite_(&buffer[keypos + size], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in keyword after");
+            THROW_TPR_EXCEPTION("fwrite_ error in keyword after");
         }
 
         return TPR_SUCCESS;
@@ -2825,7 +3174,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
-        throw std::runtime_error(std::string("Unknown vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown vector property: ") + type);
     }
 
     switch (evec)
@@ -2835,7 +3184,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         // check if has coordinates of tpr
         if (!data_->bX)
         {
-            throw std::runtime_error("Input tpr has not coordinates information");
+            THROW_TPR_EXCEPTION("Input tpr has not coordinates information");
         }
         return data_->atoms.x;
     }
@@ -2844,7 +3193,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         // check if has velocity of tpr
         if (!data_->bV)
         {
-            throw std::runtime_error("Input tpr has not velocity information");
+            THROW_TPR_EXCEPTION("Input tpr has not velocity information");
         }
         return data_->atoms.v;
     }
@@ -2853,7 +3202,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         // check if has force of tpr
         if (!data_->bF)
         {
-            throw std::runtime_error("Input tpr has not force information");
+            THROW_TPR_EXCEPTION("Input tpr has not force information");
         }
         return data_->atoms.f;
     }
@@ -2862,7 +3211,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         // check if has get mass
         if (data_->atoms.mass.empty())
         {
-            throw std::runtime_error("Can not get mass information");
+            THROW_TPR_EXCEPTION("Can not get mass information");
         }
         return data_->atoms.mass;
     }
@@ -2871,7 +3220,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         // check if has get charge
         if (data_->atoms.charge.empty())
         {
-            throw std::runtime_error("Can not get charge information");
+            THROW_TPR_EXCEPTION("Can not get charge information");
         }
         return data_->atoms.charge;
     }
@@ -2880,7 +3229,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         // check if has get charge
         if (!data_->bBox)
         {
-            throw std::runtime_error("Have not box information in tpr");
+            THROW_TPR_EXCEPTION("Have not box information in tpr");
         }
         return data_->box;
     }
@@ -2889,7 +3238,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         return get_ef();
     }
     default:
-        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type);
         break;
     }
 }
@@ -2899,7 +3248,7 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
     IVectorProps evec;
     if ((evec = check_string<IVectorProps>(type, c_int_vector)) == IVectorProps::Count)
     {
-        throw std::runtime_error(std::string("Unknown int vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown int vector property: ") + type);
     }
 
     switch (evec)
@@ -2908,7 +3257,7 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
     {
         if (data_->atoms.resid.empty())
         {
-            throw std::runtime_error("Can not get resid information");
+            THROW_TPR_EXCEPTION("Can not get resid information");
         }
         return data_->atoms.resid;
     }
@@ -2916,7 +3265,7 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
     {
         if (data_->atoms.atomtypenumber.empty())
         {
-            throw std::runtime_error("Can not get atomtype number information");
+            THROW_TPR_EXCEPTION("Can not get atomtype number information");
         }
         return data_->atoms.atomtypenumber;
     }
@@ -2927,12 +3276,12 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
                 [](int val) {return val == -1; })
             )
         {
-            throw std::runtime_error("Can not get atomic number information or all -1");
+            THROW_TPR_EXCEPTION("Can not get atomic number information or all -1");
         }
         return data_->atoms.atomnumber;
     }
     default:
-        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type);
         break;
     }
 }
@@ -2943,7 +3292,7 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
     StringType evec;
     if ((evec = check_string<StringType>(type, c_name_vector)) == StringType::Count)
     {
-        throw std::runtime_error(std::string("Unknown vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown vector property: ") + type);
     }
 
     switch (evec)
@@ -2952,7 +3301,7 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
     {
         if (data_->atoms.resname.empty())
         {
-            throw std::runtime_error("Can not get resname information");
+            THROW_TPR_EXCEPTION("Can not get resname information");
         }
         return data_->atoms.resname;
     }
@@ -2960,7 +3309,7 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
     {
         if (data_->atoms.atomname.empty())
         {
-            throw std::runtime_error("Can not get atomname information");
+            THROW_TPR_EXCEPTION("Can not get atomname information");
         }
         return data_->atoms.atomname;
     }
@@ -2968,12 +3317,12 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
     {
         if (data_->atoms.atomtypename.empty())
         {
-            throw std::runtime_error("Can not get atomtypename information");
+            THROW_TPR_EXCEPTION("Can not get atomtypename information");
         }
         return data_->atoms.atomtypename;
     }
     default:
-        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type);
         break;
     }
 }
@@ -2984,7 +3333,7 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
     BondedType evec;
     if ((evec = check_string<BondedType>(type, c_bonded_type)) == BondedType::Count)
     {
-        throw std::runtime_error(std::string("Unknown bonded property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown bonded property: ") + type);
     }
     
     switch (evec)
@@ -2993,7 +3342,7 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
     {
         if (data_->bonds.empty())
         {
-            throw std::runtime_error("Can not get bonds information from tpr");
+            THROW_TPR_EXCEPTION("Can not get bonds information from tpr");
         }
         return data_->bonds; 
     }
@@ -3001,7 +3350,7 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
     {
         if (data_->angles.empty())
         {
-            throw std::runtime_error("Can not get angles information from tpr");
+            THROW_TPR_EXCEPTION("Can not get angles information from tpr");
         }
         return data_->angles; 
     }
@@ -3009,7 +3358,7 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
     {
         if (data_->dihedrals.empty())
         {
-            throw std::runtime_error("Can not get dihedrals information from tpr");
+            THROW_TPR_EXCEPTION("Can not get dihedrals information from tpr");
         }
         return data_->dihedrals;
     }
@@ -3017,12 +3366,12 @@ const std::vector<Bonded> &TprReader::get_bonded(const char *type) const
     {
         if (data_->dihedrals.empty())
         {
-            throw std::runtime_error("Can not get dihedrals information from tpr");
+            THROW_TPR_EXCEPTION("Can not get dihedrals information from tpr");
         }
         return data_->impropers;
     }
     default:
-        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type);
         break;
     }
 }
@@ -3033,7 +3382,7 @@ const std::vector<NonBonded>& TprReader::get_nonbonded(const char* type) const
     NonBondedType evec;
     if ((evec = check_string<NonBondedType>(type, c_nonbonded_type)) == NonBondedType::Count)
     {
-        throw std::runtime_error(std::string("Unknown nonbonded property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown nonbonded property: ") + type);
     }
 
     switch (evec)
@@ -3041,23 +3390,23 @@ const std::vector<NonBonded>& TprReader::get_nonbonded(const char* type) const
     case NonBondedType::LJ:
         if (data_->ljparams.empty())
         {
-            throw std::runtime_error("Can not get LJ information from tpr");
+            THROW_TPR_EXCEPTION("Can not get LJ information from tpr");
         }
         return data_->ljparams;
     case NonBondedType::atomtype:
         if (data_->atomtypesLJ.empty())
         {
-            throw std::runtime_error("Can not get atomtype LJ information from tpr");
+            THROW_TPR_EXCEPTION("Can not get atomtype LJ information from tpr");
         }
         return data_->atomtypesLJ;
     case NonBondedType::LJ_14:
         if (data_->pairs.empty())
         {
-            throw std::runtime_error("Can not get LJ_14(pairs) information from tpr");
+            THROW_TPR_EXCEPTION("Can not get LJ_14(pairs) information from tpr");
         }
         return data_->pairs;
     default:
-        throw std::invalid_argument(std::string("Unknown keyword: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type);
         break;
     }
 }
@@ -3068,7 +3417,7 @@ int TprReader::get_mdp_integer(const char* prop) const
     ParamsInteger epi;
     if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
     {
-        throw std::runtime_error(std::string("Unknown mdp property: ") + prop);
+        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop);
     }
 
     switch (epi)
@@ -3109,7 +3458,7 @@ const std::vector<float> &TprReader::get_ef() const
          data_->ir.elec_field[4] == 0.0f &&
          data_->ir.elec_field[8] == 0.0f) )
     {
-        throw std::runtime_error("Error! Have not electric field in tpr");
+        THROW_TPR_EXCEPTION("Error! Have not electric field in tpr");
     }
     return data_->ir.elec_field;
 }
@@ -3126,7 +3475,7 @@ bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
         // write nsteps before 
         if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in write_xvf before");
+            THROW_TPR_EXCEPTION("fwrite_ error in write_xvf before");
         }
 
         // write new vector
@@ -3137,7 +3486,7 @@ bool TprReader::write_xvf(std::vector<float> &vec, long pos, long prec) const
         long len = fsize - pos - (long)size;
         if (newtpr.fwrite_(&buffer[pos + size], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in write_xvf after");
+            THROW_TPR_EXCEPTION("fwrite_ error in write_xvf after");
         }
         return TPR_SUCCESS;
     }
@@ -3159,7 +3508,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         // write ef before 
         if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in write_ef before");
+            THROW_TPR_EXCEPTION("fwrite_ error in write_ef before");
         }
 
         auto tempvec(vec); // copy 
@@ -3188,7 +3537,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         long len = fsize - pos - nskip;
         if (newtpr.fwrite_(&buffer[pos + nskip], len * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in write_ef after");
+            THROW_TPR_EXCEPTION("fwrite_ error in write_ef after");
         }
 
         return TPR_SUCCESS;
@@ -3201,7 +3550,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         // write ef before 
         if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
         {
-            throw std::runtime_error("fwrite_ error in write_ef before");
+            THROW_TPR_EXCEPTION("fwrite_ error in write_ef before");
         }
 
         //! write electric field
@@ -3246,7 +3595,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         {
             if (newtpr.fwrite_(&buffer[currpos], (fsize - currpos) * sizeof(char), 1) != 1)
             {
-                throw std::runtime_error("fwrite_ error in write_ef after");
+                THROW_TPR_EXCEPTION("fwrite_ error in write_ef after");
             }
         }
 
@@ -3261,33 +3610,33 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
     // check precision of tpr
     if (data_->prec != sizeof(float))
     {
-        throw std::runtime_error("Unsupport double precision of tpr in set_xvf");
+        THROW_TPR_EXCEPTION("Unsupport double precision of tpr in set_xvf");
     }
 
     // check input type, must X, or V or F or box
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
-        throw std::runtime_error(std::string("Unknown set vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown set vector property: ") + type);
     }
 
     // check vector size 
     if (evec != VecProps::box && evec != VecProps::ef && 
         (int)vec.size() != data_->natoms * DIM)
     {
-        throw std::runtime_error("Input vector size is not equal to natoms * 3");
+        THROW_TPR_EXCEPTION("Input vector size is not equal to natoms * 3");
     }
 
     // check box size
     if (evec == VecProps::box && (int)vec.size() != DIM * DIM)
     {
-        throw std::runtime_error("Input box size is not equal to 9");
+        THROW_TPR_EXCEPTION("Input box size is not equal to 9");
     }
 
     // check electric field
     if (evec == VecProps::ef && (int)vec.size() != DIM * 4)
     {
-        throw std::runtime_error("Input electric field size is not equal to 12");
+        THROW_TPR_EXCEPTION("Input electric field size is not equal to 12");
     }
 
     switch (evec)
@@ -3297,7 +3646,7 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         // check if has coordinates of tpr
         if (!data_->bX)
         {
-            throw std::runtime_error("Input tpr has not coordinates information");
+            THROW_TPR_EXCEPTION("Input tpr has not coordinates information");
         }
         // if succeed, return 
         if (write_xvf(vec, data_->property.x, data_->prec)) return TPR_SUCCESS;
@@ -3308,7 +3657,7 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         // check if has velocity of tpr
         if (!data_->bV)
         {
-            throw std::runtime_error("Input tpr has not velocity information");
+            THROW_TPR_EXCEPTION("Input tpr has not velocity information");
         }
         if (write_xvf(vec, data_->property.v, data_->prec)) return TPR_SUCCESS;
         break;
@@ -3318,7 +3667,7 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         // check if has force of tpr
         if (!data_->bF)
         {
-            throw std::runtime_error("Input tpr has not force information");
+            THROW_TPR_EXCEPTION("Input tpr has not force information");
         }
         if (write_xvf(vec, data_->property.f, data_->prec)) return TPR_SUCCESS;
         break;
@@ -3327,7 +3676,7 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
     {
         if (!data_->bBox)
         {
-            throw std::runtime_error("Input tpr has not box information");
+            THROW_TPR_EXCEPTION("Input tpr has not box information");
         }
         if (write_xvf(vec, data_->property.box, data_->prec)) return TPR_SUCCESS;
         break;
@@ -3338,7 +3687,7 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         break;
     }
     default:
-        throw std::invalid_argument(std::string("Unknown set keyword: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown set keyword: ") + type);
         break;
     }
 

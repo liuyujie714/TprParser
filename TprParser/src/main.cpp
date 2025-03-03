@@ -3,6 +3,7 @@
 * 2024.06.24 - support set up deform 
 * 2024.07.07 - support read electric field
 * 2024.09.30 - fix empty lj parameters
+* 2025.03.04 - support read pull code by do_pull
 */
 
 #include <iostream>
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/2020.4_gra.tpr");
 		//TprReader reader("test/annealing.tpr");
 		//TprReader reader("test/npt2025-beta_water.tpr");
-		TprReader reader("test/benchBFC_FEP.tpr");
+		//TprReader reader("test/benchBFC_FEP.tpr");
 		//TprReader reader("test/elecxyz.tpr");
 		//for (auto& a : reader.get_ivector("atomicnum"))
 		//{
@@ -104,6 +105,10 @@ int main(int argc, char *argv[])
 			//TprReader reader("test/extra-interactions-2018.tpr");
 			//auto &ret = reader.get_nonbonded("lj");
 			//std::cout << ret[0].ifunc << std::endl;
+		}
+
+		{
+			TprReader reader(argv[1]);
 		}
 	}
 	catch (const std::exception&e)

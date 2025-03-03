@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "TprException.h"
 #include "Utils.h"
 
 std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams *param)
@@ -240,7 +241,7 @@ FILE* efopen(const char* fname, const char* mod)
     FILE* fp = fopen(fname, mod);
     if (!fp)
     {
-        throw std::runtime_error(std::string("Can not open/write file: ") + fname);
+        THROW_TPR_EXCEPTION(std::string("Can not open/write file: ") + fname);
     }
     return fp;
 }

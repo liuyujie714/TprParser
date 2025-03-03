@@ -25,6 +25,7 @@
     <ClInclude Include="src\Enum.h" />
     <ClInclude Include="src\Reader.h" />
     <ClInclude Include="src\TprData.h" />
+    <ClInclude Include="src\TprException.h" />
     <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <ItemGroup>

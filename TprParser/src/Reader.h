@@ -6,6 +6,7 @@
 #include <memory> // unique_ptr
 
 #include "define.h"
+#include "TprException.h"
 #include "Bytes.h"
 #include "TprData.h"
 
@@ -32,43 +33,43 @@ public:
 	{
 		if (tpr_header() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_header()");
+			THROW_TPR_EXCEPTION("error for tpr_header()");
 		}
 		if (tpr_body() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_body()");
+			THROW_TPR_EXCEPTION("error for tpr_body()");
 		}
 		if (tpr_mtop() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_mtop()");
+			THROW_TPR_EXCEPTION("error for tpr_mtop()");
 		}
 		if (tpr_xvf() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_xvf()");
+			THROW_TPR_EXCEPTION("error for tpr_xvf()");
 		}
 		if (tpr_chargemass() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_chargemass()");
+			THROW_TPR_EXCEPTION("error for tpr_chargemass()");
 		}
 		if (tpr_bonds() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_bonds()");
+			THROW_TPR_EXCEPTION("error for tpr_bonds()");
 		}
 		if (tpr_angles() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_angles()");
+			THROW_TPR_EXCEPTION("error for tpr_angles()");
 		}
 		if (tpr_dihedrals() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_dihedrals()");
+			THROW_TPR_EXCEPTION("error for tpr_dihedrals()");
 		}
 		if (tpr_nonbonded() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for tpr_nonbonded()");
+			THROW_TPR_EXCEPTION("error for tpr_nonbonded()");
 		}
 		if (do_ir() != TPR_SUCCESS)
 		{
-			throw std::runtime_error("error for do_ir()");
+			THROW_TPR_EXCEPTION("error for do_ir()");
 		}
 	}
 
@@ -107,7 +108,7 @@ public:
 
 	/*< do_ir, have not yet completely completed
 	* Unfinished: 
-	*	- Pull, AWH, Enforced rotation, IMD, ComputationalElectrophysiology, etc.
+	*	- AWH, Enforced rotation, IMD, ComputationalElectrophysiology, etc.
 	*/
 	bool do_ir();
 
@@ -195,6 +196,13 @@ private:
 
 	//< do_fepvals
 	bool do_fepvals();
+
+	//< do_pull
+	bool do_pull(PullingAlgorithm ePullOld);
+	//! internal function of do_pull
+	bool do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd);
+	bool do_pull_group(t_pull_group* pgrp);
+	bool do_pull_coord(t_pull_coord* pcrd, PullingAlgorithm ePullOld, PullGroupGeometry eGeomOld, int dimOld[DIM]);
 
 private:
 	FileSerializer			tpr_;

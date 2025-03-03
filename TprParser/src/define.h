@@ -12,8 +12,8 @@
 #ifdef _DEBUG
 #define msg(...) \
 do { \
-    fprintf(stderr, "INFO) "); \
-    fprintf(stderr, __VA_ARGS__); \
+    fprintf(stdout, "INFO) "); \
+    fprintf(stdout, __VA_ARGS__); \
 } while(0)
 #else
 #define msg(...) 
@@ -26,15 +26,22 @@ do { \
 #define myassert(cond, message) do {if (!(cond)) {puts(message);exit(8);}} while(0)
 #endif // _DEBUG
 
-
-// enum type for input 
+// enum type for input
 enum
 {
-    egcTC, egcENER, egcACC, egcFREEZE,
-    egcUser1, egcUser2, egcVCM, egcCompressedX,
-    egcORFIT, egcQMMM,
-    egcNR
+    egcTC,      //! T-Coupling
+    egcENER,    //! Energy Mon.
+    egcACC,     //! Acceleration
+    egcFREEZE,  //! Freeze
+    egcUser1,   //! User1
+    egcUser2,   //! User2
+    egcVCM,     //! VCM
+    egcCompressedX, //! Compressed X
+    egcORFIT,   //! Or. Res. Fit
+    egcQMMM,    //! QMMM
+    egcNR       //! Count of groups
 };
+//! Group statistics
 static const char* c_groups[egcNR] =
 {
     "T-Coupling", "Energy Mon.", "Acceleration", "Freeze",
@@ -123,7 +130,7 @@ enum
     F_COM_PULL,
     F_DENSITYFITTING,
     F_EQM,
-    F_ENNPOT,
+    F_ENNPOT, // gmx 2025
     F_EPOT,
     F_EKIN,
     F_ETOT,

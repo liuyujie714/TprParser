@@ -5,12 +5,12 @@
 #define _FILE_OFFSETS_BITS 64
 
 #include <stdio.h>
-#include <stdexcept>
 #include <type_traits>
 #include <cstring> // strlen
 #include <string>
 
 #include "endianswap.h"
+#include "TprException.h"
 
 #define TPR_SUCCESS true
 #define TPR_FAILED  false
@@ -36,13 +36,13 @@ public:
 			m_read = false; bmode[0] = 'w';
 			break;
 		default:
-			throw std::invalid_argument(std::string("Unknown file open mode: ") + mode);
+			THROW_TPR_EXCEPTION(std::string("Unknown file open mode: ") + mode);
 		}
 
 		m_fp = fopen(fname, bmode);
 		if (!m_fp)
 		{
-			throw std::runtime_error("Can not open/write file: " + std::string(fname));
+			THROW_TPR_EXCEPTION("Can not open/write file: " + std::string(fname));
 		}
 
 		// need endianism swap?
@@ -290,7 +290,7 @@ public:
 				break;
 			}
 			default:
-				throw std::runtime_error("Can not support precision= " + std::to_string(prec));
+				THROW_TPR_EXCEPTION("Can not support precision= " + std::to_string(prec));
 			}
 		return TPR_SUCCESS;
 	}
@@ -327,7 +327,7 @@ public:
 			}
 			else
 			{
-				throw std::runtime_error(std::string("Unsupport type for do_vector: ") + typeid(T).name());
+				THROW_TPR_EXCEPTION(std::string("Unsupport type for do_vector: ") + typeid(T).name());
 			}
 		}
 		return TPR_SUCCESS;
@@ -337,7 +337,7 @@ public:
 	// string's length, then reading in the string itself and storing
 	// it in str. If the length is greater than max, it is truncated
 	// and the rest of the string is skipped in the file
-	bool xdr_string(char* str, int max) const
+	bool xdr_string(char* str, int maxlen) const
 	{
 		int size;
 		if (do_int(&size) == TPR_FAILED) return TPR_FAILED;
@@ -349,19 +349,19 @@ public:
 		}
 
 		size_t ssize = static_cast<size_t>(size); // ignore warning
-		if (str && size < max)
+		if (str && size < maxlen)
 		{
 			if (fread_(str, 1, ssize) != ssize) return TPR_FAILED;
 			str[ssize] = '\0';
 			return TPR_SUCCESS;
 		}
-		// size >= max
+		// size >= maxlen
 		else if (str)
 		{
-			if (fread_(str, 1, (size_t)max) != (size_t)max) return TPR_FAILED;
-			str[max - 1] = '\0';
+			if (fread_(str, 1, (size_t)maxlen) != (size_t)maxlen) return TPR_FAILED;
+			str[maxlen - 1] = '\0';
 			// skip next string
-			if (fseek_(size - max, SEEK_CUR) != 0) return TPR_FAILED;
+			if (fseek_(size - maxlen, SEEK_CUR) != 0) return TPR_FAILED;
 			return TPR_SUCCESS;
 		}
 		else
@@ -484,7 +484,7 @@ private:
 		fseek_(0, SEEK_SET); // file start
 		if (fread_(m_buffer, m_fsize, 1) != 1)
 		{
-			throw std::runtime_error("Can not read all binary stream to m_buffer");
+			THROW_TPR_EXCEPTION("Can not read all binary stream to m_buffer");
 		}
 		// restore
 		fseek_(0, SEEK_SET);
