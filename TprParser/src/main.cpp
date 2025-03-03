@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/double_2023.tpr");
 		//TprReader reader("test/benchMEM.tpr");
 		//TprReader reader("test/md_cg.tpr");
-		//TprReader reader("test/2lyz_gmx_4.0.tpr");
+		TprReader reader("output.tpr");
 		//TprReader reader("test/inter-md.tpr");
 		//TprReader reader("test/md2024.tpr");
 		//TprReader reader("test/2023demo.tpr");
@@ -107,9 +107,9 @@ int main(int argc, char *argv[])
 			//std::cout << ret[0].ifunc << std::endl;
 		}
 
-		{
-			TprReader reader(argv[1]);
-		}
+		//{
+		//	TprReader reader(argv[1]);
+		//}
 	}
 	catch (const std::exception&e)
 	{

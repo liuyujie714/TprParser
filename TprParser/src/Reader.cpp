@@ -2792,6 +2792,7 @@ bool TprReader::set_nsteps(int64_t nsteps)
         }
 
         // write new nsteps
+        size_t offset = sizeof(int64_t);
         if (data_->filever >= 62)
         {
             if (!newtpr.do_int64(&nsteps)) return TPR_FAILED;
@@ -2801,11 +2802,12 @@ bool TprReader::set_nsteps(int64_t nsteps)
             // old tpr use int type
             int idum = static_cast<int>(nsteps);
             if (!newtpr.do_int(&idum)) return TPR_FAILED;
+            offset = sizeof(int); // int size 
         }
 
         // write nsteps after
-        long len = fsize - data_->property.nsteps - sizeof(int64_t);
-        if (newtpr.fwrite_(&buffer[data_->property.nsteps + sizeof(int64_t)], len * sizeof(char), 1) != 1)
+        long len = fsize - data_->property.nsteps - offset;
+        if (newtpr.fwrite_(&buffer[data_->property.nsteps + offset], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in set_nsteps after");
         }
