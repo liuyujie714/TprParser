@@ -466,9 +466,9 @@ struct t_pull_coord
 	//! Used to select components for constraint
 	int  dim[DIM] = { 0, 0, 0 };
 	//! The origin for the absolute reference
-	int  origin[DIM] = { 0, 0, 0 };
+	float  origin[DIM] = { 0, 0, 0 };
 	//! The pull vector, direction or position
-	int  vec[DIM] = { 0, 0, 0 };
+	float  vec[DIM] = { 0, 0, 0 };
 	//! Set init based on the initial structure
 	bool bStart = false;
 	//! Initial reference displacement (nm) or (deg)

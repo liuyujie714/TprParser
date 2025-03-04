@@ -473,6 +473,17 @@ public:
 		return fwrite(buffer, elementsize, count, m_fp);
 	}
 
+	//< get file size when read mode
+	int64_t get_fsize() const
+	{
+		if (m_read) {
+			return m_fsize;
+		}
+		else {
+			THROW_TPR_EXCEPTION("get_fsize only use in read mode");
+		}
+	}
+
 private:
 	//< get all binary file buffer
 	void get_buffer()

@@ -49,6 +49,13 @@ bool TprReader::tpr_body()
 	// read file foramt version of tpr
 	if (!tpr_.do_int(&data_->filever)) return TPR_FAILED;
 	msg("File Format Version: %d\n", data_->filever);
+
+    // gmx version<4.0 (filever=58) is unsupported
+    if (data_->filever < 58)
+    {
+        THROW_TPR_EXCEPTION("Can not support read the tpr from gmx version < 4.0 ");
+    }
+
 	/* This is for backward compatibility with development versions 77-79
 	 * where the tag was, mistakenly, placed before the generation,
 	 * which would cause a segv instead of a proper error message
@@ -119,8 +126,13 @@ bool TprReader::tpr_body()
 		int64_t fsize;
 		if (!tpr_.do_int64(&fsize)) return TPR_FAILED;
 		msg("Size of tpr body= %lld bytes\n", fsize);
+        // gmx 2020-beta is not supported
+        if (4 * fsize == (tpr_.get_fsize() - tpr_.ftell_()))
+        {
+            THROW_TPR_EXCEPTION("TprParser does not support the beta version for gmx 2020");
+        }
 	}
-	if (data_->vergen > 28) data_->bIr = false; // This can only happen if TopOnlyOK=TRUE
+	if (data_->vergen > tpx_generation) data_->bIr = false; // This can only happen if TopOnlyOK=TRUE
 
 	// read box size
 	if (data_->bBox)

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 		//TprReader reader("test/large_2021_aa_posres.tpr");
 		//TprReader reader("test/double_2023.tpr");
 		//TprReader reader("test/benchMEM.tpr");
-		//TprReader reader("test/md_cg.tpr");
+		//TprReader reader("test/2lyz_gmx_2020-beta2.tpr");
 		//TprReader reader("test/2lyz_gmx_4.0.tpr");
 		//TprReader reader("test/inter-md.tpr");
 		//TprReader reader("test/md2024.tpr");
