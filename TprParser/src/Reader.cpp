@@ -1847,84 +1847,86 @@ bool TprReader::do_ir()
 
 #if 1
     // AdResS is removed, but we need to be able to read old files,
-    bool bAdress = false;
-    if (data_->filever >= 77 && data_->filever < tpxv_RemoveAdress)
     {
-        if (!tpr_.do_bool(&bAdress, data_->vergen)) return TPR_FAILED;
-        if (bAdress)
+        bool bAdress = false;
+        if (data_->filever >= 77 && data_->filever < tpxv_RemoveAdress)
         {
-            int numThermoForceGroups, numEnergyGroups;
-            float rvec[DIM];
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            if (!tpr_.do_vector(rvec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
-            if (!tpr_.do_int(&numThermoForceGroups)) return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-            if (!tpr_.do_int(&numEnergyGroups)) return TPR_FAILED;
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_bool(&bAdress, data_->vergen)) return TPR_FAILED;
+            if (bAdress)
+            {
+                int numThermoForceGroups, numEnergyGroups;
+                float rvec[DIM];
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                if (!tpr_.do_vector(rvec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+                if (!tpr_.do_int(&numThermoForceGroups)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_int(&numEnergyGroups)) return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
 
-            if (numThermoForceGroups > 0)
-            {
-                std::vector<int> idumn(numThermoForceGroups);
-                if (!tpr_.do_vector(idumn.data(), numThermoForceGroups, data_->prec, data_->vergen)) return TPR_FAILED;
-            }
-            if (numEnergyGroups > 0)
-            {
-                std::vector<int> idumn(numEnergyGroups);
-                if (!tpr_.do_vector(idumn.data(), numEnergyGroups, data_->prec, data_->vergen)) return TPR_FAILED;
+                if (numThermoForceGroups > 0)
+                {
+                    std::vector<int> idumn(numThermoForceGroups);
+                    if (!tpr_.do_vector(idumn.data(), numThermoForceGroups, data_->prec, data_->vergen)) return TPR_FAILED;
+                }
+                if (numEnergyGroups > 0)
+                {
+                    std::vector<int> idumn(numEnergyGroups);
+                    if (!tpr_.do_vector(idumn.data(), numEnergyGroups, data_->prec, data_->vergen)) return TPR_FAILED;
+                }
             }
         }
+        msg("bAdress= %d\n", bAdress ? 1 : 0);
     }
-    msg("bAdress= %d\n", bAdress ? 1 : 0);
 
-    bool bPull = false;
-    PullingAlgorithm ePullOld = PullingAlgorithm::Umbrella;
-    if (data_->filever >= tpxv_PullCoordTypeGeom)
+    // Pull
     {
-        if (!tpr_.do_bool(&bPull, data_->vergen)) return TPR_FAILED;
-    }
-    else
-    {
-        if (!tpr_.do_int(&idum)) return TPR_FAILED;
-        ePullOld = static_cast<PullingAlgorithm>(idum);
-        bPull = (ePullOld != PullingAlgorithm::Umbrella);
-        switch (ePullOld)
+        bool bPull = false;
+        PullingAlgorithm ePullOld = PullingAlgorithm::Umbrella;
+        if (data_->filever >= tpxv_PullCoordTypeGeom)
         {
-        case PullingAlgorithm::Umbrella:
-            break;
-        case PullingAlgorithm::Constraint:
-            ePullOld = PullingAlgorithm::Umbrella;
-            break;
-        case PullingAlgorithm::ConstantForce:
-            ePullOld = PullingAlgorithm::Constraint;
-            break;
-        case PullingAlgorithm::FlatBottom:
-            ePullOld = PullingAlgorithm::ConstantForce;
-            break;
-        case PullingAlgorithm::FlatBottomHigh:
-            ePullOld = PullingAlgorithm::FlatBottom;
-            break;
-        case PullingAlgorithm::External:
-            ePullOld = PullingAlgorithm::FlatBottomHigh;
-            break;
-        case PullingAlgorithm::Count:
-            ePullOld = PullingAlgorithm::External;
-            break;
-        default:
-            THROW_TPR_EXCEPTION("Unhandled old pull algorithm");
-            break;
+            if (!tpr_.do_bool(&bPull, data_->vergen)) return TPR_FAILED;
         }
-    }
-    if (bPull)
-    {
-        do_pull(ePullOld);
-        //return TPR_SUCCESS;
-        //// TODO
-        //THROW_TPR_EXCEPTION("Unsupport read pull code");
+        else
+        {
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            ePullOld = static_cast<PullingAlgorithm>(idum);
+            bPull = (ePullOld != PullingAlgorithm::Umbrella);
+            switch (ePullOld)
+            {
+            case PullingAlgorithm::Umbrella:
+                break;
+            case PullingAlgorithm::Constraint:
+                ePullOld = PullingAlgorithm::Umbrella;
+                break;
+            case PullingAlgorithm::ConstantForce:
+                ePullOld = PullingAlgorithm::Constraint;
+                break;
+            case PullingAlgorithm::FlatBottom:
+                ePullOld = PullingAlgorithm::ConstantForce;
+                break;
+            case PullingAlgorithm::FlatBottomHigh:
+                ePullOld = PullingAlgorithm::FlatBottom;
+                break;
+            case PullingAlgorithm::External:
+                ePullOld = PullingAlgorithm::FlatBottomHigh;
+                break;
+            case PullingAlgorithm::Count:
+                ePullOld = PullingAlgorithm::External;
+                break;
+            default:
+                THROW_TPR_EXCEPTION("Unhandled old pull algorithm");
+                break;
+            }
+        }
+        if (bPull)
+        {
+            do_pull(ePullOld);
+        }
     }
 
     // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
@@ -1941,32 +1943,32 @@ bool TprReader::do_ir()
     }
 
     // Enforced rotation
-    bool bRot = false;
-    if (data_->filever >= 74)
     {
-        if (!tpr_.do_bool(&bRot, data_->vergen)) return TPR_FAILED;
-    }
-    if (bRot)
-    {
-        do_rot();
-        //return TPR_SUCCESS;
-        //THROW_TPR_EXCEPTION("Unsupport read enforced rotation code");
+        bool bRot = false;
+        if (data_->filever >= 74)
+        {
+            if (!tpr_.do_bool(&bRot, data_->vergen)) return TPR_FAILED;
+        }
+        if (bRot)
+        {
+            do_rot();
+        }
     }
 
     // IMD
-    bool bIMD = false;
-    if (data_->filever >= tpxv_InteractiveMolecularDynamics)
     {
-        if (!tpr_.do_bool(&bIMD, data_->vergen)) return TPR_FAILED;
-    }
-    if (bIMD)
-    {
-        int nat;
-        if (!tpr_.do_int(&nat)) return TPR_FAILED;
-        std::vector<int> imd_ind(nat);
-        if (!tpr_.do_vector(imd_ind.data(), nat, data_->prec, data_->vergen)) return TPR_FAILED;
-        //return TPR_SUCCESS;
-        //THROW_TPR_EXCEPTION("Unsupport read IMD code");
+        bool bIMD = false;
+        if (data_->filever >= tpxv_InteractiveMolecularDynamics)
+        {
+            if (!tpr_.do_bool(&bIMD, data_->vergen)) return TPR_FAILED;
+        }
+        if (bIMD)
+        {
+            int nat;
+            if (!tpr_.do_int(&nat)) return TPR_FAILED;
+            std::vector<int> imd_ind(nat);
+            if (!tpr_.do_vector(imd_ind.data(), nat, data_->prec, data_->vergen)) return TPR_FAILED;
+        }
     }
 
     // 控温部分
