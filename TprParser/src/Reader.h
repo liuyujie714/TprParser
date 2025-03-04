@@ -108,7 +108,7 @@ public:
 
 	/*< do_ir, have not yet completely completed
 	* Unfinished: 
-	*	- AWH, Enforced rotation, IMD, ComputationalElectrophysiology, etc.
+	*	- AWH, ComputationalElectrophysiology, etc.
 	*/
 	bool do_ir();
 
@@ -203,6 +203,9 @@ private:
 	bool do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd);
 	bool do_pull_group(t_pull_group* pgrp);
 	bool do_pull_coord(t_pull_coord* pcrd, PullingAlgorithm ePullOld, PullGroupGeometry eGeomOld, int dimOld[DIM]);
+
+	//< do_rot
+	bool do_rot();
 
 private:
 	FileSerializer			tpr_;

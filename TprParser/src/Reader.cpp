@@ -1881,8 +1881,6 @@ bool TprReader::do_ir()
     }
     msg("bAdress= %d\n", bAdress ? 1 : 0);
 
-    // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
-    // TODO pull code
     bool bPull = false;
     PullingAlgorithm ePullOld = PullingAlgorithm::Umbrella;
     if (data_->filever >= tpxv_PullCoordTypeGeom)
@@ -1929,6 +1927,7 @@ bool TprReader::do_ir()
         //THROW_TPR_EXCEPTION("Unsupport read pull code");
     }
 
+    // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
     // read AWH
     bool bDoAwh = false;
     if (data_->filever >= tpxv_AcceleratedWeightHistogram)
@@ -1949,8 +1948,9 @@ bool TprReader::do_ir()
     }
     if (bRot)
     {
-        return TPR_SUCCESS;
-        THROW_TPR_EXCEPTION("Unsupport read enforced rotation code");
+        do_rot();
+        //return TPR_SUCCESS;
+        //THROW_TPR_EXCEPTION("Unsupport read enforced rotation code");
     }
 
     // IMD
@@ -1961,8 +1961,12 @@ bool TprReader::do_ir()
     }
     if (bIMD)
     {
-        return TPR_SUCCESS;
-        THROW_TPR_EXCEPTION("Unsupport read IMD code");
+        int nat;
+        if (!tpr_.do_int(&nat)) return TPR_FAILED;
+        std::vector<int> imd_ind(nat);
+        if (!tpr_.do_vector(imd_ind.data(), nat, data_->prec, data_->vergen)) return TPR_FAILED;
+        //return TPR_SUCCESS;
+        //THROW_TPR_EXCEPTION("Unsupport read IMD code");
     }
 
     // 控温部分
@@ -2674,6 +2678,65 @@ bool TprReader::do_pull_coord(t_pull_coord* pcrd, PullingAlgorithm ePullOld, Pul
     msg("pcrd->rate= %g\n", pcrd->rate);
     msg("pcrd->k= %g\n", pcrd->k);
     msg("pcrd->kB= %g\n", pcrd->kB);
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::do_rot()
+{
+    t_rot       rot;
+
+    int numGroups;
+    if (!tpr_.do_int(&numGroups)) return TPR_FAILED;
+    if (!tpr_.do_int(&rot.nstrout)) return TPR_FAILED;
+    if (!tpr_.do_int(&rot.nstsout)) return TPR_FAILED;
+    msg("rot numGroups= %d\n", numGroups);
+    msg("rot nstrout= %d\n", rot.nstrout);
+    msg("rot nstsout= %d\n", rot.nstsout);
+
+    rot.grp.resize(numGroups);
+    for (auto& grp : rot.grp)
+    {
+        //do_rotgrp
+        if (!tpr_.do_int(reinterpret_cast<int*>(&grp.eType))) return TPR_FAILED;
+        msg("grp.eType= %d\n", static_cast<int>(grp.eType));
+        int idump;
+        if (!tpr_.do_int(&idump)) return TPR_FAILED;
+        grp.bMassW = static_cast<bool>(idump);
+        msg("grp.bMassW= %d\n", grp.bMassW ? 1 : 0);
+        if (!tpr_.do_int(&grp.nat)) return TPR_FAILED;
+        msg("grp.nat= %d\n", grp.nat);
+        grp.ind.resize(grp.nat);
+        if (!tpr_.do_vector(grp.ind.data(), grp.nat, data_->prec, data_->vergen)) return TPR_FAILED;
+        print_vec("grp.ind= ", grp.ind.data(), grp.nat);
+
+        grp.x_ref_original.resize(grp.nat);
+        for (auto& x : grp.x_ref_original)
+        {
+            if (!tpr_.do_vector(x.data(), DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+        }
+
+        if (!tpr_.do_vector(grp.inputVec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+        print_vec("grp.inputVec= ", grp.inputVec, DIM);
+        if (!tpr_.do_vector(grp.pivot, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+        print_vec("grp.pivot= ", grp.pivot, DIM);
+        if (!tpr_.do_real(&grp.rate, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.k, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.slab_dist, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.min_gaussian, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.eps, data_->prec)) return TPR_FAILED;
+        msg("grp.rate= %g\n", grp.rate);
+        msg("grp.k= %g\n", grp.k);
+        msg("grp.slab_dist= %g\n", grp.slab_dist);
+        msg("grp.min_gaussian= %g\n", grp.min_gaussian);
+        msg("grp.eps= %g\n", grp.eps);
+        if (!tpr_.do_int(reinterpret_cast<int*>(&grp.eFittype))) return TPR_FAILED;
+        if (!tpr_.do_int(&grp.PotAngle_nstep)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.PotAngle_step, data_->prec)) return TPR_FAILED;
+        msg("grp.eFittype= %d\n", static_cast<int>(grp.eFittype));
+        msg("grp.PotAngle_nstep= %d\n", grp.PotAngle_nstep);
+        msg("grp.PotAngle_step= %g\n", grp.PotAngle_step);
+    }
 
     return TPR_SUCCESS;
 }

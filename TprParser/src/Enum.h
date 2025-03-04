@@ -197,4 +197,34 @@ enum class PullGroupGeometry : int
 	Default = Distance
 };
 
+
+//! Enforced rotation group type.
+enum class EnforcedRotationGroupType : int
+{
+	Iso,
+	Isopf,
+	Pm,
+	Pmpf,
+	Rm,
+	Rmpf,
+	Rm2,
+	Rm2pf,
+	Flex,
+	Flext,
+	Flex2,
+	Flex2t,
+	Count,
+	Default = Iso
+};
+
+//! Rotation group fitting type
+enum class RotationGroupFitting : int
+{
+	Rmsd,
+	Norm,
+	Pot,
+	Count,
+	Default = Rmsd
+};
+
 #endif // !ENUM_H

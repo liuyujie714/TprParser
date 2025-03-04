@@ -10,7 +10,7 @@ Many properties can be set up by this module, such as total simulation time `nst
 
 # Compatibility
 
-GROMACS tpr version should between `4.0` to `2025-dev`, too old tpr to be read by this module.
+GROMACS tpr version should between `4.0` to `2025`, too old tpr to be read by this module.
 
 # Installation
 

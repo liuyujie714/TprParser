@@ -430,7 +430,7 @@ struct TprData
 
 
 //! Pull code data, from pull_params.h
-	/*! \brief Struct that defines a pull group */
+/*! \brief Struct that defines a pull group */
 struct t_pull_group
 {
 	std::vector<int>  ind;     /**< The global atoms numbers */
@@ -505,6 +505,50 @@ struct PullData
 	std::vector<t_pull_coord> coord;
 };
 
+struct t_rot
+{
+	//! Rot data
+	struct t_rotgrp
+	{
+		//! Rotation type for this group
+		EnforcedRotationGroupType eType = EnforcedRotationGroupType::Default;
+		//! Use mass-weighed positions?
+		bool bMassW = false;
+		//! Number of atoms in the group
+		int nat = 0;
+		//! The global atoms numbers
+		std::vector<int> ind;
+		//! The reference positions (which have not been centered)
+		std::vector<std::array<float, DIM>> x_ref_original;
+		//! The normalized rotation vector
+		float inputVec[DIM] = { 0, 0, 0 };
+		//! Rate of rotation (degree/ps)
+		float rate = 0;
+		//! Force constant (kJ/(mol nm^2)
+		float k = 0;
+		//! Pivot point of rotation axis (nm)
+		float pivot[DIM] = { 0, 0, 0 };
+		//! Type of fit to determine actual group angle
+		RotationGroupFitting eFittype = RotationGroupFitting::Default;
+		//! Number of angles around the reference angle for which the rotation potential is also evaluated (for fit type 'potential' only)
+		int PotAngle_nstep = 0;
+		//! Distance between two angles in degrees (for fit type 'potential' only)
+		float PotAngle_step = 0;
+		//! Slab distance (nm)
+		float slab_dist = 0;
+		//! Minimum value the gaussian must have so that the force is actually evaluated
+		float min_gaussian = 0;
+		//! Additive constant for radial motion2 and flexible2 potentials (nm^2)
+		float eps = 0;
+	};
 
+
+	//! Output frequency for main rotation outfile
+	int nstrout;
+	//! Output frequency for per-slab data
+	int nstsout;
+	//! Groups to rotate
+	std::vector<t_rotgrp> grp;
+};
 
 #endif // !TPRDATA_H
