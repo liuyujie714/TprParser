@@ -45,7 +45,7 @@ tprlist = {
     # No lj parameters
     'extra-interactions-2018.tpr' : [17, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:5]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:6]]
 
 
 def test_get_xvf(handle, ftype):
