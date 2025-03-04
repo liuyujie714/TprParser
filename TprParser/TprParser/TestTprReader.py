@@ -15,7 +15,7 @@ tprlist = {
     # gmx2025-beta
     'npt2025-beta_water.tpr':[2652,4],
     # enforced rotation
-    'enforced_rotation.tpr' : [4, 4],
+    'enforced_rotation_water.tpr' : [7306, 4],
 
     '1EBZ.tpr' :            [3218, 4], 
     '2020.4_gra.tpr' :      [4536, 4], 
