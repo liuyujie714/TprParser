@@ -8,46 +8,63 @@
 #define YY 1
 #define ZZ 2
 
-//#define _DEBUG
+// #define _DEBUG
 #ifdef _DEBUG
-#define msg(...) \
-do { \
-    fprintf(stdout, "INFO) "); \
-    fprintf(stdout, __VA_ARGS__); \
-} while(0)
+#    define msg(...)                      \
+        do                                \
+        {                                 \
+            fprintf(stdout, "INFO) ");    \
+            fprintf(stdout, __VA_ARGS__); \
+        } while (0)
 #else
-#define msg(...) 
+#    define msg(...)
 #endif // DEBUG
 
 #ifdef _DEBUG
-#include <assert.h>
-#define myassert(cond, message) do {assert(cond);} while(0)
+#    include <assert.h>
+#    define myassert(cond, message) \
+        do                          \
+        {                           \
+            assert(cond);           \
+        } while (0)
 #else
-#define myassert(cond, message) do {if (!(cond)) {puts(message);exit(8);}} while(0)
+#    define myassert(cond, message) \
+        do                          \
+        {                           \
+            if (!(cond))            \
+            {                       \
+                puts(message);      \
+                exit(8);            \
+            }                       \
+        } while (0)
 #endif // _DEBUG
 
 // enum type for input
 enum
 {
-    egcTC,      //! T-Coupling
-    egcENER,    //! Energy Mon.
-    egcACC,     //! Acceleration
-    egcFREEZE,  //! Freeze
-    egcUser1,   //! User1
-    egcUser2,   //! User2
-    egcVCM,     //! VCM
+    egcTC,          //! T-Coupling
+    egcENER,        //! Energy Mon.
+    egcACC,         //! Acceleration
+    egcFREEZE,      //! Freeze
+    egcUser1,       //! User1
+    egcUser2,       //! User2
+    egcVCM,         //! VCM
     egcCompressedX, //! Compressed X
-    egcORFIT,   //! Or. Res. Fit
-    egcQMMM,    //! QMMM
-    egcNR       //! Count of groups
+    egcORFIT,       //! Or. Res. Fit
+    egcQMMM,        //! QMMM
+    egcNR           //! Count of groups
 };
 //! Group statistics
-static const char* c_groups[egcNR] =
-{
-    "T-Coupling", "Energy Mon.", "Acceleration", "Freeze",
-    "User1", "User2", "VCM", "Compressed X",
-    "Or. Res. Fit", "QMMM"
-};
+static const char* c_groups[egcNR] = {"T-Coupling",
+                                      "Energy Mon.",
+                                      "Acceleration",
+                                      "Freeze",
+                                      "User1",
+                                      "User2",
+                                      "VCM",
+                                      "Compressed X",
+                                      "Or. Res. Fit",
+                                      "QMMM"};
 
 // enum for interaction function from ifunc.h
 enum
@@ -154,7 +171,7 @@ enum
 enum tpxv
 {
     tpxv_ComputationalElectrophysiology =
-    96, /**< support for ion/water position swaps (computational electrophysiology) */
+        96, /**< support for ion/water position swaps (computational electrophysiology) */
     tpxv_Use64BitRandomSeed, /**< change ld_seed from int to int64_t */
     tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, /**< potentials for supporting coarse-grained force fields */
     tpxv_InteractiveMolecularDynamics, /**< interactive molecular dynamics (IMD) */
@@ -193,10 +210,10 @@ enum tpxv
     tpxv_AwhTargetMetricScaling,      /**< Add AWH friction optimized target distribution */
     tpxv_VerletBufferPressureTol,     /**< Add Verlet buffer pressure tolerance */
     tpxv_HandleMartiniBondedBStateParametersProperly, /**< Handle restraint angles, restraint dihedrals, and combined bending-torsion parameters properly */
-    tpxv_RefScaleMultipleCOMs,        /**< Add multiple COM groups for refcoord-scale */
-    tpxv_InputHistogramCounts,        /**< Provide input histogram counts for current expanded ensemble state */
-    tpxv_NNPotIFuncType,              /**< Add interaction function type for neural network potential */
-    tpxv_Count                        /**< the total number of tpxv versions */
+    tpxv_RefScaleMultipleCOMs, /**< Add multiple COM groups for refcoord-scale */
+    tpxv_InputHistogramCounts, /**< Provide input histogram counts for current expanded ensemble state */
+    tpxv_NNPotIFuncType,       /**< Add interaction function type for neural network potential */
+    tpxv_Count                 /**< the total number of tpxv versions */
 };
 static constexpr int tpx_version = tpxv_Count - 1;
 
@@ -225,42 +242,42 @@ typedef struct
 
 // tpx compatibility version with added function types
 static constexpr t_ftupd ftupd[] = {
-    { 70, F_RESTRBONDS },
-    { tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES },
-    { 76, F_LINEAR_ANGLES },
-    { tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRDIHS },
-    { tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_CBTDIHS },
-    { 65, F_CMAP },
-    { 60, F_GB12_NOLONGERUSED },
-    { 61, F_GB13_NOLONGERUSED },
-    { 61, F_GB14_NOLONGERUSED },
-    { 72, F_GBPOL_NOLONGERUSED },
-    { 72, F_NPSOLVATION_NOLONGERUSED },
-    { 93, F_LJ_RECIP },
-    { 76, F_ANHARM_POL },
-    { 90, F_FBPOSRES },
-    { tpxv_VSite1, F_VSITE1 },
-    { tpxv_VSite2FD, F_VSITE2FD },
-    { tpxv_GenericInternalParameters, F_DENSITYFITTING },
-    { tpxv_NNPotIFuncType, F_ENNPOT},
-    { 69, F_VTEMP_NOLONGERUSED },
-    { 66, F_PDISPCORR },
-    { 79, F_DVDL_COUL },
-    { 79, F_DVDL_VDW },
-    { 79, F_DVDL_BONDED },
-    { 79, F_DVDL_RESTRAINT },
-    { 79, F_DVDL_TEMPERATURE },
+    {70, F_RESTRBONDS},
+    {tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES},
+    {76, F_LINEAR_ANGLES},
+    {tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRDIHS},
+    {tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_CBTDIHS},
+    {65, F_CMAP},
+    {60, F_GB12_NOLONGERUSED},
+    {61, F_GB13_NOLONGERUSED},
+    {61, F_GB14_NOLONGERUSED},
+    {72, F_GBPOL_NOLONGERUSED},
+    {72, F_NPSOLVATION_NOLONGERUSED},
+    {93, F_LJ_RECIP},
+    {76, F_ANHARM_POL},
+    {90, F_FBPOSRES},
+    {tpxv_VSite1, F_VSITE1},
+    {tpxv_VSite2FD, F_VSITE2FD},
+    {tpxv_GenericInternalParameters, F_DENSITYFITTING},
+    {tpxv_NNPotIFuncType, F_ENNPOT},
+    {69, F_VTEMP_NOLONGERUSED},
+    {66, F_PDISPCORR},
+    {79, F_DVDL_COUL},
+    {79, F_DVDL_VDW},
+    {79, F_DVDL_BONDED},
+    {79, F_DVDL_RESTRAINT},
+    {79, F_DVDL_TEMPERATURE},
 };
 #define asize(x) (sizeof(x) / sizeof(x[0]))
 static constexpr int NFTUPD = asize(ftupd);
 
 // from ifunc.h
-constexpr int DIM = 3;
-constexpr int MAXATOMLIST = 6;
+constexpr int DIM           = 3;
+constexpr int MAXATOMLIST   = 6;
 constexpr int MAXFORCEPARAM = 12;
-constexpr int NR_RBDIHS = 6;
-constexpr int NR_CBTDIHS = 6;
-constexpr int NR_FOURDIHS = 4;
+constexpr int NR_RBDIHS     = 6;
+constexpr int NR_CBTDIHS    = 6;
+constexpr int NR_FOURDIHS   = 4;
 
 typedef union t_iparams
 {
@@ -350,7 +367,7 @@ typedef union t_iparams
     struct
     {
         float phiA, cpA;
-        int  mult;
+        int   mult;
         float phiB, cpB;
     } pdihs;
     struct
@@ -375,7 +392,7 @@ typedef union t_iparams
     struct
     {
         float pos0[DIM], r, k;
-        int  geom;
+        int   geom;
     } fbposres;
     struct
     {
@@ -391,14 +408,14 @@ typedef union t_iparams
     } vsite;
     struct
     {
-        int  n;
+        int   n;
         float a;
     } vsiten;
     /* NOTE: npair is only set after reading the tpx file */
     struct
     {
         float low, up1, up2, kfac;
-        int  type, label, npair;
+        int   type, label, npair;
     } disres;
     struct
     {
@@ -406,12 +423,12 @@ typedef union t_iparams
     } dihres;
     struct
     {
-        int  ex, power, label;
+        int   ex, power, label;
         float c, obs, kfac;
     } orires;
     struct
     {
-        int  table;
+        int   table;
         float kA;
         float kB;
     } tab;
