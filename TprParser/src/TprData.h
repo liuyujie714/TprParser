@@ -36,16 +36,14 @@ struct Bonded
     Bonded(int ta, int tb, int functype, const std::vector<float>& ffparam)
         : a(ta), b(tb), ifunc(functype), ff{ffparam}
     {
-        if (a > b)
-            std::swap(a, b);
+        if (a > b) std::swap(a, b);
     }
 
     // angle
     Bonded(int ta, int tb, int tc, int functype, const std::vector<float>& ffparam)
         : a(ta), b(tb), c(tc), ifunc(functype), ff{ffparam}
     {
-        if (a > c)
-            std::swap(a, c);
+        if (a > c) std::swap(a, c);
     }
 
     // dihedral
@@ -308,8 +306,8 @@ struct TprData
             int n = 0, nt = 0; // 时间，空间项数，<=1
         } elec_old_gmx[DIM];   // 低版本tpr用
         //! 高版本tpr用：
-        int elec_nf = 0; // 电场项，必须是1
-        int elec_ne = 0; // applied-forces项目，必须是>=1
+        int elec_nf = 0; //< 存在applied-forces项目，必须是>=1
+        int elec_ne = 0; //< 电场项，必须是1
     } ir;
 
 

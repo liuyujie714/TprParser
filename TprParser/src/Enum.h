@@ -162,8 +162,7 @@ static inline ENUM check_string(const char* str, const char* arr[])
 {
     for (int i = 0; i < count; i++)
     {
-        if (!mystricmp(str, arr[i]))
-            return static_cast<ENUM>(i);
+        if (!mystricmp(str, arr[i])) return static_cast<ENUM>(i);
     }
     return ENUM::Count;
 }

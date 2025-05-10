@@ -76,10 +76,7 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
 {
     PyObject* capsule = NULL;
     int64_t   nsteps;
-    if (!PyArg_ParseTuple(args, "OL", &capsule, &nsteps))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "OL", &capsule, &nsteps)) { return NULL; }
 
     int ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_nsteps, ret, nsteps);
@@ -91,10 +88,7 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
 {
     PyObject* capsule = NULL;
     double    dt      = 0.0;
-    if (!PyArg_ParseTuple(args, "Od", &capsule, &dt))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Od", &capsule, &dt)) { return NULL; }
 
     int ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_dt, ret, dt);
@@ -185,18 +179,15 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
 
     // get pressure
     std::vector<float> vec_press;
-    if (!get_vector_float(ref_p, vec_press))
-        return NULL;
+    if (!get_vector_float(ref_p, vec_press)) return NULL;
 
     // get compress
     std::vector<float> vec_compress;
-    if (!get_vector_float(compress, vec_compress))
-        return NULL;
+    if (!get_vector_float(compress, vec_compress)) return NULL;
 
     // get deform
     std::vector<float> vec_deform;
-    if (!get_vector_float(deform, vec_deform))
-        return NULL;
+    if (!get_vector_float(deform, vec_deform)) return NULL;
 
     int ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_pressure, ret, epc, epct, tau_p, vec_press, vec_compress, vec_deform);
@@ -219,13 +210,11 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
 
     // get tau_t
     std::vector<float> vec_tau;
-    if (!get_vector_float(tau_t, vec_tau))
-        return NULL;
+    if (!get_vector_float(tau_t, vec_tau)) return NULL;
 
     // get ref_t
     std::vector<float> vec_t;
-    if (!get_vector_float(ref_t, vec_t))
-        return NULL;
+    if (!get_vector_float(ref_t, vec_t)) return NULL;
 
     int ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_temperature, ret, etc, vec_tau, vec_t);
@@ -240,10 +229,7 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
     const char* prop    = NULL;
     int         val     = 0;
 
-    if (!PyArg_ParseTuple(args, "Osi", &capsule, &prop, &val))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Osi", &capsule, &prop, &val)) { return NULL; }
 
     int ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_mdp_integer, ret, prop, val);
@@ -257,10 +243,7 @@ static PyObject* get_mdp_integer(PyObject* self, PyObject* args)
     PyObject*   capsule = NULL;
     const char* prop    = NULL;
 
-    if (!PyArg_ParseTuple(args, "Os", &capsule, &prop))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &prop)) { return NULL; }
 
     int ret = -1;
     TRY_THROW_EXCEPTION_FROM_OBJ(get_mdp_integer, ret, prop);
@@ -274,10 +257,7 @@ static PyObject* get_xvf(PyObject* self, PyObject* args)
     const char* type    = NULL;
 
     // get object handle
-    if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &type)) { return NULL; }
 
     std::vector<float> vec;
     TRY_THROW_EXCEPTION_FROM_OBJ(get_xvf, vec, type);
@@ -313,10 +293,7 @@ static PyObject* get_ivector(PyObject* self, PyObject* args)
     const char* type    = NULL;
 
     // get object handle
-    if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &type)) { return NULL; }
 
     std::vector<int> vec;
     TRY_THROW_EXCEPTION_FROM_OBJ(get_ivector, vec, type);
@@ -350,10 +327,7 @@ static PyObject* get_prec(PyObject* self, PyObject* args)
 {
     PyObject* capsule = NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &capsule))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O", &capsule)) { return NULL; }
 
     int prec = 4;
     TRY_THROW_EXCEPTION_FROM_OBJ(get_precision, prec);
@@ -367,10 +341,7 @@ static PyObject* get_name(PyObject* self, PyObject* args)
     PyObject*   capsule = NULL;
     const char* type    = NULL;
 
-    if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &type)) { return NULL; }
 
     // get vector of name
     std::vector<std::string> vec;
@@ -476,10 +447,7 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
     PyObject*   capsule = NULL;
     const char* type    = NULL;
 
-    if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &type)) { return NULL; }
 
     // get vector from handle
     std::vector<Bonded> vec;
@@ -512,10 +480,7 @@ static PyObject* get_nonbonded(PyObject* self, PyObject* args)
     PyObject*   capsule = NULL;
     const char* type    = NULL;
 
-    if (!PyArg_ParseTuple(args, "Os", &capsule, &type))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &type)) { return NULL; }
 
     // get vector from handle
     std::vector<NonBonded> vec;
@@ -553,8 +518,7 @@ static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject* kwargs)
 
     // get vector from handle
     std::vector<float> vec;
-    if (!get_vector_float(vec_obj, vec))
-        return NULL;
+    if (!get_vector_float(vec_obj, vec)) return NULL;
 
     int ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_xvf, ret, prop, vec);
@@ -612,7 +576,7 @@ static struct PyModuleDef tpr_module = {
 PyMODINIT_FUNC PYINIT_FUNC(void)
 {
     // if is numpy
-    import_array() // 使用numpy相关的函数时候必须先调用这个
+    import_array(); // 使用numpy相关的函数时候必须先调用这个
 
-        return PyModule_Create(&tpr_module);
+    return PyModule_Create(&tpr_module);
 }

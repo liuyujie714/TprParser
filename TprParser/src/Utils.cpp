@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "define.h"
+#include "Bytes.h"
 #include "TprException.h"
 
 std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* param)
@@ -240,9 +242,18 @@ std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams
 FILE* efopen(const char* fname, const char* mod)
 {
     FILE* fp = fopen(fname, mod);
-    if (!fp)
-    {
-        THROW_TPR_EXCEPTION(std::string("Can not open/write file: ") + fname);
-    }
+    if (!fp) { THROW_TPR_EXCEPTION(std::string("Can not open/write file: ") + fname); }
     return fp;
+}
+
+
+AppliedForces::AppliedForces(const FileSerializer& tpr)
+    : tpr_(tpr)
+{
+
+}
+
+void AppliedForces::deserialize()
+{
+
 }

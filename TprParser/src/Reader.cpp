@@ -17,59 +17,27 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
       bMol2_(bMol2),
       bCharge_(bCharge)
 {
-    if (tpr_header() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_header()");
-    }
-    if (tpr_body() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_body()");
-    }
-    if (tpr_mtop() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_mtop()");
-    }
-    if (tpr_xvf() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_xvf()");
-    }
-    if (tpr_chargemass() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_chargemass()");
-    }
-    if (tpr_bonds() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_bonds()");
-    }
-    if (tpr_angles() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_angles()");
-    }
-    if (tpr_dihedrals() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_dihedrals()");
-    }
-    if (tpr_nonbonded() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for tpr_nonbonded()");
-    }
-    if (do_ir() != TPR_SUCCESS)
-    {
-        THROW_TPR_EXCEPTION("error for do_ir()");
-    }
+    if (tpr_header() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_header()"); }
+    if (tpr_body() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_body()"); }
+    if (tpr_mtop() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_mtop()"); }
+    if (tpr_xvf() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_xvf()"); }
+    if (tpr_chargemass() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_chargemass()"); }
+    if (tpr_bonds() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_bonds()"); }
+    if (tpr_angles() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_angles()"); }
+    if (tpr_dihedrals() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_dihedrals()"); }
+    if (tpr_nonbonded() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_nonbonded()"); }
+    if (do_ir() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_ir()"); }
 }
 
 bool TprReader::tpr_header()
 {
     // read the first int at the first of tpr
     int tempint;
-    if (!tpr_.do_int(&tempint))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&tempint)) return TPR_FAILED;
 
     // read string contains gmx version: VERSION xxx
     char filever[MAX_LEN];
-    if (!tpr_.xdr_string(filever, MAX_LEN))
-        return TPR_FAILED;
+    if (!tpr_.xdr_string(filever, MAX_LEN)) return TPR_FAILED;
     // check it, make sure it's a valid tpr file
     if (std::strncmp(filever, "VERSION", 7) != 0)
     {
@@ -78,8 +46,7 @@ bool TprReader::tpr_header()
     msg("gmx version: %s\n", filever);
 
     // read precision int
-    if (!tpr_.do_int(&data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->prec)) return TPR_FAILED;
     msg("gmx precision: %s\n", data_->prec == sizeof(float) ? "float" : "double");
     if (data_->prec != sizeof(float) && data_->prec != sizeof(double))
     {
@@ -103,8 +70,7 @@ static void print_vec(const char* name, T* arr, int len = DIM * DIM)
 bool TprReader::tpr_body()
 {
     // read file foramt version of tpr
-    if (!tpr_.do_int(&data_->filever))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->filever)) return TPR_FAILED;
     msg("File Format Version: %d\n", data_->filever);
 
     // gmx version<4.0 (filever=58) is unsupported
@@ -121,12 +87,10 @@ bool TprReader::tpr_body()
     if (data_->filever >= 77 && data_->filever <= 79)
     {
         char release[MAX_LEN];
-        if (!tpr_.xdr_string(release, MAX_LEN))
-            return TPR_FAILED;
+        if (!tpr_.xdr_string(release, MAX_LEN)) return TPR_FAILED;
         msg("%s\n", release);
     }
-    if (!tpr_.do_int(&data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->vergen)) return TPR_FAILED;
     msg("file generator: %d\n", data_->vergen);
 
     // release string ?
@@ -135,20 +99,16 @@ bool TprReader::tpr_body()
         char buf[MAX_LEN];
         int  tempint;
         // 前4个字节未使用
-        if (!tpr_.do_int(&tempint))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&tempint)) return TPR_FAILED;
 
-        if (!tpr_.xdr_string(buf, MAX_LEN))
-            return TPR_FAILED;
+        if (!tpr_.xdr_string(buf, MAX_LEN)) return TPR_FAILED;
         msg("fileTag= %s\n", buf);
     }
 
     // natoms and ngtc
-    if (!tpr_.do_int(&data_->natoms))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->natoms)) return TPR_FAILED;
     INSERT_POS(temperature.g_ngtc); // 温度耦合组数目
-    if (!tpr_.do_int(&data_->ngtc))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->ngtc)) return TPR_FAILED;
     msg("natoms= %d, ngtc= %d\n", data_->natoms, data_->ngtc);
 
     // fep state and lambda
@@ -156,35 +116,25 @@ bool TprReader::tpr_body()
     {
         int   tempint;
         float tempreal;
-        if (!tpr_.do_int(&tempint))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&tempreal, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&tempint)) return TPR_FAILED;
+        if (!tpr_.do_real(&tempreal, data_->prec)) return TPR_FAILED;
     }
     if (data_->filever >= 79)
     {
         // fep state
-        if (!tpr_.do_int(&data_->fep_state))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->fep_state)) return TPR_FAILED;
         msg("fep_state= %d\n", data_->fep_state);
     }
     // lambda
-    if (!tpr_.do_real(&data_->lambda, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&data_->lambda, data_->prec)) return TPR_FAILED;
     msg("lambda= %f\n", data_->lambda);
     // bool type
-    if (!tpr_.do_bool(&data_->bIr))
-        return TPR_FAILED;
-    if (!tpr_.do_bool(&data_->bTop))
-        return TPR_FAILED;
-    if (!tpr_.do_bool(&data_->bX))
-        return TPR_FAILED;
-    if (!tpr_.do_bool(&data_->bV))
-        return TPR_FAILED;
-    if (!tpr_.do_bool(&data_->bF))
-        return TPR_FAILED;
-    if (!tpr_.do_bool(&data_->bBox))
-        return TPR_FAILED;
+    if (!tpr_.do_bool(&data_->bIr)) return TPR_FAILED;
+    if (!tpr_.do_bool(&data_->bTop)) return TPR_FAILED;
+    if (!tpr_.do_bool(&data_->bX)) return TPR_FAILED;
+    if (!tpr_.do_bool(&data_->bV)) return TPR_FAILED;
+    if (!tpr_.do_bool(&data_->bF)) return TPR_FAILED;
+    if (!tpr_.do_bool(&data_->bBox)) return TPR_FAILED;
     msg("bIr= %d, bTop= %d, bX= %d, bV= %d, bF= %d, bBox= %d\n",
         data_->bIr ? 1 : 0,
         data_->bTop ? 1 : 0,
@@ -196,8 +146,7 @@ bool TprReader::tpr_body()
     if (data_->filever >= tpxv_AddSizeField && data_->vergen >= 27)
     {
         int64_t fsize;
-        if (!tpr_.do_int64(&fsize))
-            return TPR_FAILED;
+        if (!tpr_.do_int64(&fsize)) return TPR_FAILED;
         msg("Size of tpr body= %lld bytes\n", fsize);
         // gmx 2020-beta is not supported
         if (4 * fsize == (tpr_.get_fsize() - tpr_.ftell_()))
@@ -243,12 +192,10 @@ bool TprReader::tpr_body()
         std::vector<float> temparr(data_->ngtc);
         if (data_->filever < 69)
         {
-            if (!tpr_.do_vector(temparr.data(), data_->ngtc, data_->prec))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(temparr.data(), data_->ngtc, data_->prec)) return TPR_FAILED;
         }
         // These used to be the Berendsen tcoupl_lambda's
-        if (!tpr_.do_vector(temparr.data(), data_->ngtc, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(temparr.data(), data_->ngtc, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -258,16 +205,14 @@ bool TprReader::tpr_mtop()
 {
     // do_mtop starts here, which starts by reading the symtab (do_symtab)
     int symtablen;
-    if (!tpr_.do_int(&symtablen))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&symtablen)) return TPR_FAILED;
     msg("symtablen= %d\n", symtablen);
     data_->symtab.resize(symtablen * SAVELEN, '\0'); // clear zero
 
     // 原子类型名称和组名
     for (int i = 0; i < symtablen; i++)
     {
-        if (!tpr_.do_string(&data_->symtab[SAVELEN * i], data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_string(&data_->symtab[SAVELEN * i], data_->vergen)) return TPR_FAILED;
 
         // print symb
         if constexpr (0)
@@ -283,21 +228,16 @@ bool TprReader::tpr_mtop()
 
     // temp int
     int tempint;
-    if (!tpr_.do_int(&tempint))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&tempint)) return TPR_FAILED;
     msg("tempint= %d\n", tempint);
 
     // read forcefiled parameters
-    if (!tpr_readff())
-        return TPR_FAILED;
+    if (!tpr_readff()) return TPR_FAILED;
 
     // read type of molecules
-    if (!tpr_.do_int(&data_->nmoltypes))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->nmoltypes)) return TPR_FAILED;
     msg("nmoltypes= %d\n", data_->nmoltypes);
-    if (!do_atoms())
-        return TPR_FAILED;
-
+    if (!do_atoms()) return TPR_FAILED;
 
     // 保存分子和原子信息到atoms结构体中
     data_->atoms.atomname.resize(data_->natoms);
@@ -405,7 +345,6 @@ bool TprReader::tpr_xvf()
                 data_->box[7]);
         fclose(fp);
     }
-
     return TPR_SUCCESS;
 }
 
@@ -434,7 +373,7 @@ bool TprReader::tpr_bonds()
                                     F_G96BONDS,
                                     F_MORSE,
                                     F_CUBICBONDS,
-                                    F_CONNBONDS,
+                                    // F_CONNBONDS, // 无参数，这个应该只存在以qmmm中
                                     F_HARMONIC,
                                     F_FENEBONDS,
                                     F_CONSTR,
@@ -455,7 +394,6 @@ bool TprReader::tpr_bonds()
                 int ftype = interactions[k];
                 // settle algorithm for water molecules nspace=4
                 const int nspace = (ftype == F_SETTLE) ? 4 : 3;
-
                 for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
                 {
                     // the id of type
@@ -775,24 +713,19 @@ bool TprReader::tpr_readff()
     double reppow = 12.0;
     float  fudge  = 0.5;
 
-    if (!tpr_.do_int(&data_->atnr))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ntypes))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->atnr)) return TPR_FAILED;
+    if (!tpr_.do_int(&ntypes)) return TPR_FAILED;
     msg("ntypes= %d\n", ntypes);
 
     // 函数类型
     functype_.resize(ntypes);
     for (int i = 0; i < ntypes; i++)
     {
-        if (!tpr_.do_int(&functype_[i]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&functype_[i])) return TPR_FAILED;
     }
     if (data_->filever >= 66)
-        if (!tpr_.do_double(&reppow))
-            return TPR_FAILED;
-    if (!tpr_.do_real(&fudge, data_->prec))
-        return TPR_FAILED;
+        if (!tpr_.do_double(&reppow)) return TPR_FAILED;
+    if (!tpr_.do_real(&fudge, data_->prec)) return TPR_FAILED;
     msg("fudge= %f\n", fudge);
 
     // 调整所有函数类型
@@ -807,8 +740,7 @@ bool TprReader::tpr_readff()
             }
         }
         // 读力场参数
-        if (!do_iparams(functype_[i], &iparams_[i], data_->filever, data_->prec))
-            return TPR_FAILED;
+        if (!do_iparams(functype_[i], &iparams_[i], data_->filever, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -1078,10 +1010,7 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
                           std::end(iparams->cbtdihs.cbtcA),
                           std::begin(iparams->cbtdihs.cbtcB));
             }
-            else
-            {
-                tpr_.do_vector(iparams->cbtdihs.cbtcB, NR_CBTDIHS, data_->prec);
-            }
+            else { tpr_.do_vector(iparams->cbtdihs.cbtcB, NR_CBTDIHS, data_->prec); }
             break;
         case F_RBDIHS:
             // Fall-through intended
@@ -1184,16 +1113,13 @@ bool TprReader::do_atoms()
     for (int i = 0; i < n; i++)
     {
         // 分子名称长度
-        if (!tpr_.do_int(&data_->molnames[i]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->molnames[i])) return TPR_FAILED;
         msg("data_->molnames[i]= %d\n", data_->molnames[i]);
 
         // 每个moltype的原子数目
-        if (!tpr_.do_int(&data_->atomsinmol[i]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->atomsinmol[i])) return TPR_FAILED;
         // 每个moltype的残基数目
-        if (!tpr_.do_int(&data_->resinmol[i]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->resinmol[i])) return TPR_FAILED;
 
         // allocate for 2D vector
         data_->charges[i].resize(data_->atomsinmol[i]);
@@ -1206,29 +1132,20 @@ bool TprReader::do_atoms()
         for (int j = 0; j < data_->atomsinmol[i]; j++)
         {
             // 读原子质量，电荷
-            if (!tpr_.do_real(&data_->masses[i][j], data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&data_->charges[i][j], data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED; // mB
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED; // qB
+            if (!tpr_.do_real(&data_->masses[i][j], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&data_->charges[i][j], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; // mB
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; // qB
 
             // for gmx>=2020，short只读2字节
-            if (!tpr_.do_ushort(&data_->types[i][j], data_->vergen))
-                return TPR_FAILED;
-            if (!tpr_.do_ushort(&usdum, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_ushort(&data_->types[i][j], data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_ushort(&usdum, data_->vergen)) return TPR_FAILED;
 
-            if (!tpr_.do_int(&data_->ptypes[i][j]))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&data_->resids[i][j]))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&data_->ptypes[i][j])) return TPR_FAILED;
+            if (!tpr_.do_int(&data_->resids[i][j])) return TPR_FAILED;
             if (data_->filever >= 52)
             {
-                if (!tpr_.do_int(&data_->atomicnumbers[i][j]))
-                    return TPR_FAILED;
+                if (!tpr_.do_int(&data_->atomicnumbers[i][j])) return TPR_FAILED;
             }
             // msg("data_->types[i][j]= %d\n", data_->types[i][j]);
             // msg("data_->ptypes[i][j]= %d\n", data_->ptypes[i][j]);
@@ -1246,111 +1163,87 @@ bool TprReader::do_atoms()
         // typeB
         for (int j = 0; j < data_->atomsinmol[i]; j++)
         {
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
         }
 
         // read residues
         data_->resnames[i].resize(data_->resinmol[i]);
         for (int j = 0; j < data_->resinmol[i]; j++)
         {
-            if (!tpr_.do_int(&data_->resnames[i][j]))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&data_->resnames[i][j])) return TPR_FAILED;
             // msg("data_->resnames[i][j]= %d\n", data_->resnames[i][j]);
 
             if (data_->filever >= 63)
             {
                 // true Residue number
-                if (!tpr_.do_int(&idum))
-                    return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
                 data_->trueresids.push_back(idum);
 
                 // gmx >= 2020, 只读一字节
-                if (!tpr_.do_uchar(&ucdum, data_->vergen))
-                    return TPR_FAILED;
+                if (!tpr_.do_uchar(&ucdum, data_->vergen)) return TPR_FAILED;
             }
-            else
-            {
-                data_->resnames[i][j] += 1;
-            }
+            else { data_->resnames[i][j] += 1; }
         }
 
         // do_ilists
         msg("do_ilists\n");
-        if (!do_ilists(i, data_->ilist.nr, data_->ilist.interactionlist))
-            return TPR_FAILED;
+        if (!do_ilists(i, data_->ilist.nr, data_->ilist.interactionlist)) return TPR_FAILED;
 
         // charge groups parts
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         std::vector<int> temp(idum + 1); // need +1
-        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
         // doListOfLists
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&idum2))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum2)) return TPR_FAILED;
         temp.resize(idum + 1); // need +1
-        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
         temp.resize(idum2); // not need +1
-        if (!tpr_.do_vector(temp.data(), idum2, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), idum2, data_->prec)) return TPR_FAILED;
     }
 
 
     // do molblock
-    if (!tpr_.do_int(&data_->nmolblock))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&data_->nmolblock)) return TPR_FAILED;
     msg("nmolblock= %d\n", data_->nmolblock);
     data_->molbtype.resize(data_->nmolblock);
     data_->molbnmol.resize(data_->nmolblock);
     data_->molbnatoms.resize(data_->nmolblock);
     for (int i = 0; i < data_->nmolblock; i++)
     {
-        if (!tpr_.do_int(&data_->molbtype[i]))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&data_->molbnmol[i]))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&data_->molbnatoms[i]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->molbtype[i])) return TPR_FAILED;
+        if (!tpr_.do_int(&data_->molbnmol[i])) return TPR_FAILED;
+        if (!tpr_.do_int(&data_->molbnatoms[i])) return TPR_FAILED;
         msg("data_->molbtype[i]= %d\n", data_->molbtype[i]);
         msg("data_->molbnmol[i]= %d\n", data_->molbnmol[i]);
         msg("data_->molbnatoms[i]= %d\n", data_->molbnatoms[i]);
 
         // posres
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED; // posres_xA
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // posres_xA
         msg("posres_xA= %d\n", idum);
         if (idum > 0)
         {
             std::vector<float> temp(idum * DIM);
-            if (!tpr_.do_vector(temp.data(), idum * DIM, data_->prec))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(temp.data(), idum * DIM, data_->prec)) return TPR_FAILED;
         }
 
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED; // posres_xB
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // posres_xB
         msg("posres_xB= %d\n", idum);
         if (idum > 0)
         {
             std::vector<float> temp(idum * DIM);
-            if (!tpr_.do_vector(temp.data(), idum * DIM, data_->prec))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(temp.data(), idum * DIM, data_->prec)) return TPR_FAILED;
         }
     }
     // 体系全局原子数
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("The number of atoms= %d\n", idum);
 
     // inter-molecularbonds
     if (data_->filever >= tpxv_IntermolecularBondeds)
     {
         // for gmx>=2020, read 1 byte
-        if (!tpr_.do_bool(&data_->bInter, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&data_->bInter, data_->vergen)) return TPR_FAILED;
         msg("bInter= %d\n", data_->bInter ? 1 : 0);
         if (data_->bInter)
         {
@@ -1366,24 +1259,20 @@ bool TprReader::do_atoms()
 
     if (data_->filever < tpxv_RemoveAtomtypes)
     {
-        if (!do_atomtypes())
-            return TPR_FAILED;
+        if (!do_atomtypes()) return TPR_FAILED;
     }
 
     if (data_->filever >= 65)
     {
-        if (!do_cmap())
-            return TPR_FAILED;
+        if (!do_cmap()) return TPR_FAILED;
     }
 
-    if (!do_groups())
-        return TPR_FAILED;
+    if (!do_groups()) return TPR_FAILED;
 
     if (data_->filever >= tpxv_StoreNonBondedInteractionExclusionGroup)
     {
         int64_t intermolecularExclusionGroupSize;
-        if (!tpr_.do_int64(&intermolecularExclusionGroupSize))
-            return TPR_FAILED;
+        if (!tpr_.do_int64(&intermolecularExclusionGroupSize)) return TPR_FAILED;
         std::vector<int> temp(intermolecularExclusionGroupSize);
         if (!tpr_.do_vector(temp.data(), static_cast<int>(intermolecularExclusionGroupSize)))
             return TPR_FAILED;
@@ -1396,31 +1285,24 @@ bool TprReader::do_atomtypes()
 {
     int nr;
 
-    if (!tpr_.do_int(&nr))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&nr)) return TPR_FAILED;
     if (data_->filever < tpxv_RemoveImplicitSolvation)
     {
         std::vector<float> temp(nr);
-        if (!tpr_.do_vector(temp.data(), nr, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_vector(temp.data(), nr, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_vector(temp.data(), nr, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
     }
 
     // read atomtype number [ atomtypes ]
     data_->atoms.atomtypenumber.resize(nr);
-    if (!tpr_.do_vector(data_->atoms.atomtypenumber.data(), nr, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(data_->atoms.atomtypenumber.data(), nr, data_->prec)) return TPR_FAILED;
 
     if (data_->filever >= 60 && data_->filever < tpxv_RemoveImplicitSolvation)
     {
         std::vector<float> temp(nr);
-        if (!tpr_.do_vector(temp.data(), nr, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_vector(temp.data(), nr, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(temp.data(), nr, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -1431,22 +1313,16 @@ bool TprReader::do_cmap()
     int   ngrid, gridspace;
     float rdum;
 
-    if (!tpr_.do_int(&ngrid))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&gridspace))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ngrid)) return TPR_FAILED;
+    if (!tpr_.do_int(&gridspace)) return TPR_FAILED;
     msg("ngrid= %d, gridspace= %d\n", ngrid, gridspace);
 
     for (int i = 0; i < ngrid * gridspace * gridspace; i++)
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -1462,73 +1338,60 @@ bool TprReader::do_ir()
     msg("------------------------------\n");
     if (data_->filever >= 53)
     {
-        if (!tpr_.do_int(reinterpret_cast<int*>(&ir->pbc)))
-            return TPR_FAILED;
+        if (!tpr_.do_int(reinterpret_cast<int*>(&ir->pbc))) return TPR_FAILED;
         msg("pbcType= %d\n", static_cast<int>(data_->ir.pbc));
-        if (!tpr_.do_bool(&ir->pbcmol, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&ir->pbcmol, data_->vergen)) return TPR_FAILED;
         msg("pbcmol= %d\n", ir->pbcmol ? 1 : 0);
     }
     // too new tpr have not yet support read ir
-    if (data_->vergen > tpx_generation)
-        return TPR_FAILED;
+    if (data_->vergen > tpx_generation) return TPR_FAILED;
 
     // integration method
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("integration method= %d\n", idum);
 
     // nsteps
     INSERT_POS(nsteps);
     if (data_->filever >= 62)
     {
-        if (!tpr_.do_int64(&data_->ir.nsteps))
-            return TPR_FAILED;
+        if (!tpr_.do_int64(&data_->ir.nsteps)) return TPR_FAILED;
     }
     else
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         ir->nsteps = static_cast<int64_t>(idum); // int to int64
     }
     msg("nsteps= %lld\n", ir->nsteps);
 
     if (data_->filever >= 62)
     {
-        if (!tpr_.do_int64(&ir->init_step))
-            return TPR_FAILED;
+        if (!tpr_.do_int64(&ir->init_step)) return TPR_FAILED;
     }
     else
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         ir->init_step = static_cast<int64_t>(idum); // int to int64
     }
     msg("init_step= %lld\n", ir->init_step);
 
-    if (!tpr_.do_int(&ir->simulation_part))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->simulation_part)) return TPR_FAILED;
     msg("simulation_part= %d\n", ir->simulation_part);
 
     // 多时步模拟参数,ignor
     if (data_->filever >= tpxv_MTS)
     {
         bool useMts;
-        if (!tpr_.do_bool(&useMts, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&useMts, data_->vergen)) return TPR_FAILED;
         msg("mts= %d\n", useMts ? 1 : 0);
         if (useMts)
         {
             // numLevels
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
             int forceGroups, stepFactor;
             for (int i = 0; i < idum; i++)
             {
-                if (!tpr_.do_int(&forceGroups))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&stepFactor))
-                    return TPR_FAILED;
+                if (!tpr_.do_int(&forceGroups)) return TPR_FAILED;
+                if (!tpr_.do_int(&stepFactor)) return TPR_FAILED;
             }
         }
     }
@@ -1536,19 +1399,16 @@ bool TprReader::do_ir()
     if (data_->filever >= tpxv_MassRepartitioning)
     {
         float massRepartitionFactor;
-        if (!tpr_.do_real(&massRepartitionFactor, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&massRepartitionFactor, data_->prec)) return TPR_FAILED;
         msg("massRepartitionFactor= %f\n", massRepartitionFactor);
     }
 
     if (data_->filever >= tpxv_EnsembleTemperature)
     {
         // ensembleTemperatureSetting
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         // ensembleTemperature
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         msg("ensembleTemperature= %f\n", rdum);
     }
 
@@ -1556,20 +1416,15 @@ bool TprReader::do_ir()
     if (data_->filever >= 67)
     {
         INSERT_POS(integer.nstcalcenergy);
-        if (!tpr_.do_int(&ir->nstcalcenergy))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->nstcalcenergy)) return TPR_FAILED;
     }
-    else
-    {
-        ir->nstcalcenergy = 1;
-    }
+    else { ir->nstcalcenergy = 1; }
     msg("nstcalcenergy= %d\n", ir->nstcalcenergy);
 
     if (data_->filever >= 81)
     {
         // cutoff_scheme
-        if (!tpr_.do_int(&ir->cutoff_scheme))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->cutoff_scheme)) return TPR_FAILED;
     }
     else
     {
@@ -1577,399 +1432,290 @@ bool TprReader::do_ir()
     }
     msg("cutoff_scheme= %d\n", ir->cutoff_scheme);
 
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("ns_type= %d\n", idum);
     INSERT_POS(integer.nstlist);
-    if (!tpr_.do_int(&ir->nstlist))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstlist)) return TPR_FAILED;
     msg("nstlist= %d\n", ir->nstlist);
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("ndelta= %d\n", idum);
 
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     msg("rtpi= %f\n", rdum); // test particle radius
     INSERT_POS(integer.nstcomm);
-    if (!tpr_.do_int(&ir->nstcomm))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstcomm)) return TPR_FAILED;
     msg("nstcomm= %d\n", ir->nstcomm);
-    if (!tpr_.do_int(&ir->comm_mode))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->comm_mode)) return TPR_FAILED;
     msg("comm_mode= %d\n", ir->comm_mode);
 
     // ignore nstcheckpoint
     if (data_->filever < tpxv_RemoveObsoleteParameters1)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
     }
 
-    if (!tpr_.do_int(&ir->nstcgsteep))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstcgsteep)) return TPR_FAILED;
     msg("nstcgsteep= %d\n", ir->nstcgsteep);
-    if (!tpr_.do_int(&ir->nbfgscorr))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nbfgscorr)) return TPR_FAILED;
     msg("nbfgscorr= %d\n", ir->nbfgscorr);
 
     INSERT_POS(integer.nstlog);
-    if (!tpr_.do_int(&ir->nstlog))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstlog)) return TPR_FAILED;
     msg("nstlog= %d\n", ir->nstlog);
 
     INSERT_POS(integer.nstxout);
-    if (!tpr_.do_int(&ir->nstxout))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstxout)) return TPR_FAILED;
     msg("nstxout= %d\n", ir->nstxout);
 
     INSERT_POS(integer.nstvout);
-    if (!tpr_.do_int(&ir->nstvout))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstvout)) return TPR_FAILED;
     msg("nstvout= %d\n", ir->nstvout);
 
     INSERT_POS(integer.nstfout);
-    if (!tpr_.do_int(&ir->nstfout))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstfout)) return TPR_FAILED;
     msg("nstfout= %d\n", ir->nstfout);
 
     INSERT_POS(integer.nstenergy);
-    if (!tpr_.do_int(&ir->nstenergy))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstenergy)) return TPR_FAILED;
     msg("nstenergy= %d\n", ir->nstenergy);
 
     INSERT_POS(integer.nstxout_compressed);
-    if (!tpr_.do_int(&ir->nstxout_compressed))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nstxout_compressed)) return TPR_FAILED;
     msg("nstxout_compressed= %d\n", ir->nstxout_compressed);
 
     if (data_->filever >= 59)
     {
-        if (!tpr_.do_double(&ir->init_t))
-            return TPR_FAILED;
+        if (!tpr_.do_double(&ir->init_t)) return TPR_FAILED;
 
         INSERT_POS(dt); // get dt position
-        if (!tpr_.do_double(&ir->dt))
-            return TPR_FAILED;
+        if (!tpr_.do_double(&ir->dt)) return TPR_FAILED;
     }
     else
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->init_t = static_cast<double>(rdum);
 
         INSERT_POS(dt); // get dt position
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->dt = static_cast<double>(rdum);
     }
     msg("init_t= %g\n", ir->init_t);
     msg("delta_t= %g (ps)\n", ir->dt);
 
-    if (!tpr_.do_real(&ir->x_compression_precision, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->x_compression_precision, data_->prec)) return TPR_FAILED;
     msg("xtc prec= %g\n", ir->x_compression_precision);
 
     if (data_->filever >= 81)
     {
-        if (!tpr_.do_real(&ir->verletbuf_tol, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&ir->verletbuf_tol, data_->prec)) return TPR_FAILED;
     }
-    else
-    {
-        ir->verletbuf_tol = 0.0f;
-    }
+    else { ir->verletbuf_tol = 0.0f; }
     msg("tolerance of verlet buffer= %g\n", ir->verletbuf_tol);
 
     if (data_->filever >= tpxv_VerletBufferPressureTol)
     {
-        if (!tpr_.do_real(&ir->verletBufferPressureTolerance, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&ir->verletBufferPressureTolerance, data_->prec)) return TPR_FAILED;
     }
-    else
-    {
-        ir->verletBufferPressureTolerance = -1;
-    }
+    else { ir->verletBufferPressureTolerance = -1; }
     msg("verletBufferPressureTolerancer= %g\n", ir->verletBufferPressureTolerance);
 
-    if (!tpr_.do_real(&ir->rlist, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->rlist, data_->prec)) return TPR_FAILED;
     msg("rlist= %g\n", ir->rlist);
 
     // twin-range interactions
     if (data_->filever >= 67 && data_->filever < tpxv_RemoveTwinRange)
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         msg("dummy_rlistlong= %g\n", rdum);
     }
 
     //
     if (data_->filever >= 82 && data_->filever != 90)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         msg("dummy_nstcalclr= %d\n", idum);
     }
 
     // 静电处理方式
-    if (!tpr_.do_int(&ir->coulombtype))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->coulombtype)) return TPR_FAILED;
     msg("coulombtype= %d\n", ir->coulombtype);
     if (data_->filever >= 81)
     {
-        if (!tpr_.do_int(&ir->coulomb_modifier))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->coulomb_modifier)) return TPR_FAILED;
     }
-    else
-    {
-        ir->coulomb_modifier = ir->cutoff_scheme == 0 ? 1 : 2;
-    }
+    else { ir->coulomb_modifier = ir->cutoff_scheme == 0 ? 1 : 2; }
     msg("coulomb_modifier= %d\n", ir->coulomb_modifier);
 
-    if (!tpr_.do_real(&ir->rcoulomb_switch, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->rcoulomb_switch, data_->prec)) return TPR_FAILED;
     msg("rcoulomb_switch= %g\n", ir->rcoulomb_switch);
-    if (!tpr_.do_real(&ir->rcoulomb, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->rcoulomb, data_->prec)) return TPR_FAILED;
     msg("rcoulomb= %g\n", ir->rcoulomb);
-    if (!tpr_.do_int(&ir->vdwtype))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->vdwtype)) return TPR_FAILED;
     msg("vdwtype= %d\n", ir->vdwtype);
     if (data_->filever >= 81)
     {
-        if (!tpr_.do_int(&ir->vdw_modifier))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->vdw_modifier)) return TPR_FAILED;
     }
-    else
-    {
-        ir->vdw_modifier = ir->cutoff_scheme == 0 ? 1 : 2;
-    }
+    else { ir->vdw_modifier = ir->cutoff_scheme == 0 ? 1 : 2; }
     msg("vdw_modifier= %d\n", ir->vdw_modifier);
 
 
-    if (!tpr_.do_real(&ir->rvdw_switch, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->rvdw_switch, data_->prec)) return TPR_FAILED;
     msg("rvdw_switch= %g\n", ir->rvdw_switch);
-    if (!tpr_.do_real(&ir->rvdw, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->rvdw, data_->prec)) return TPR_FAILED;
     msg("rvdw= %g\n", ir->rvdw);
-    if (!tpr_.do_int(&ir->eDispCorr))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->eDispCorr)) return TPR_FAILED;
     msg("eDispCorr= %d\n", ir->eDispCorr);
-    if (!tpr_.do_real(&ir->epsilon_r, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->epsilon_r, data_->prec)) return TPR_FAILED;
     msg("epsilon_r= %g\n", ir->epsilon_r);
-    if (!tpr_.do_real(&ir->epsilon_rf, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->epsilon_rf, data_->prec)) return TPR_FAILED;
     msg("epsilon_rf= %g\n", ir->epsilon_rf);
-    if (!tpr_.do_real(&ir->tabext, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->tabext, data_->prec)) return TPR_FAILED;
     msg("tabext= %g\n", ir->tabext);
 
     // 隐式溶剂部分
     if (data_->filever < tpxv_RemoveImplicitSolvation)
     {
         // int, int, real, real, int
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         ir->implicit_solvent = idum > 0;
     }
-    else
-    {
-        ir->implicit_solvent = false;
-    }
+    else { ir->implicit_solvent = false; }
 
     if (data_->filever < tpxv_RemoveImplicitSolvation)
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         if (data_->filever >= 60)
         {
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
         }
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
     if (data_->filever >= 81)
     {
-        if (!tpr_.do_real(&ir->fourier_spacing, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&ir->fourier_spacing, data_->prec)) return TPR_FAILED;
     }
-    else
-    {
-        ir->fourier_spacing = 0.0;
-    }
-    if (!tpr_.do_int(&ir->nkx))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->nky))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->nkz))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->pme_order))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&ir->ewald_rtol, data_->prec))
-        return TPR_FAILED;
+    else { ir->fourier_spacing = 0.0; }
+    if (!tpr_.do_int(&ir->nkx)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nky)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->nkz)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->pme_order)) return TPR_FAILED;
+    if (!tpr_.do_real(&ir->ewald_rtol, data_->prec)) return TPR_FAILED;
     if (data_->filever >= 93)
     {
-        if (!tpr_.do_real(&ir->ewald_rtol_lj, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&ir->ewald_rtol_lj, data_->prec)) return TPR_FAILED;
     }
-    else
-    {
-        ir->ewald_rtol_lj = ir->ewald_rtol;
-    }
-    if (!tpr_.do_int(&ir->ewald_geometry))
-        return TPR_FAILED;
+    else { ir->ewald_rtol_lj = ir->ewald_rtol; }
+    if (!tpr_.do_int(&ir->ewald_geometry)) return TPR_FAILED;
     msg("ewald_geometry= %s\n", ir->ewald_geometry == 0 ? "3D" : "3DC");
 
-    if (!tpr_.do_real(&ir->epsilon_surface, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->epsilon_surface, data_->prec)) return TPR_FAILED;
     msg("epsilon_surface= %g\n", ir->epsilon_surface);
 
     // ignore bOptFFT
     if (data_->filever < tpxv_RemoveObsoleteParameters1)
     {
-        if (!tpr_.do_bool(&bdum, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
     }
 
     if (data_->filever >= 93)
     {
-        if (!tpr_.do_int(&ir->ljpme_combination_rule))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->ljpme_combination_rule)) return TPR_FAILED;
         msg("ljpme_combination_rule= %s\n", ir->ljpme_combination_rule == 0 ? "Geom" : "LB");
     }
-    if (!tpr_.do_bool(&ir->bContinuation, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_bool(&ir->bContinuation, data_->vergen)) return TPR_FAILED;
     msg("Continuation= %d\n", ir->bContinuation ? 1 : 0);
 
     // 温度耦合
     INSERT_POS(temperature.etc);
-    if (!tpr_.do_int(&ir->etc))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->etc)) return TPR_FAILED;
     msg("etc= %d\n", ir->etc);
 
     // bPrintNHChains
     if (data_->filever >= 79)
     {
-        if (!tpr_.do_bool(&bdum, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
     }
     if (data_->filever >= 71)
     {
         INSERT_POS(integer.nsttcouple);
-        if (!tpr_.do_int(&ir->nsttcouple))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->nsttcouple)) return TPR_FAILED;
     }
-    else
-    {
-        ir->nsttcouple = ir->nstcalcenergy;
-    }
+    else { ir->nsttcouple = ir->nstcalcenergy; }
     msg("nsttcouple= %d\n", ir->nsttcouple);
 
     INSERT_POS(press.epc);
-    if (!tpr_.do_int(&ir->epc))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->epc)) return TPR_FAILED;
     msg("epc= %d\n", ir->epc);
     INSERT_POS(press.epct);
-    if (!tpr_.do_int(&ir->epct))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->epct)) return TPR_FAILED;
     msg("epct= %d\n", ir->epct);
 
     if (data_->filever >= 71)
     {
         INSERT_POS(integer.nstpcouple);
-        if (!tpr_.do_int(&ir->nstpcouple))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->nstpcouple)) return TPR_FAILED;
     }
-    else
-    {
-        ir->nstpcouple = ir->nstcalcenergy;
-    }
+    else { ir->nstpcouple = ir->nstcalcenergy; }
     msg("nstpcouple= %d\n", ir->nstpcouple);
 
     INSERT_POS(press.tau_p);
-    if (!tpr_.do_real(&ir->tau_p, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->tau_p, data_->prec)) return TPR_FAILED;
     msg("tau_p= %g\n", ir->tau_p);
 
     // pressure
     INSERT_POS(press.ref_p);
-    if (!tpr_.do_vector(ir->ref_p, 9, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(ir->ref_p, 9, data_->prec)) return TPR_FAILED;
     print_vec("ref_p= ", ir->ref_p);
     INSERT_POS(press.compress);
-    if (!tpr_.do_vector(ir->compress, 9, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(ir->compress, 9, data_->prec)) return TPR_FAILED;
     print_vec("compress= ", ir->compress);
-    if (!tpr_.do_int(&ir->refcoord_scaling))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->refcoord_scaling)) return TPR_FAILED;
     msg("refcoord_scaling= %d\n", ir->refcoord_scaling);
 
     // 多质心缩放
     int numPosresComGroups = 1;
     if (data_->filever >= tpxv_RefScaleMultipleCOMs)
     {
-        if (!tpr_.do_int(&numPosresComGroups))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&numPosresComGroups)) return TPR_FAILED;
     }
     ir->posres_com.resize(numPosresComGroups);
     ir->posres_comB.resize(numPosresComGroups);
     for (int i = 0; i < numPosresComGroups; ++i)
     {
-        if (!tpr_.do_vector(ir->posres_com[i].data(), DIM, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(ir->posres_com[i].data(), DIM, data_->prec)) return TPR_FAILED;
         print_vec("posres_com= ", ir->posres_com[i].data(), DIM);
-        if (!tpr_.do_vector(ir->posres_comB[i].data(), DIM, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(ir->posres_comB[i].data(), DIM, data_->prec)) return TPR_FAILED;
         print_vec("posres_comB= ", ir->posres_comB[i].data(), DIM);
     }
 
     // andersen_seed
     if (data_->filever < 79)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
     }
 
-    if (!tpr_.do_real(&ir->shake_tol, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->shake_tol, data_->prec)) return TPR_FAILED;
     msg("shake_tol= %g\n", ir->shake_tol);
 
     // 自由能计算部分
-    if (!tpr_.do_int(&ir->efep))
-        return TPR_FAILED;
-    if (!do_fepvals())
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->efep)) return TPR_FAILED;
+    if (!do_fepvals()) return TPR_FAILED;
 
     if (data_->filever >= 79)
     {
-        if (!tpr_.do_bool(&ir->bSimTemp, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&ir->bSimTemp, data_->vergen)) return TPR_FAILED;
     }
-    else
-    {
-        ir->bSimTemp = false;
-    }
+    else { ir->bSimTemp = false; }
     msg("bSimTemp= %d\n", ir->bSimTemp ? 1 : 0);
     // do_simtempvals
     if (ir->bSimTemp)
@@ -1977,12 +1723,9 @@ bool TprReader::do_ir()
         if (data_->filever >= 79)
         {
             // eSimTempScale
-            if (!tpr_.do_int(&ir->eSimTempScale))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&ir->simtemp_high, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&ir->simtemp_high, data_->prec))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&ir->eSimTempScale)) return TPR_FAILED;
+            if (!tpr_.do_real(&ir->simtemp_high, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&ir->simtemp_high, data_->prec)) return TPR_FAILED;
 
             // The range of temperatures used for simulated tempering
             if (ir->n_lambda > 0)
@@ -1996,13 +1739,9 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 79)
     {
-        if (!tpr_.do_bool(&ir->bExpanded, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&ir->bExpanded, data_->vergen)) return TPR_FAILED;
     }
-    else
-    {
-        ir->bExpanded = false;
-    }
+    else { ir->bExpanded = false; }
     if (ir->bExpanded)
     {
         // do_expandedvals
@@ -2016,55 +1755,32 @@ bool TprReader::do_ir()
                 if (data_->filever < tpxv_InputHistogramCounts)
                 {
                     // bInit_weights
-                    if (!tpr_.do_bool(&bdum, data_->vergen))
-                        return TPR_FAILED;
+                    if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
                 }
             }
 
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_bool(&bdum, data_->vergen))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_bool(&bdum, data_->vergen))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         }
 
         // gromacs2025 used, current use real instead of int
@@ -2094,105 +1810,73 @@ bool TprReader::do_ir()
     }
 
     // eDisre, eDisreWeighting
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
-    if (!tpr_.do_bool(&bdum, data_->vergen))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
 
     // ignore dihre_fc
     if (data_->filever < 79)
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
 
     // em_stepsize, em_tol
-    if (!tpr_.do_real(&ir->em_stepsize, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->em_stepsize, data_->prec)) return TPR_FAILED;
     msg("em_stepsize= %g\n", ir->em_stepsize);
-    if (!tpr_.do_real(&ir->em_tol, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->em_tol, data_->prec)) return TPR_FAILED;
     msg("em_tol= %g\n", ir->em_tol);
     // bShakeSOR
-    if (!tpr_.do_bool(&bdum, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
     // niter
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     // fc_stepsize
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     // eConstrAlg
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     // nProjOrder
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     // LincsWarnAngle
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     // nLincsIter
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     // bd_fric
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
 
     if (data_->filever >= tpxv_Use64BitRandomSeed)
     {
-        if (!tpr_.do_int64(&ir->ld_seed))
-            return TPR_FAILED;
+        if (!tpr_.do_int64(&ir->ld_seed)) return TPR_FAILED;
     }
     else
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         ir->ld_seed = static_cast<int64_t>(idum);
     }
     msg("ld_seed= %lld\n", ir->ld_seed);
 
     INSERT_POS(press.deform); // for change deform =
-    if (!tpr_.do_vector(ir->deform, DIM * DIM, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(ir->deform, DIM * DIM, data_->prec)) return TPR_FAILED;
     print_vec("deform= ", ir->deform);
 
     // 余弦加速
-    if (!tpr_.do_real(&ir->cos_accel, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&ir->cos_accel, data_->prec)) return TPR_FAILED;
     msg("cos_accel= %g\n", ir->cos_accel);
 
     // 用户可选int和real
-    if (!tpr_.do_int(&ir->userint1))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->userint2))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->userint3))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->userint4))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&ir->userreal1, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&ir->userreal2, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&ir->userreal3, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&ir->userreal4, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->userint1)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->userint2)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->userint3)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->userint4)) return TPR_FAILED;
+    if (!tpr_.do_real(&ir->userreal1, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&ir->userreal2, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&ir->userreal3, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&ir->userreal4, data_->prec)) return TPR_FAILED;
     msg("userint= %d %d %d %d\n", ir->userint1, ir->userint2, ir->userint3, ir->userint4);
     msg("userreal= %g %g %g %g\n", ir->userreal1, ir->userreal2, ir->userreal3, ir->userreal4);
 
@@ -2203,34 +1887,22 @@ bool TprReader::do_ir()
         bool bAdress = false;
         if (data_->filever >= 77 && data_->filever < tpxv_RemoveAdress)
         {
-            if (!tpr_.do_bool(&bAdress, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_bool(&bAdress, data_->vergen)) return TPR_FAILED;
             if (bAdress)
             {
                 int   numThermoForceGroups, numEnergyGroups;
                 float rvec[DIM];
-                if (!tpr_.do_int(&idum))
-                    return TPR_FAILED;
-                if (!tpr_.do_real(&rdum, data_->prec))
-                    return TPR_FAILED;
-                if (!tpr_.do_real(&rdum, data_->prec))
-                    return TPR_FAILED;
-                if (!tpr_.do_real(&rdum, data_->prec))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&idum))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&idum))
-                    return TPR_FAILED;
-                if (!tpr_.do_vector(rvec, DIM, data_->prec, data_->vergen))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&numThermoForceGroups))
-                    return TPR_FAILED;
-                if (!tpr_.do_real(&rdum, data_->prec))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&numEnergyGroups))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&idum))
-                    return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                if (!tpr_.do_vector(rvec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+                if (!tpr_.do_int(&numThermoForceGroups)) return TPR_FAILED;
+                if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+                if (!tpr_.do_int(&numEnergyGroups)) return TPR_FAILED;
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
 
                 if (numThermoForceGroups > 0)
                 {
@@ -2255,13 +1927,11 @@ bool TprReader::do_ir()
         PullingAlgorithm ePullOld = PullingAlgorithm::Umbrella;
         if (data_->filever >= tpxv_PullCoordTypeGeom)
         {
-            if (!tpr_.do_bool(&bPull, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_bool(&bPull, data_->vergen)) return TPR_FAILED;
         }
         else
         {
-            if (!tpr_.do_int(&idum))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
             ePullOld = static_cast<PullingAlgorithm>(idum);
             bPull    = (ePullOld != PullingAlgorithm::Umbrella);
             switch (ePullOld)
@@ -2282,10 +1952,7 @@ bool TprReader::do_ir()
                 default: THROW_TPR_EXCEPTION("Unhandled old pull algorithm"); break;
             }
         }
-        if (bPull)
-        {
-            do_pull(ePullOld);
-        }
+        if (bPull) { do_pull(ePullOld); }
     }
 
     // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
@@ -2293,8 +1960,7 @@ bool TprReader::do_ir()
     bool bDoAwh = false;
     if (data_->filever >= tpxv_AcceleratedWeightHistogram)
     {
-        if (!tpr_.do_bool(&bDoAwh, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&bDoAwh, data_->vergen)) return TPR_FAILED;
     }
     if (bDoAwh)
     {
@@ -2307,13 +1973,9 @@ bool TprReader::do_ir()
         bool bRot = false;
         if (data_->filever >= 74)
         {
-            if (!tpr_.do_bool(&bRot, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_bool(&bRot, data_->vergen)) return TPR_FAILED;
         }
-        if (bRot)
-        {
-            do_rot();
-        }
+        if (bRot) { do_rot(); }
     }
 
     // IMD
@@ -2321,35 +1983,27 @@ bool TprReader::do_ir()
         bool bIMD = false;
         if (data_->filever >= tpxv_InteractiveMolecularDynamics)
         {
-            if (!tpr_.do_bool(&bIMD, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_bool(&bIMD, data_->vergen)) return TPR_FAILED;
         }
         if (bIMD)
         {
             int nat;
-            if (!tpr_.do_int(&nat))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&nat)) return TPR_FAILED;
             std::vector<int> imd_ind(nat);
-            if (!tpr_.do_vector(imd_ind.data(), nat, data_->prec, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(imd_ind.data(), nat, data_->prec, data_->vergen)) return TPR_FAILED;
         }
     }
 
     // 控温部分
     INSERT_POS(temperature.ngtc);
-    if (!tpr_.do_int(&ir->ngtc))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->ngtc)) return TPR_FAILED;
     msg("ir->ngtc= %d\n", ir->ngtc);
     if (data_->filever >= 69)
     {
         INSERT_POS(temperature.nhchainlength);
-        if (!tpr_.do_int(&ir->nhchainlength))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->nhchainlength)) return TPR_FAILED;
     }
-    else
-    {
-        ir->nhchainlength = 1;
-    }
+    else { ir->nhchainlength = 1; }
     // 是否移除加速组功能
     if (data_->filever >= tpxv_RemovedConstantAcceleration && data_->filever < tpxv_ReaddedConstantAcceleration)
     {
@@ -2357,13 +2011,10 @@ bool TprReader::do_ir()
     }
     else
     {
-        if (!tpr_.do_int(&ir->ngacc))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&ir->ngacc)) return TPR_FAILED;
     }
-    if (!tpr_.do_int(&ir->ngfrz))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&ir->ngener))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ir->ngfrz)) return TPR_FAILED;
+    if (!tpr_.do_int(&ir->ngener)) return TPR_FAILED;
 
     // allocate
     ir->nrdf.resize(ir->ngtc);
@@ -2429,29 +2080,21 @@ bool TprReader::do_ir()
 
     // 墙
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         msg("The number of wall= %d\n", idum);
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED; // int to enum
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to enum
         msg("The type of wall= %d\n", idum);
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         msg("wall_r_linpot= %g\n", rdum);
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         msg("wall_atomtype[0]= %d\n", idum);
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         msg("wall_atomtype[1]= %d\n", idum);
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         msg("wall_density[0]= %g\n", rdum);
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         msg("wall_density[1]= %g\n", rdum);
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         msg("wall_ewald_zfac= %g\n", rdum);
     }
 
@@ -2464,23 +2107,17 @@ bool TprReader::do_ir()
         {
             // n和nt不可大于1
             int n, nt;
-            if (!tpr_.do_int(&n))
-                return TPR_FAILED;
-            if (!tpr_.do_int(&nt))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&n)) return TPR_FAILED;
+            if (!tpr_.do_int(&nt)) return TPR_FAILED;
             ir->elec_old_gmx[i].n  = n;
             ir->elec_old_gmx[i].nt = nt;
 
             // +1 确保容器正常
             std::vector<float> aa(n + 1), phi(nt + 1), at(nt + 1), phit(nt + 1);
-            if (!tpr_.do_vector(aa.data(), n, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_vector(phi.data(), n, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_vector(at.data(), nt, data_->prec))
-                return TPR_FAILED;
-            if (!tpr_.do_vector(phit.data(), nt, data_->prec))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(aa.data(), n, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_vector(phi.data(), n, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_vector(at.data(), nt, data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_vector(phit.data(), nt, data_->prec)) return TPR_FAILED;
             msg("n= %d, nt= %d\n", n, nt);
             if (n > 0)
             {
@@ -2510,9 +2147,8 @@ bool TprReader::do_ir()
     // 计算电生理学: 未完成
     if (data_->filever >= tpxv_ComputationalElectrophysiology)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;         // int to enum
-        msg("swapcoords= %d\n", idum); // No=0, X, Y, Z
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to enum
+        msg("swapcoords= %d\n", idum);              // No=0, X, Y, Z
         if (idum != 0)
         {
             // do_swapcoords_tpx
@@ -2523,25 +2159,20 @@ bool TprReader::do_ir()
 
     // QMMM
     bool bQMMM = false;
-    if (!tpr_.do_bool(&bQMMM, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_bool(&bQMMM, data_->vergen)) return TPR_FAILED;
     msg("bQMMM= %d\n", bQMMM ? 1 : 0);
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED; // qmmmScheme
+    if (!tpr_.do_int(&idum)) return TPR_FAILED; // qmmmScheme
     msg("qmmmScheme= %d\n", idum);
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED; // unusedScalefactor
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; // unusedScalefactor
     msg("unusedScalefactor= %g\n", rdum);
     int ngQM = 0;
-    if (!tpr_.do_int(&ngQM))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&ngQM)) return TPR_FAILED;
     msg("ngQM= %d\n", ngQM);
     // 读旧的QMMM参数
     if (bQMMM && ngQM > 0)
     {
         std::vector<int> dumi(4 * ngQM, 0);
-        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec)) return TPR_FAILED;
 
         // std::vector<bool> has no data()
         std::vector<char> dumc(ngQM * sizeof(bool) / sizeof(char));
@@ -2549,22 +2180,19 @@ bool TprReader::do_ir()
             return TPR_FAILED;
 
         dumi.resize(2 * ngQM, 0);
-        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec)) return TPR_FAILED;
 
         std::vector<float> dumf(2 * ngQM, 0);
-        if (!tpr_.do_vector(dumf.data(), (int)dumf.size(), data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(dumf.data(), (int)dumf.size(), data_->prec)) return TPR_FAILED;
 
         dumi.resize(3 * ngQM, 0);
-        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(dumi.data(), (int)dumi.size(), data_->prec)) return TPR_FAILED;
     }
 
-    // 高版本gmx电场：此处为树结构
+    //! 高版本gmx电场：此处为树结构
     if (data_->filever >= tpxv_GenericParamsForElectricField)
     {
-        // 目前只针对applied-forces中含有电场部分，如果有其他部分，则读取失败，直接返回成功状态，因为我不想让tpr读取功能崩溃
+        //! 目前只针对applied-forces中含有电场部分，如果有其他部分，则读取失败，直接返回成功状态，因为我不想让tpr读取功能崩溃
         ir->elec_field.resize(12, 0.0f);
         INSERT_POS(ef);
         try
@@ -2572,60 +2200,51 @@ bool TprReader::do_ir()
             char          tempstr[MAX_LEN];
             unsigned char typeTag;
 
-            if (!tpr_.do_int(&data_->ir.elec_nf))
-                return TPR_FAILED;
+            if (!tpr_.do_int(&data_->ir.elec_nf)) return TPR_FAILED;
             msg("nf count= %d\n", data_->ir.elec_nf);
-            // 'applied-forces' item
+
+#if 1
+            //! 'applied-forces' item
             for (int i = 0; i < data_->ir.elec_nf; i++)
             {
-                if (!tpr_.do_string(tempstr, data_->vergen))
-                    return TPR_FAILED;
-                msg("name= '%s'\n", tempstr);
-                if (!tpr_.do_uchar(&typeTag, data_->vergen))
-                    return TPR_FAILED;
+                if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
+                msg("name= '%s'\n", tempstr); ///< 'applied-forces' str
+                if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                 msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
 
-                // 'electric-field' when j==0
-                if (!tpr_.do_int(&data_->ir.elec_ne))
-                    return TPR_FAILED;
+                // 属于applied-forces的数目elec_ne
+                if (!tpr_.do_int(&data_->ir.elec_ne)) return TPR_FAILED;
                 msg("ne count= %d\n", data_->ir.elec_ne);
+                //! j==0时是'electric-field'
                 for (int j = 0; j < data_->ir.elec_ne; j++)
                 {
-                    if (!tpr_.do_string(tempstr, data_->vergen))
-                        return TPR_FAILED;
+                    if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                     msg("name= '%s'\n", tempstr);
-                    if (!tpr_.do_uchar(&typeTag, data_->vergen))
-                        return TPR_FAILED;
+                    if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                     msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
 
                     // x or y or z
                     int ndim;
-                    if (!tpr_.do_int(&ndim))
-                        return TPR_FAILED;
+                    if (!tpr_.do_int(&ndim)) return TPR_FAILED;
                     msg("nx count= %d\n", ndim); // == DIM
                     for (int k = 0; k < ndim; k++)
                     {
-                        if (!tpr_.do_string(tempstr, data_->vergen))
-                            return TPR_FAILED;
+                        if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                         msg("name= '%s'\n", tempstr);
-                        if (!tpr_.do_uchar(&typeTag, data_->vergen))
-                            return TPR_FAILED;
+                        if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                         msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
 
                         // E0, omega, t0, sigma
                         int nd;
-                        if (!tpr_.do_int(&nd))
-                            return TPR_FAILED;
+                        if (!tpr_.do_int(&nd)) return TPR_FAILED;
                         msg("nd count= %d\n", nd); // == 4
                         myassert(nd == 4, "The electricfield size must have four parameters");
 
                         for (int m = 0; m < nd; m++)
                         {
-                            if (!tpr_.do_string(tempstr, data_->vergen))
-                                return TPR_FAILED;
+                            if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                             msg("name= '%s'\n", tempstr);
-                            if (!tpr_.do_uchar(&typeTag, data_->vergen))
-                                return TPR_FAILED;
+                            if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
                             msg("typeTag= '%c'\n", typeTag); // 'f' -> float
 
                             if (!tpr_.do_real(&ir->elec_field[k * nd + m], data_->prec))
@@ -2637,6 +2256,9 @@ bool TprReader::do_ir()
                     break;
                 }
             }
+#else 
+            // TODO: Use AppliedForces class  
+#endif
         }
         catch (const std::exception& e)
         {
@@ -2647,6 +2269,9 @@ bool TprReader::do_ir()
         print_vec("ElecY= ", ir->elec_field.data() + 4, 4);
         print_vec("ElecZ= ", ir->elec_field.data() + 8, 4);
     }
+
+    // TODO: internal parameters for mdrun modules
+
 
 #endif // 0
 
@@ -2663,33 +2288,25 @@ bool TprReader::do_fepvals()
     if (data_->filever >= 79)
     {
         // init_fep_state, init_lambda,delta_lambda
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
-        if (!tpr_.do_double(&d))
-            return TPR_FAILED;
-        if (!tpr_.do_double(&d))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_double(&d)) return TPR_FAILED;
+        if (!tpr_.do_double(&d)) return TPR_FAILED;
     }
     else if (data_->filever >= 59)
     {
-        if (!tpr_.do_double(&d))
-            return TPR_FAILED;
-        if (!tpr_.do_double(&d))
-            return TPR_FAILED;
+        if (!tpr_.do_double(&d)) return TPR_FAILED;
+        if (!tpr_.do_double(&d)) return TPR_FAILED;
     }
     else
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
     if (data_->filever >= 79)
     {
         // n_lambda
-        if (!tpr_.do_int(&data_->ir.n_lambda))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->ir.n_lambda)) return TPR_FAILED;
         // 遍历Fep, Mass, Coul, Vdw, Bonded, Restraint, Temperature
         const int Count = 7;
         for (int i = 0; i < Count; i++)
@@ -2697,13 +2314,11 @@ bool TprReader::do_fepvals()
             if (data_->ir.n_lambda > 0)
             {
                 std::vector<double> lambda(data_->ir.n_lambda);
-                if (!tpr_.do_vector(lambda.data(), data_->ir.n_lambda))
-                    return TPR_FAILED;
+                if (!tpr_.do_vector(lambda.data(), data_->ir.n_lambda)) return TPR_FAILED;
                 bool separate_dvdl;
                 for (int j = 0; j < Count; j++)
                 {
-                    if (!tpr_.do_bool(&separate_dvdl, data_->vergen))
-                        return TPR_FAILED;
+                    if (!tpr_.do_bool(&separate_dvdl, data_->vergen)) return TPR_FAILED;
                 }
             }
         }
@@ -2711,105 +2326,75 @@ bool TprReader::do_fepvals()
     else if (data_->filever >= 64)
     {
         // n_lambda
-        if (!tpr_.do_int(&data_->ir.n_lambda))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&data_->ir.n_lambda)) return TPR_FAILED;
 
         std::vector<double> lambda(data_->ir.n_lambda);
-        if (!tpr_.do_vector(lambda.data(), data_->ir.n_lambda))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(lambda.data(), data_->ir.n_lambda)) return TPR_FAILED;
     }
-    else
-    {
-        data_->ir.n_lambda = 0;
-    }
+    else { data_->ir.n_lambda = 0; }
     msg("n_lambda= %d\n", data_->ir.n_lambda);
 
     // sc_alpha
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     msg("sc_alpha= %g\n", rdum);
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("sc_power= %d\n", idum);
     if (data_->filever >= 79)
     {
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
-    else
-    {
-        rdum = 6.0f;
-    }
+    else { rdum = 6.0f; }
     msg("sc_r_power= %g\n", rdum);
 
-    if (!tpr_.do_real(&rdum, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     msg("sc_sigma= %g\n", rdum);
 
     if (data_->filever >= 79)
     {
-        if (!tpr_.do_bool(&bdum, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&bdum, data_->vergen)) return TPR_FAILED;
     }
-    else
-    {
-        idum = true;
-    }
+    else { idum = true; }
     msg("bScCoul= %d\n", idum ? 1 : 0);
 
     // nstdhdl
     if (data_->filever >= 64)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
     }
-    else
-    {
-        idum = 1;
-    }
+    else { idum = 1; }
     msg("nstdhdl= %d\n", idum);
 
     if (data_->filever >= 73)
     {
         // enum as int, separate_dhdl_file, dhdl_derivatives
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
     }
     if (data_->filever >= 71)
     {
         // dh_hist_size
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         // dh_hist_spacing
-        if (!tpr_.do_double(&d))
-            return TPR_FAILED;
+        if (!tpr_.do_double(&d)) return TPR_FAILED;
     }
     if (data_->filever >= 79)
     {
         // enum as int, edHdLPrintEnergy
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
     }
     if (data_->filever >= tpxv_SoftcoreGapsys)
     {
         // softcoreFunction, scGapsysScaleLinpointLJ, scGapsysScaleLinpointQ, scGapsysSigmaLJ
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
     // lambda_neighbors
     if ((data_->filever >= 83 && data_->filever < 90) || data_->filever >= 92)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
@@ -2824,11 +2409,9 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
     float fdum;
     if (data_->filever >= 95)
     {
-        if (!tpr_.do_int(&pd.ngroup))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&pd.ngroup)) return TPR_FAILED;
     }
-    if (!tpr_.do_int(&pd.ncoord))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&pd.ncoord)) return TPR_FAILED;
     msg("ncoord= %d\n", pd.ncoord);
 
     if (data_->filever < 95)
@@ -2839,45 +2422,34 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
 
     if (data_->filever < tpxv_PullCoordTypeGeom)
     {
-        if (!tpr_.do_int(reinterpret_cast<int*>(&eGeomOld)))
-            return TPR_FAILED;
+        if (!tpr_.do_int(reinterpret_cast<int*>(&eGeomOld))) return TPR_FAILED;
         msg("eGeomOld= %d\n", static_cast<int>(eGeomOld));
-        if (!tpr_.do_vector(dimOld, DIM, data_->prec, data_->filever))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(dimOld, DIM, data_->prec, data_->filever)) return TPR_FAILED;
         print_vec("dimOld= ", dimOld, DIM);
         // The inner cylinder radius
-        if (!tpr_.do_real(&fdum, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
         msg("cylinder radius= %g\n", fdum);
     }
-    if (!tpr_.do_real(&pd.cylinder_r, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&pd.cylinder_r, data_->prec)) return TPR_FAILED;
     msg("cylinder_r= %g\n", pd.cylinder_r);
-    if (!tpr_.do_real(&pd.constr_tol, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&pd.constr_tol, data_->prec)) return TPR_FAILED;
     msg("constr_tol= %g\n", pd.constr_tol);
     if (data_->filever >= 95)
     {
-        if (!tpr_.do_bool(&pd.bPrintCOM, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bPrintCOM, data_->vergen)) return TPR_FAILED;
         msg("bPrintCOM= %d\n", pd.bPrintCOM ? 1 : 0);
     }
     if (data_->filever >= tpxv_ReplacePullPrintCOM12)
     {
-        if (!tpr_.do_bool(&pd.bPrintRefValue, data_->vergen))
-            return TPR_FAILED;
-        if (!tpr_.do_bool(&pd.bPrintComp, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bPrintRefValue, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bPrintComp, data_->vergen)) return TPR_FAILED;
     }
     else if (data_->filever >= tpxv_PullCoordTypeGeom)
     {
         int idum;
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED; // used to be bPrintCOM2
-        if (!tpr_.do_bool(&pd.bPrintRefValue, data_->vergen))
-            return TPR_FAILED;
-        if (!tpr_.do_bool(&pd.bPrintComp, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // used to be bPrintCOM2
+        if (!tpr_.do_bool(&pd.bPrintRefValue, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bPrintComp, data_->vergen)) return TPR_FAILED;
     }
     else
     {
@@ -2887,21 +2459,15 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
     msg("bPrintRefValue= %d\n", pd.bPrintRefValue ? 1 : 0);
     msg("bPrintComp= %d\n", pd.bPrintComp ? 1 : 0);
 
-    if (!tpr_.do_int(&pd.nstxout))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&pd.nstfout))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&pd.nstxout)) return TPR_FAILED;
+    if (!tpr_.do_int(&pd.nstfout)) return TPR_FAILED;
     msg("pull nstxout= %d\n", pd.nstxout);
     msg("pull nstfout= %d\n", pd.nstfout);
     if (data_->filever >= tpxv_PullPrevStepCOMAsReference)
     {
-        if (!tpr_.do_bool(&pd.bSetPbcRefToPrevStepCOM, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bSetPbcRefToPrevStepCOM, data_->vergen)) return TPR_FAILED;
     }
-    else
-    {
-        pd.bSetPbcRefToPrevStepCOM = false;
-    }
+    else { pd.bSetPbcRefToPrevStepCOM = false; }
     // allcate
     pd.group.resize(pd.ngroup);
     pd.coord.resize(pd.ngroup);
@@ -2957,11 +2523,9 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
     }
     if (data_->filever >= tpxv_PullAverage)
     {
-        if (!tpr_.do_bool(&pd.bXOutAverage, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bXOutAverage, data_->vergen)) return TPR_FAILED;
         msg("pull bXOutAverage= %d\n", pd.bXOutAverage ? 1 : 0);
-        if (!tpr_.do_bool(&pd.bFOutAverage, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&pd.bFOutAverage, data_->vergen)) return TPR_FAILED;
         msg("pull bFOutAverage= %d\n", pd.bFOutAverage ? 1 : 0);
     }
 
@@ -2972,17 +2536,14 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
 bool TprReader::do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd)
 {
     int numAtoms = static_cast<int>(pgrp->ind.size());
-    if (!tpr_.do_int(&numAtoms))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&numAtoms)) return TPR_FAILED;
     msg("pull numAtoms= %d\n", numAtoms);
     pgrp->ind.resize(numAtoms);
-    if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen)) return TPR_FAILED;
     print_vec("pgrp->ind= ", pgrp->ind.data(), numAtoms);
 
     int numWeights = static_cast<int>(pgrp->weight.size());
-    if (!tpr_.do_int(&numWeights))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&numWeights)) return TPR_FAILED;
     msg("pull numWeights= %d\n", numWeights);
     pgrp->weight.resize(numWeights);
     if (!tpr_.do_vector(pgrp->weight.data(), numWeights, data_->prec, data_->vergen))
@@ -2990,24 +2551,18 @@ bool TprReader::do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd)
     print_vec("pgrp->weight= ", pgrp->weight.data(), numWeights);
 
 
-    if (!tpr_.do_int(&pgrp->pbcatom))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&pgrp->pbcatom)) return TPR_FAILED;
     msg("pull pbcatom= %d\n", pgrp->pbcatom);
-    if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
     print_vec("pcrd->vec= ", pcrd->vec, DIM);
 
     std::vector<float> tmp(DIM); // size=DIM
     pcrd->origin[0] = pcrd->origin[1] = pcrd->origin[2] = 0;
-    if (!tpr_.do_vector(tmp.data(), DIM, data_->prec, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(tmp.data(), DIM, data_->prec, data_->vergen)) return TPR_FAILED;
     pcrd->init = tmp[0];
-    if (!tpr_.do_real(&pcrd->rate, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&pcrd->k, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&pcrd->kB, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->rate, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->k, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->kB, data_->prec)) return TPR_FAILED;
     msg("pcrd->init= %g\n", pcrd->init);
     msg("pcrd->rate= %g\n", pcrd->rate);
     msg("pcrd->k= %g\n", pcrd->k);
@@ -3019,23 +2574,19 @@ bool TprReader::do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd)
 bool TprReader::do_pull_group(t_pull_group* pgrp)
 {
     int numAtoms = static_cast<int>(pgrp->ind.size());
-    if (!tpr_.do_int(&numAtoms))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&numAtoms)) return TPR_FAILED;
     pgrp->ind.resize(numAtoms);
-    if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen)) return TPR_FAILED;
 
     int numWeights = static_cast<int>(pgrp->weight.size());
-    if (!tpr_.do_int(&numWeights))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&numWeights)) return TPR_FAILED;
     msg("pull numWeights= %d\n", numWeights);
     pgrp->weight.resize(numWeights);
     if (!tpr_.do_vector(pgrp->weight.data(), numWeights, data_->prec, data_->vergen))
         return TPR_FAILED;
     print_vec("pgrp->weight", pgrp->weight.data(), numWeights);
 
-    if (!tpr_.do_int(&pgrp->pbcatom))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&pgrp->pbcatom)) return TPR_FAILED;
     msg("pull pbcatom= %d\n", pgrp->pbcatom);
     return TPR_SUCCESS;
 }
@@ -3047,36 +2598,26 @@ bool TprReader::do_pull_coord(t_pull_coord*     pcrd,
 {
     if (data_->filever >= tpxv_PullCoordNGroup)
     {
-        if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eType)))
-            return TPR_FAILED;
+        if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eType))) return TPR_FAILED;
         msg("pcrd->eType= %d\n", static_cast<int>(pcrd->eType));
         if (data_->filever >= tpxv_PullExternalPotential)
         {
             if (pcrd->eType == PullingAlgorithm::External)
             {
                 char temp[MAX_LEN];
-                if (!tpr_.do_string(temp, data_->vergen))
-                    return TPR_FAILED;
+                if (!tpr_.do_string(temp, data_->vergen)) return TPR_FAILED;
                 pcrd->externalPotentialProvider = temp;
             }
-            else
-            {
-                pcrd->externalPotentialProvider.clear();
-            }
+            else { pcrd->externalPotentialProvider.clear(); }
         }
-        else
-        {
-            pcrd->externalPotentialProvider.clear();
-        }
+        else { pcrd->externalPotentialProvider.clear(); }
         /* Note that we try to support adding new geometries without
          * changing the tpx version. This requires checks when printing the
          * geometry string and a check and fatal_error in init_pull.
          */
-        if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eGeom)))
-            return TPR_FAILED;
+        if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eGeom))) return TPR_FAILED;
         msg("pcrd->eGeom= %d\n", static_cast<int>(pcrd->eGeom));
-        if (!tpr_.do_int(&pcrd->ngroup))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&pcrd->ngroup)) return TPR_FAILED;
         msg("pcrd->ngroup= %d\n", pcrd->ngroup);
         if (pcrd->ngroup <= c_pullCoordNgroupMax)
         {
@@ -3098,48 +2639,36 @@ bool TprReader::do_pull_coord(t_pull_coord*     pcrd,
 
             pcrd->ngroup = 0;
         }
-        if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
         print_vec("pcrd->dim= ", pcrd->dim, DIM);
         if (data_->filever >= tpxv_TransformationPullCoord)
         {
             char temp[MAX_LEN];
-            if (!tpr_.do_string(temp, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_string(temp, data_->vergen)) return TPR_FAILED;
             pcrd->expression = temp;
         }
-        else
-        {
-            pcrd->expression.clear();
-        }
+        else { pcrd->expression.clear(); }
     }
     else
     {
         pcrd->ngroup = 2;
-        if (!tpr_.do_int(&pcrd->group[0]))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&pcrd->group[1]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&pcrd->group[0])) return TPR_FAILED;
+        if (!tpr_.do_int(&pcrd->group[1])) return TPR_FAILED;
         if (data_->filever >= tpxv_PullCoordTypeGeom)
         {
             pcrd->ngroup = (pcrd->eGeom == PullGroupGeometry::DirectionRelative ? 4 : 2);
-            if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eType)))
-                return TPR_FAILED;
-            if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eGeom)))
-                return TPR_FAILED;
+            if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eType))) return TPR_FAILED;
+            if (!tpr_.do_int(reinterpret_cast<int*>(&pcrd->eGeom))) return TPR_FAILED;
             msg("pcrd->ngroup= %d\n", pcrd->ngroup);
             msg("pcrd->eType= %d\n", static_cast<int>(pcrd->eType));
             msg("pcrd->eGeom= %d\n", static_cast<int>(pcrd->eGeom));
 
             if (pcrd->ngroup == 4)
             {
-                if (!tpr_.do_int(&pcrd->group[2]))
-                    return TPR_FAILED;
-                if (!tpr_.do_int(&pcrd->group[3]))
-                    return TPR_FAILED;
+                if (!tpr_.do_int(&pcrd->group[2])) return TPR_FAILED;
+                if (!tpr_.do_int(&pcrd->group[3])) return TPR_FAILED;
             }
-            if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
             print_vec("pcrd->dim= ", pcrd->dim, DIM);
         }
         else
@@ -3149,28 +2678,21 @@ bool TprReader::do_pull_coord(t_pull_coord*     pcrd,
             std::copy(dimOld, dimOld + DIM, pcrd->dim);
         }
     }
-    if (!tpr_.do_vector(pcrd->origin, DIM, data_->prec, data_->vergen))
-        return TPR_FAILED;
-    if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen))
-        return TPR_FAILED;
+    if (!tpr_.do_vector(pcrd->origin, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
+    if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
     if (data_->filever >= tpxv_PullCoordTypeGeom)
     {
-        if (!tpr_.do_bool(&pcrd->bStart, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_bool(&pcrd->bStart, data_->vergen)) return TPR_FAILED;
     }
     else
     {
         /* This parameter is only printed, but not actually used by mdrun */
         pcrd->bStart = false;
     }
-    if (!tpr_.do_real(&pcrd->init, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&pcrd->rate, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&pcrd->k, data_->prec))
-        return TPR_FAILED;
-    if (!tpr_.do_real(&pcrd->kB, data_->prec))
-        return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->init, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->rate, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->k, data_->prec)) return TPR_FAILED;
+    if (!tpr_.do_real(&pcrd->kB, data_->prec)) return TPR_FAILED;
     msg("pcrd->init= %g\n", pcrd->init);
     msg("pcrd->rate= %g\n", pcrd->rate);
     msg("pcrd->k= %g\n", pcrd->k);
@@ -3184,12 +2706,9 @@ bool TprReader::do_rot()
     t_rot rot;
 
     int numGroups;
-    if (!tpr_.do_int(&numGroups))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&rot.nstrout))
-        return TPR_FAILED;
-    if (!tpr_.do_int(&rot.nstsout))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&numGroups)) return TPR_FAILED;
+    if (!tpr_.do_int(&rot.nstrout)) return TPR_FAILED;
+    if (!tpr_.do_int(&rot.nstsout)) return TPR_FAILED;
     msg("rot numGroups= %d\n", numGroups);
     msg("rot nstrout= %d\n", rot.nstrout);
     msg("rot nstsout= %d\n", rot.nstsout);
@@ -3198,56 +2717,41 @@ bool TprReader::do_rot()
     for (auto& grp : rot.grp)
     {
         // do_rotgrp
-        if (!tpr_.do_int(reinterpret_cast<int*>(&grp.eType)))
-            return TPR_FAILED;
+        if (!tpr_.do_int(reinterpret_cast<int*>(&grp.eType))) return TPR_FAILED;
         msg("grp.eType= %d\n", static_cast<int>(grp.eType));
         int idump;
-        if (!tpr_.do_int(&idump))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idump)) return TPR_FAILED;
         grp.bMassW = static_cast<bool>(idump);
         msg("grp.bMassW= %d\n", grp.bMassW ? 1 : 0);
-        if (!tpr_.do_int(&grp.nat))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&grp.nat)) return TPR_FAILED;
         msg("grp.nat= %d\n", grp.nat);
         grp.ind.resize(grp.nat);
-        if (!tpr_.do_vector(grp.ind.data(), grp.nat, data_->prec, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(grp.ind.data(), grp.nat, data_->prec, data_->vergen)) return TPR_FAILED;
         print_vec("grp.ind= ", grp.ind.data(), grp.nat);
 
         grp.x_ref_original.resize(grp.nat);
         for (auto& x : grp.x_ref_original)
         {
-            if (!tpr_.do_vector(x.data(), DIM, data_->prec, data_->vergen))
-                return TPR_FAILED;
+            if (!tpr_.do_vector(x.data(), DIM, data_->prec, data_->vergen)) return TPR_FAILED;
         }
 
-        if (!tpr_.do_vector(grp.inputVec, DIM, data_->prec, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(grp.inputVec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
         print_vec("grp.inputVec= ", grp.inputVec, DIM);
-        if (!tpr_.do_vector(grp.pivot, DIM, data_->prec, data_->vergen))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(grp.pivot, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
         print_vec("grp.pivot= ", grp.pivot, DIM);
-        if (!tpr_.do_real(&grp.rate, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&grp.k, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&grp.slab_dist, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&grp.min_gaussian, data_->prec))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&grp.eps, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_real(&grp.rate, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.k, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.slab_dist, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.min_gaussian, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.eps, data_->prec)) return TPR_FAILED;
         msg("grp.rate= %g\n", grp.rate);
         msg("grp.k= %g\n", grp.k);
         msg("grp.slab_dist= %g\n", grp.slab_dist);
         msg("grp.min_gaussian= %g\n", grp.min_gaussian);
         msg("grp.eps= %g\n", grp.eps);
-        if (!tpr_.do_int(reinterpret_cast<int*>(&grp.eFittype)))
-            return TPR_FAILED;
-        if (!tpr_.do_int(&grp.PotAngle_nstep))
-            return TPR_FAILED;
-        if (!tpr_.do_real(&grp.PotAngle_step, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_int(reinterpret_cast<int*>(&grp.eFittype))) return TPR_FAILED;
+        if (!tpr_.do_int(&grp.PotAngle_nstep)) return TPR_FAILED;
+        if (!tpr_.do_real(&grp.PotAngle_step, data_->prec)) return TPR_FAILED;
         msg("grp.eFittype= %d\n", static_cast<int>(grp.eFittype));
         msg("grp.PotAngle_nstep= %d\n", grp.PotAngle_nstep);
         msg("grp.PotAngle_step= %g\n", grp.PotAngle_step);
@@ -3265,29 +2769,24 @@ bool TprReader::do_groups()
     for (int i = 0; i < egcNR; i++)
     {
         // i=0时，温度耦合组数目 grp[T-Coupling  ]
-        if (!tpr_.do_int(&nr))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&nr)) return TPR_FAILED;
 
         gid[i].resize(nr); // allocated memory for this type
-        if (!tpr_.do_vector(gid[i].data(), nr, data_->prec))
-            return TPR_FAILED;
+        if (!tpr_.do_vector(gid[i].data(), nr, data_->prec)) return TPR_FAILED;
     }
 
-    if (!tpr_.do_int(&idum))
-        return TPR_FAILED;
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("number of group names= %d\n", idum);
     // 每个原子组字符串的起始位置
     gpos.resize(idum);
     for (int i = 0; i < idum; i++)
     {
-        if (!tpr_.do_int(&gpos[i]))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&gpos[i])) return TPR_FAILED;
     }
 
     for (int i = 0; i < egcNR; i++)
     {
-        if (!tpr_.do_int(&idum))
-            return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
         if (idum != 0)
         {
             // for gmx >= 2020，uchar只读1字节
@@ -3322,10 +2821,7 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
         bool bClear = false;
         for (int k = 0; k < NFTUPD; k++)
         {
-            if ((data_->filever < ftupd[k].fvnr) && (i == ftupd[k].ftype))
-            {
-                bClear = true;
-            }
+            if ((data_->filever < ftupd[k].fvnr) && (i == ftupd[k].ftype)) { bClear = true; }
         }
 
         if (bClear)
@@ -3336,10 +2832,8 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
         else
         {
             // get the number of interactions
-            if (!tpr_.do_int(&nr[i][ntype]))
-                return TPR_FAILED;
-            if (nr[i][ntype] == 0)
-                continue; // empty
+            if (!tpr_.do_int(&nr[i][ntype])) return TPR_FAILED;
+            if (nr[i][ntype] == 0) continue; // empty
 
             // allocated memory
             interactionlist[i][ntype].resize(nr[i][ntype]);
@@ -3381,20 +2875,18 @@ bool TprReader::set_nsteps(int64_t nsteps)
         size_t offset = sizeof(int64_t);
         if (data_->filever >= 62)
         {
-            if (!newtpr.do_int64(&nsteps))
-                return TPR_FAILED;
+            if (!newtpr.do_int64(&nsteps)) return TPR_FAILED;
         }
         else
         {
             // old tpr use int type
             int idum = static_cast<int>(nsteps);
-            if (!newtpr.do_int(&idum))
-                return TPR_FAILED;
+            if (!newtpr.do_int(&idum)) return TPR_FAILED;
             offset = sizeof(int); // int size
         }
 
         // write nsteps after
-        long len = fsize - data_->property.nsteps - offset;
+        size_t len = fsize - data_->property.nsteps - offset;
         if (newtpr.fwrite_(&buffer[data_->property.nsteps + offset], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in set_nsteps after");
@@ -3424,8 +2916,7 @@ bool TprReader::set_dt(double dt)
         // write new dt
         if (data_->filever >= 59)
         {
-            if (!newtpr.do_double(&dt))
-                return TPR_FAILED;
+            if (!newtpr.do_double(&dt)) return TPR_FAILED;
             realsize = 8;
         }
         else
@@ -3433,8 +2924,7 @@ bool TprReader::set_dt(double dt)
             // old tpr use real type
             realsize   = data_->prec;
             float rdum = static_cast<float>(dt);
-            if (!newtpr.do_real(&rdum, data_->prec))
-                return TPR_FAILED;
+            if (!newtpr.do_real(&rdum, data_->prec)) return TPR_FAILED;
         }
 
         // write dt after
@@ -3469,14 +2959,8 @@ do_box_rel(int ndim, const float deform[DIM][DIM], float box_rel[DIM][DIM], floa
             if (deform[d][d2] == 0
                 && !(d == ZZ && d2 == XX && deform[d][YY] != 0 && (b[YY][d2] != 0 || deform[YY][d2] != 0)))
             {
-                if (bInit)
-                {
-                    box_rel[d][d2] = b[d][d2] / b[XX][XX];
-                }
-                else
-                {
-                    b[d][d2] = b[XX][XX] * box_rel[d][d2];
-                }
+                if (bInit) { box_rel[d][d2] = b[d][d2] / b[XX][XX]; }
+                else { b[d][d2] = b[XX][XX] * box_rel[d][d2]; }
             }
         }
     }
@@ -3509,19 +2993,13 @@ bool TprReader::set_pressure(const char*         method,
         THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling type: ") + type);
     }
     // ref_p and compress
-    if (ref_p.size() != DIM * DIM)
-    {
-        THROW_TPR_EXCEPTION("The size of ref_p must be 9");
-    }
+    if (ref_p.size() != DIM * DIM) { THROW_TPR_EXCEPTION("The size of ref_p must be 9"); }
     if (compress.size() != DIM * DIM)
     {
         THROW_TPR_EXCEPTION("The size of compressibility must be 9");
     }
     // deform
-    if (deform.size() != DIM * DIM)
-    {
-        THROW_TPR_EXCEPTION("The size of deform must be 9");
-    }
+    if (deform.size() != DIM * DIM) { THROW_TPR_EXCEPTION("The size of deform must be 9"); }
 
     // only for fileversion >= 51
     if (data_->filever < 51)
@@ -3554,8 +3032,7 @@ bool TprReader::set_pressure(const char*         method,
                        (float(*)[DIM])data_->box.data(),
                        true);
         }
-        if (!newtpr.do_vector(box_rel, DIM * DIM, data_->prec, data_->vergen))
-            return TPR_FAILED;
+        if (!newtpr.do_vector(box_rel, DIM * DIM, data_->prec, data_->vergen)) return TPR_FAILED;
 
 
         // write box_rel after and epc before
@@ -3568,24 +3045,20 @@ bool TprReader::set_pressure(const char*         method,
 
         // write epc as int enum
         int enum_epc = static_cast<int>(epc);
-        if (!newtpr.do_int(&enum_epc))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&enum_epc)) return TPR_FAILED;
 
         // write epct as int enum
         int enum_epct = static_cast<int>(epct);
-        if (!newtpr.do_int(&enum_epct))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&enum_epct)) return TPR_FAILED;
 
         // write old nstpcouple
         if (data_->filever >= 71)
         {
-            if (!newtpr.do_int(&data_->ir.nstpcouple))
-                return TPR_FAILED;
+            if (!newtpr.do_int(&data_->ir.nstpcouple)) return TPR_FAILED;
         }
 
         // write tau_p in float
-        if (!newtpr.do_real(&tau_p, data_->prec))
-            return TPR_FAILED;
+        if (!newtpr.do_real(&tau_p, data_->prec)) return TPR_FAILED;
 
         // write ref_p in vector
         if (!newtpr.do_vector(ref_p.data(), DIM * DIM, data_->prec, data_->vergen))
@@ -3660,8 +3133,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
 
         // write etc type as enum
         int enum_etc = static_cast<int>(etc);
-        if (!newtpr.do_int(&enum_etc))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&enum_etc)) return TPR_FAILED;
 
         // write etc after and ngtc before
         constexpr int sizeInt = (int)sizeof(int); // etc size
@@ -3672,8 +3144,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
         }
 
         // write ir->ngtc
-        if (!newtpr.do_int(&data_->ir.ngtc))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&data_->ir.ngtc)) return TPR_FAILED;
 
         // write nhchainlength
         if (data_->filever >= 69)
@@ -3683,8 +3154,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
             {
                 nhchainlength = 1; // use default value 1
             }
-            if (!newtpr.do_int(&nhchainlength))
-                return TPR_FAILED;
+            if (!newtpr.do_int(&nhchainlength)) return TPR_FAILED;
         }
 
         // write nhchainlength after and ref_t before
@@ -3750,8 +3220,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         }
 
         // write new epi in a int
-        if (!newtpr.do_int(&val))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&val)) return TPR_FAILED;
 
         // write keyword after
         constexpr int size = sizeof(int);
@@ -3781,37 +3250,25 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         case VecProps::x:
         {
             // check if has coordinates of tpr
-            if (!data_->bX)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not coordinates information");
-            }
+            if (!data_->bX) { THROW_TPR_EXCEPTION("Input tpr has not coordinates information"); }
             return data_->atoms.x;
         }
         case VecProps::v:
         {
             // check if has velocity of tpr
-            if (!data_->bV)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not velocity information");
-            }
+            if (!data_->bV) { THROW_TPR_EXCEPTION("Input tpr has not velocity information"); }
             return data_->atoms.v;
         }
         case VecProps::f:
         {
             // check if has force of tpr
-            if (!data_->bF)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not force information");
-            }
+            if (!data_->bF) { THROW_TPR_EXCEPTION("Input tpr has not force information"); }
             return data_->atoms.f;
         }
         case VecProps::m:
         {
             // check if has get mass
-            if (data_->atoms.mass.empty())
-            {
-                THROW_TPR_EXCEPTION("Can not get mass information");
-            }
+            if (data_->atoms.mass.empty()) { THROW_TPR_EXCEPTION("Can not get mass information"); }
             return data_->atoms.mass;
         }
         case VecProps::q:
@@ -3826,10 +3283,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
         case VecProps::box:
         {
             // check if has get charge
-            if (!data_->bBox)
-            {
-                THROW_TPR_EXCEPTION("Have not box information in tpr");
-            }
+            if (!data_->bBox) { THROW_TPR_EXCEPTION("Have not box information in tpr"); }
             return data_->box;
         }
         case VecProps::ef:
@@ -4055,8 +3509,7 @@ bool TprReader::write_xvf(std::vector<float>& vec, long pos, long prec) const
         }
 
         // write new vector
-        if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec))
-            return TPR_FAILED;
+        if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_FAILED;
 
         // write vector after
         size_t size = vec.size() * sizeof(float);
@@ -4076,8 +3529,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
     long        fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
 
-    if (!(fsize && pos))
-        return TPR_FAILED;
+    if (!(fsize && pos)) return TPR_FAILED;
 
     // 低版本电场
     if (data_->filever < tpxv_GenericParamsForElectricField)
@@ -4101,21 +3553,15 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
             // write n, nt
             int n  = data_->ir.elec_old_gmx[i].n;
             int nt = data_->ir.elec_old_gmx[i].nt;
-            if (!newtpr.do_int(&n))
-                return TPR_FAILED;
-            if (!newtpr.do_int(&nt))
-                return TPR_FAILED;
+            if (!newtpr.do_int(&n)) return TPR_FAILED;
+            if (!newtpr.do_int(&nt)) return TPR_FAILED;
             nskip += (n + nt) * (2 * sizeof(float) + sizeof(int));
 
             // write E0, t0, omega, sigma in DIM of tpr, n or nt may be zero
-            if (!newtpr.do_vector(tempvec.data() + i * 4 + 0, n, prec))
-                return TPR_FAILED;
-            if (!newtpr.do_vector(tempvec.data() + i * 4 + 1, n, prec))
-                return TPR_FAILED;
-            if (!newtpr.do_vector(tempvec.data() + i * 4 + 2, nt, prec))
-                return TPR_FAILED;
-            if (!newtpr.do_vector(tempvec.data() + i * 4 + 3, nt, prec))
-                return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 0, n, prec)) return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 1, n, prec)) return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 2, nt, prec)) return TPR_FAILED;
+            if (!newtpr.do_vector(tempvec.data() + i * 4 + 3, nt, prec)) return TPR_FAILED;
         }
 
         // write ef after
@@ -4140,50 +3586,37 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
 
         //! write electric field
         // 1. Firstly write nf,  'applied-forces' string and type
-        if (!newtpr.do_int(&data_->ir.elec_nf))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&data_->ir.elec_nf)) return TPR_FAILED;
         char          str[] = "applied-forces";
         unsigned char otype = 'O'; // obj
-        if (!newtpr.do_string(str, data_->vergen))
-            return TPR_FAILED;
-        if (!newtpr.do_uchar(&otype, data_->vergen))
-            return TPR_FAILED;
+        if (!newtpr.do_string(str, data_->vergen)) return TPR_FAILED;
+        if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
 
         // 2. Then write ne and 'electric-field' and type
-        if (!newtpr.do_int(&data_->ir.elec_ne))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&data_->ir.elec_ne)) return TPR_FAILED;
         char str2[] = "electric-field";
-        if (!newtpr.do_string(str2, data_->vergen))
-            return TPR_FAILED;
-        if (!newtpr.do_uchar(&otype, data_->vergen))
-            return TPR_FAILED;
+        if (!newtpr.do_string(str2, data_->vergen)) return TPR_FAILED;
+        if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
 
         // 3. write ndim and electric field value in three dimension
         int ndim = DIM;
-        if (!newtpr.do_int(&ndim))
-            return TPR_FAILED;
+        if (!newtpr.do_int(&ndim)) return TPR_FAILED;
         const char*   direct[] = {"x", "y", "z"};
         const char*   items[]  = {"E0", "omega", "t0", "sigma"};
         unsigned char ftype    = 'f'; // float
         for (int i = 0; i < DIM; i++)
         {
-            if (!newtpr.do_string((char*)direct[i], data_->vergen))
-                return TPR_FAILED;
-            if (!newtpr.do_uchar(&otype, data_->vergen))
-                return TPR_FAILED;
+            if (!newtpr.do_string((char*)direct[i], data_->vergen)) return TPR_FAILED;
+            if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
 
             int nd = 4; // E0, Omega, t0, sigma
-            if (!newtpr.do_int(&nd))
-                return TPR_FAILED;
+            if (!newtpr.do_int(&nd)) return TPR_FAILED;
             for (int j = 0; j < nd; j++)
             {
-                if (!newtpr.do_string((char*)items[j], data_->vergen))
-                    return TPR_FAILED;
-                if (!newtpr.do_uchar(&ftype, data_->vergen))
-                    return TPR_FAILED;
+                if (!newtpr.do_string((char*)items[j], data_->vergen)) return TPR_FAILED;
+                if (!newtpr.do_uchar(&ftype, data_->vergen)) return TPR_FAILED;
                 // 电场实际值
-                if (!newtpr.do_real(&vec[i * nd + j], data_->prec))
-                    return TPR_FAILED;
+                if (!newtpr.do_real(&vec[i * nd + j], data_->prec)) return TPR_FAILED;
             }
         }
 
@@ -4241,51 +3674,34 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         case VecProps::x:
         {
             // check if has coordinates of tpr
-            if (!data_->bX)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not coordinates information");
-            }
+            if (!data_->bX) { THROW_TPR_EXCEPTION("Input tpr has not coordinates information"); }
             // if succeed, return
-            if (write_xvf(vec, data_->property.x, data_->prec))
-                return TPR_SUCCESS;
+            if (write_xvf(vec, data_->property.x, data_->prec)) return TPR_SUCCESS;
             break;
         }
         case VecProps::v:
         {
             // check if has velocity of tpr
-            if (!data_->bV)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not velocity information");
-            }
-            if (write_xvf(vec, data_->property.v, data_->prec))
-                return TPR_SUCCESS;
+            if (!data_->bV) { THROW_TPR_EXCEPTION("Input tpr has not velocity information"); }
+            if (write_xvf(vec, data_->property.v, data_->prec)) return TPR_SUCCESS;
             break;
         }
         case VecProps::f:
         {
             // check if has force of tpr
-            if (!data_->bF)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not force information");
-            }
-            if (write_xvf(vec, data_->property.f, data_->prec))
-                return TPR_SUCCESS;
+            if (!data_->bF) { THROW_TPR_EXCEPTION("Input tpr has not force information"); }
+            if (write_xvf(vec, data_->property.f, data_->prec)) return TPR_SUCCESS;
             break;
         }
         case VecProps::box:
         {
-            if (!data_->bBox)
-            {
-                THROW_TPR_EXCEPTION("Input tpr has not box information");
-            }
-            if (write_xvf(vec, data_->property.box, data_->prec))
-                return TPR_SUCCESS;
+            if (!data_->bBox) { THROW_TPR_EXCEPTION("Input tpr has not box information"); }
+            if (write_xvf(vec, data_->property.box, data_->prec)) return TPR_SUCCESS;
             break;
         }
         case VecProps::ef:
         {
-            if (write_ef(vec, data_->property.ef, data_->prec))
-                return TPR_SUCCESS;
+            if (write_ef(vec, data_->property.ef, data_->prec)) return TPR_SUCCESS;
             break;
         }
         default: THROW_TPR_EXCEPTION(std::string("Unknown set keyword: ") + type); break;

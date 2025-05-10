@@ -43,24 +43,19 @@ public:
         }
 
         m_fp = fopen(fname, bmode);
-        if (!m_fp)
-        {
-            THROW_TPR_EXCEPTION("Can not open/write file: " + std::string(fname));
-        }
+        if (!m_fp) { THROW_TPR_EXCEPTION("Can not open/write file: " + std::string(fname)); }
 
         // need endianism swap?
         m_rev = is_litendian();
         msg("data endian= %s\n", m_rev ? "little" : "big");
 
         // get all buffer
-        if (m_read)
-            get_buffer();
+        if (m_read) get_buffer();
     }
 
     ~FileSerializer()
     {
-        if (m_buffer)
-            delete[] m_buffer;
+        if (m_buffer) delete[] m_buffer;
         if (m_fp)
         {
             fclose(m_fp);
@@ -96,16 +91,13 @@ public:
             // read 1 byte
             if (vergen >= 27)
             {
-                if (fread_(val, 1, 1) != 1)
-                    return TPR_FAILED;
+                if (fread_(val, 1, 1) != 1) return TPR_FAILED;
             }
             else
             {
                 int tempint = 0;
-                if (fread_(&tempint, 4, 1) != 1)
-                    return TPR_FAILED;
-                if (m_rev)
-                    swap4_aligned(&tempint, 1);
+                if (fread_(&tempint, 4, 1) != 1) return TPR_FAILED;
+                if (m_rev) swap4_aligned(&tempint, 1);
                 *val = (tempint != 0); // return bool
             }
         }
@@ -114,17 +106,14 @@ public:
             // write 1 byte
             if (vergen >= 27)
             {
-                if (fwrite_(val, 1, 1) != 1)
-                    return TPR_FAILED;
+                if (fwrite_(val, 1, 1) != 1) return TPR_FAILED;
             }
             else
             {
                 // bool to int
                 int tempint = static_cast<int>(*val);
-                if (m_rev)
-                    swap4_aligned(&tempint, 1);
-                if (fwrite_(&tempint, 4, 1) != 1)
-                    return TPR_FAILED;
+                if (m_rev) swap4_aligned(&tempint, 1);
+                if (fwrite_(&tempint, 4, 1) != 1) return TPR_FAILED;
             }
         }
         return TPR_SUCCESS;
@@ -140,18 +129,14 @@ public:
             // for gmx2020
             if (vergen >= 27)
             {
-                if (fread_(val, 2, 1) != 1)
-                    return TPR_FAILED;
-                if (m_rev)
-                    swap2_aligned(val, 1);
+                if (fread_(val, 2, 1) != 1) return TPR_FAILED;
+                if (m_rev) swap2_aligned(val, 1);
             }
             else
             {
                 int temp;
-                if (fread_(&temp, 4, 1) != 1)
-                    return TPR_FAILED;
-                if (m_rev)
-                    swap4_aligned(&temp, 1);
+                if (fread_(&temp, 4, 1) != 1) return TPR_FAILED;
+                if (m_rev) swap4_aligned(&temp, 1);
                 *val = static_cast<unsigned short>(temp);
             }
         }
@@ -161,18 +146,14 @@ public:
             if (vergen >= 27)
             {
                 unsigned short tempui = *val;
-                if (m_rev)
-                    swap2_aligned(&tempui, 1);
-                if (fwrite_(&tempui, 2, 1) != 1)
-                    return TPR_FAILED;
+                if (m_rev) swap2_aligned(&tempui, 1);
+                if (fwrite_(&tempui, 2, 1) != 1) return TPR_FAILED;
             }
             else
             {
                 int temp = static_cast<int>(*val);
-                if (m_rev)
-                    swap4_aligned(&temp, 1);
-                if (fwrite_(&temp, 4, 1) != 1)
-                    return TPR_FAILED;
+                if (m_rev) swap4_aligned(&temp, 1);
+                if (fwrite_(&temp, 4, 1) != 1) return TPR_FAILED;
             }
         }
 
@@ -189,16 +170,13 @@ public:
             // for gmx>=2020, only read 1 byte
             if (vergen >= 27)
             {
-                if (fread_(val, 1, 1) != 1)
-                    return TPR_FAILED;
+                if (fread_(val, 1, 1) != 1) return TPR_FAILED;
             }
             else
             {
                 int temp;
-                if (fread_(&temp, 4, 1) != 1)
-                    return TPR_FAILED;
-                if (m_rev)
-                    swap4_aligned(&temp, 1);
+                if (fread_(&temp, 4, 1) != 1) return TPR_FAILED;
+                if (m_rev) swap4_aligned(&temp, 1);
                 *val = static_cast<unsigned char>(temp);
             }
         }
@@ -207,16 +185,13 @@ public:
             // for gmx>=2020, only write 1 byte
             if (vergen >= 27)
             {
-                if (fwrite_(val, 1, 1) != 1)
-                    return TPR_FAILED;
+                if (fwrite_(val, 1, 1) != 1) return TPR_FAILED;
             }
             else
             {
                 int temp = static_cast<int>(*val);
-                if (m_rev)
-                    swap4_aligned(&temp, 1);
-                if (fwrite_(&temp, 4, 1) != 1)
-                    return TPR_FAILED;
+                if (m_rev) swap4_aligned(&temp, 1);
+                if (fwrite_(&temp, 4, 1) != 1) return TPR_FAILED;
             }
         }
 
@@ -229,18 +204,14 @@ public:
         static_assert(sizeof(int) == 4, "sizeof int must be 4");
         if (m_read)
         {
-            if (fread_(val, 4, 1) != 1)
-                return TPR_FAILED;
-            if (m_rev)
-                swap4_aligned(val, 1);
+            if (fread_(val, 4, 1) != 1) return TPR_FAILED;
+            if (m_rev) swap4_aligned(val, 1);
         }
         else
         {
             int tempint = *val; // avoid change *val binary order
-            if (m_rev)
-                swap4_aligned(&tempint, 1);
-            if (fwrite_(&tempint, 4, 1) != 1)
-                return TPR_FAILED;
+            if (m_rev) swap4_aligned(&tempint, 1);
+            if (fwrite_(&tempint, 4, 1) != 1) return TPR_FAILED;
         }
         return TPR_SUCCESS;
     }
@@ -251,18 +222,14 @@ public:
         static_assert(sizeof(int64_t) == 8, "sizeof int64_t must be 8");
         if (m_read)
         {
-            if (fread_(val, 8, 1) != 1)
-                return TPR_FAILED;
-            if (m_rev)
-                swap8_aligned(val, 1);
+            if (fread_(val, 8, 1) != 1) return TPR_FAILED;
+            if (m_rev) swap8_aligned(val, 1);
         }
         else
         {
             int64_t tempint64 = *val; // avoid change *val
-            if (m_rev)
-                swap8_aligned(&tempint64, 1);
-            if (fwrite_(&tempint64, 8, 1) != 1)
-                return TPR_FAILED;
+            if (m_rev) swap8_aligned(&tempint64, 1);
+            if (fwrite_(&tempint64, 8, 1) != 1) return TPR_FAILED;
         }
         return TPR_SUCCESS;
     }
@@ -273,18 +240,14 @@ public:
         static_assert(sizeof(float) == 4, "sizeof float must be 4");
         if (m_read)
         {
-            if (fread_(val, 4, 1) != 1)
-                return TPR_FAILED;
-            if (m_rev)
-                swap4_aligned(val, 1);
+            if (fread_(val, 4, 1) != 1) return TPR_FAILED;
+            if (m_rev) swap4_aligned(val, 1);
         }
         else
         {
             float tempfloat = *val; // avoid change *val
-            if (m_rev)
-                swap4_aligned(&tempfloat, 1);
-            if (fwrite_(&tempfloat, 4, 1) != 1)
-                return TPR_FAILED;
+            if (m_rev) swap4_aligned(&tempfloat, 1);
+            if (fwrite_(&tempfloat, 4, 1) != 1) return TPR_FAILED;
         }
         return TPR_SUCCESS;
     }
@@ -295,18 +258,14 @@ public:
         static_assert(sizeof(double) == 8, "sizeof double must be 8");
         if (m_read)
         {
-            if (fread_(val, 8, 1) != 1)
-                return TPR_FAILED;
-            if (m_rev)
-                swap8_aligned(val, 1);
+            if (fread_(val, 8, 1) != 1) return TPR_FAILED;
+            if (m_rev) swap8_aligned(val, 1);
         }
         else
         {
             double tempdouble = *val;
-            if (m_rev)
-                swap8_aligned(&tempdouble, 1);
-            if (fwrite_(&tempdouble, 8, 1) != 1)
-                return TPR_FAILED;
+            if (m_rev) swap8_aligned(&tempdouble, 1);
+            if (fwrite_(&tempdouble, 8, 1) != 1) return TPR_FAILED;
         }
         return TPR_SUCCESS;
     }
@@ -319,20 +278,15 @@ public:
         {
             case sizeof(float):
             {
-                if (!do_float(val))
-                    return TPR_FAILED;
+                if (!do_float(val)) return TPR_FAILED;
                 break;
             }
             case sizeof(double):
             {
                 double d = static_cast<double>(*val);
-                if (!do_double(&d))
-                    return TPR_FAILED;
+                if (!do_double(&d)) return TPR_FAILED;
                 // should return result to val
-                if (m_read)
-                {
-                    *val = static_cast<float>(d);
-                }
+                if (m_read) { *val = static_cast<float>(d); }
                 break;
             }
             default: THROW_TPR_EXCEPTION("Can not support precision= " + std::to_string(prec));
@@ -348,33 +302,27 @@ public:
         {
             if constexpr (std::is_same_v<T, bool>)
             {
-                if (!do_bool(&arr[i], vergen))
-                    return TPR_FAILED;
+                if (!do_bool(&arr[i], vergen)) return TPR_FAILED;
             }
             else if constexpr (std::is_same_v<T, unsigned char>)
             {
-                if (!do_uchar(&arr[i], vergen))
-                    return TPR_FAILED;
+                if (!do_uchar(&arr[i], vergen)) return TPR_FAILED;
             }
             else if constexpr (std::is_same_v<T, int>)
             {
-                if (!do_int(&arr[i]))
-                    return TPR_FAILED;
+                if (!do_int(&arr[i])) return TPR_FAILED;
             }
             else if constexpr (std::is_same_v<T, int64_t>)
             {
-                if (!do_int64(&arr[i]))
-                    return TPR_FAILED;
+                if (!do_int64(&arr[i])) return TPR_FAILED;
             }
             else if constexpr (std::is_same_v<T, float>)
             {
-                if (!do_real(&arr[i], prec))
-                    return TPR_FAILED;
+                if (!do_real(&arr[i], prec)) return TPR_FAILED;
             }
             else if constexpr (std::is_same_v<T, double>)
             {
-                if (!do_double(&arr[i]))
-                    return TPR_FAILED;
+                if (!do_double(&arr[i])) return TPR_FAILED;
             }
             else
             {
@@ -391,8 +339,7 @@ public:
     bool xdr_string(char* str, int maxlen) const
     {
         int size;
-        if (do_int(&size) == TPR_FAILED)
-            return TPR_FAILED;
+        if (do_int(&size) == TPR_FAILED) return TPR_FAILED;
 
         // 字符串长度不是4的倍数 {VERSION 2019.6}
         if (size % 4)
@@ -403,27 +350,23 @@ public:
         size_t ssize = static_cast<size_t>(size); // ignore warning
         if (str && size < maxlen)
         {
-            if (fread_(str, 1, ssize) != ssize)
-                return TPR_FAILED;
+            if (fread_(str, 1, ssize) != ssize) return TPR_FAILED;
             str[ssize] = '\0';
             return TPR_SUCCESS;
         }
         // size >= maxlen
         else if (str)
         {
-            if (fread_(str, 1, (size_t)maxlen) != (size_t)maxlen)
-                return TPR_FAILED;
+            if (fread_(str, 1, (size_t)maxlen) != (size_t)maxlen) return TPR_FAILED;
             str[maxlen - 1] = '\0';
             // skip next string
-            if (fseek_(size - maxlen, SEEK_CUR) != 0)
-                return TPR_FAILED;
+            if (fseek_(size - maxlen, SEEK_CUR) != 0) return TPR_FAILED;
             return TPR_SUCCESS;
         }
         else
         {
             // skip all string and don not store
-            if (fseek_(size, SEEK_CUR) != 0)
-                return TPR_FAILED;
+            if (fseek_(size, SEEK_CUR) != 0) return TPR_FAILED;
             return TPR_SUCCESS;
         }
     }
@@ -439,11 +382,9 @@ public:
             if (m_read)
             {
                 int64_t len;
-                if (!do_int64(&len))
-                    return TPR_FAILED;
+                if (!do_int64(&len)) return TPR_FAILED;
                 char* buf = new char[len];
-                if (fread_(buf, 1, (size_t)(len)) != (size_t)(len))
-                    return TPR_FAILED;
+                if (fread_(buf, 1, (size_t)(len)) != (size_t)(len)) return TPR_FAILED;
                 for (i = 0; i < MIN(len, (SAVELEN - 1)); i++)
                 {
                     str[i] = buf[i];
@@ -455,10 +396,8 @@ public:
             {
                 // write str to file stream
                 int64_t len = (int64_t)strlen(str);
-                if (!do_int64(&len))
-                    return TPR_FAILED;
-                if (fwrite_(str, len * sizeof(char), 1) != 1)
-                    return TPR_FAILED;
+                if (!do_int64(&len)) return TPR_FAILED;
+                if (fwrite_(str, len * sizeof(char), 1) != 1) return TPR_FAILED;
             }
         }
         else
@@ -467,16 +406,12 @@ public:
             {
                 int len;
                 // first byte not used
-                if (!do_int(&len))
-                    return TPR_FAILED;
+                if (!do_int(&len)) return TPR_FAILED;
                 // actually len
-                if (!do_int(&len))
-                    return TPR_FAILED;
-                if (len % 4)
-                    len += 4 - len % 4; // 字节对齐
+                if (!do_int(&len)) return TPR_FAILED;
+                if (len % 4) len += 4 - len % 4; // 字节对齐
                 char* buf = new char[len];
-                if (fread_(buf, 1, (size_t)len) != (size_t)len)
-                    return TPR_FAILED;
+                if (fread_(buf, 1, (size_t)len) != (size_t)len) return TPR_FAILED;
                 for (i = 0; i < MIN(len, (SAVELEN - 1)); i++)
                 {
                     str[i] = buf[i];
@@ -489,18 +424,14 @@ public:
                 // write str to file stream
                 int len     = (int)strlen(str);
                 int tempint = 0;
-                if (len % 4)
-                    tempint = len + 4 - len % 4; // 4字节对齐
-                if (!do_int(&tempint))
-                    return TPR_FAILED; // unused
+                if (len % 4) tempint = len + 4 - len % 4; // 4字节对齐
+                if (!do_int(&tempint)) return TPR_FAILED; // unused
                 // 实际长度
-                if (!do_int(&len))
-                    return TPR_FAILED;
+                if (!do_int(&len)) return TPR_FAILED;
                 char* tempstr = new char[tempint];
                 strcpy(tempstr, str);
 
-                if (fwrite_(tempstr, tempint * sizeof(char), 1) != 1)
-                    return TPR_FAILED;
+                if (fwrite_(tempstr, tempint * sizeof(char), 1) != 1) return TPR_FAILED;
                 delete[] tempstr;
             }
         }
@@ -546,14 +477,8 @@ public:
     //< get file size when read mode
     int64_t get_fsize() const
     {
-        if (m_read)
-        {
-            return m_fsize;
-        }
-        else
-        {
-            THROW_TPR_EXCEPTION("get_fsize only use in read mode");
-        }
+        if (m_read) { return m_fsize; }
+        else { THROW_TPR_EXCEPTION("get_fsize only use in read mode"); }
     }
 
 private:
