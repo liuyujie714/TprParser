@@ -2,15 +2,17 @@
 #define UTILS_H
 
 #include <cstdio>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <typeindex>
 #include <utility> // std::pair
 #include <vector>
-#include <typeindex>
-#include <map>
-#include <string>
-#include <functional>
 
-union t_iparams;
-class FileSerializer;
+#include "define.h"
+#include "FileSerializer.h"
+#include "TprData.h"
 
 //! \brief return bond function type id and force parameters.
 //! includes constraint derived from bonds
@@ -38,153 +40,25 @@ std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams
 FILE* efopen(const char* fname, const char* mod);
 
 
-//! TODO:
-class KeyValueTreeObj
-{
-public:
-
-};
-
-class KeyValueTreeArray
-{
-public:
-
-};
-
-
-template<typename T>
-struct Deserializer;
-
-template<>
-struct Deserializer<KeyValueTreeObj>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<KeyValueTreeArray>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<std::string>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<bool>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<char>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<unsigned char>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<int>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<int64_t>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-template<>
-struct Deserializer<float>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-
-template<>
-struct Deserializer<double>
-{
-	static void deserialize()
-	{
-
-	}
-};
-
-
-struct Serializer
-{
-	unsigned char tag;
-	std::function<void ()> deserialize;
-};
-
-#define SERIALIZER(tag, type) \
-{ \
-	std::type_index(typeid(type)), \
-	{ \
-		tag, &Deserializer<type>::deserialize \
-	} \
-}
-
-static const std::map<std::type_index, Serializer> c_deserializers = {
-	SERIALIZER('O', KeyValueTreeObj),
-	SERIALIZER('A', KeyValueTreeArray),
-	SERIALIZER('s', std::string),
-	SERIALIZER('b', bool),
-	SERIALIZER('c', char),
-	SERIALIZER('u', unsigned char),
-	SERIALIZER('i', int),
-	SERIALIZER('l', int64_t),
-	SERIALIZER('f', float),
-	SERIALIZER('d', double),
-};
-
 /* \brief A class to read applied forces from tpr file
-*/
+ */
 class AppliedForces
 {
 public:
-	AppliedForces(const FileSerializer& tpr);
+    AppliedForces(const FileSerializer& tpr, std::unique_ptr<TprData>& data);
 
-	void deserialize();
+    //! 执行tpr解序列化操作
+    bool deserialize();
 
-private:
-	const FileSerializer& tpr_;
+public:
+    //! 解序列化字典
+    std::map<unsigned char, std::function<void(AppliedForces*)>> s_deserializers;
+    //! 字符串 -> 浮点数组
+    std::map<std::string, std::vector<float>> m_efield;
+    std::string                               m_name;    //! current string name
+    unsigned char                             m_typeTag; //! current typeTag
+    const FileSerializer&                     tpr_;      //! tpr reference
+    std::unique_ptr<TprData>&                 data_;     //! TprData reference
 };
 
 #endif // !UTILS_H

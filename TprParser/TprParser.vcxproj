@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Bytes.h" />
+    <ClInclude Include="src\FileSerializer.h" />
     <ClInclude Include="src\define.h" />
     <ClInclude Include="src\endianswap.h" />
     <ClInclude Include="src\Enum.h" />

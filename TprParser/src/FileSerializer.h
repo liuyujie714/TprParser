@@ -1,5 +1,5 @@
-#ifndef BYTES_H
-#define BYTES_H
+#ifndef FILESERIALIZER_H
+#define FILESERIALIZER_H
 
 // 64 bit fileseek operations
 #define _FILE_OFFSETS_BITS 64
@@ -372,7 +372,7 @@ public:
     }
 
     // read/write string str according to given version, used this function in gmx::ISerializer class
-    bool do_string(char* str, int genversion)
+    bool do_string(char* str, int genversion) const
     {
         int i;
 
@@ -508,4 +508,4 @@ private:
 };
 
 
-#endif // !BYTES_H
+#endif // !FileSerializer_H

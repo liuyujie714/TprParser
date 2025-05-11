@@ -4,7 +4,6 @@
 #include <string>
 
 #include "define.h"
-#include "Bytes.h"
 #include "TprException.h"
 
 std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* param)
@@ -247,13 +246,249 @@ FILE* efopen(const char* fname, const char* mod)
 }
 
 
-AppliedForces::AppliedForces(const FileSerializer& tpr)
-    : tpr_(tpr)
+//! TODO:
+class KeyValueTreeObj
 {
+public:
+};
 
+class KeyValueTreeArray
+{
+public:
+};
+
+
+class AppliedForces;
+
+struct Serializer
+{
+    unsigned char typeTag;
+    //! 实际解序列化函数指针
+    std::function<void(AppliedForces*)> deserialize;
+};
+
+//! macro to simplify the definition of serializer
+#define SERIALIZER(tag, type)                     \
+    {                                             \
+        std::type_index(typeid(type)),            \
+        {                                         \
+            tag, &Deserializer<type>::deserialize \
+        }                                         \
+    }
+
+
+template<typename T>
+struct Deserializer;
+
+template<>
+struct Deserializer<KeyValueTreeObj>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<KeyValueTreeArray>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<std::string>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<bool>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<char>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<unsigned char>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<int>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<int64_t>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+template<>
+struct Deserializer<float>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+
+template<>
+struct Deserializer<double>
+{
+    static void deserialize(AppliedForces* obj);
+};
+
+static const std::map<std::type_index, Serializer> s_serializers = {
+    SERIALIZER('O', KeyValueTreeObj),
+    SERIALIZER('A', KeyValueTreeArray),
+    SERIALIZER('s', std::string),
+    SERIALIZER('b', bool),
+    SERIALIZER('c', char),
+    SERIALIZER('u', unsigned char),
+    SERIALIZER('i', int),
+    SERIALIZER('l', int64_t),
+    SERIALIZER('f', float),
+    SERIALIZER('d', double),
+};
+
+
+AppliedForces::AppliedForces(const FileSerializer& tpr, std::unique_ptr<TprData>& data)
+    : tpr_(tpr), data_(data), m_name(""), m_typeTag('\0')
+{
+    //! typeTag -> deserialize function
+    for (const auto& it : s_serializers)
+    {
+        s_deserializers[it.second.typeTag] = it.second.deserialize;
+    }
 }
 
-void AppliedForces::deserialize()
+bool AppliedForces::deserialize()
 {
+    if (!tpr_.do_int(&data_->ir.ncount)) return TPR_FAILED;
+    msg("nf count= %d\n", data_->ir.ncount);
+    if (data_->ir.ncount != 1)
+    {
+        THROW_TPR_EXCEPTION("Something is wrong in AppliedForces, ir.ncount must be 1");
+    }
 
+    char          tempstr[MAX_LEN];
+    unsigned char typeTag;
+    //! 'applied-forces' item
+    if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
+    if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
+    msg("name= '%s'\n", tempstr);    ///< 项目名称，比如'applied-forces'字符串
+    msg("typeTag= '%c'\n", typeTag); // 解序列化类型，比如'O'表示obj
+    auto it = s_deserializers.find(typeTag);
+    if (it == s_deserializers.end())
+    {
+        THROW_TPR_EXCEPTION("Unknown type tag for deserializization: " + typeTag);
+    }
+    it->second(this);
+
+    return TPR_SUCCESS;
+}
+
+
+//! 实现
+void Deserializer<KeyValueTreeObj>::deserialize(AppliedForces* obj)
+{
+    int           count;
+    char          tempstr[MAX_LEN];
+    unsigned char typeTag;
+    obj->tpr_.do_int(&count);
+    msg("countXXX= %d\n", count);
+    for (int i = 0; i < count; i++)
+    {
+        obj->tpr_.do_string(tempstr, obj->data_->vergen);
+        obj->tpr_.do_uchar(&typeTag, obj->data_->vergen);
+        msg("tempstrXXX= %s\n", tempstr);
+        msg("typeTagXXX= %c\n", typeTag);
+
+        //! save it
+        obj->m_name    = tempstr;
+        obj->m_typeTag = typeTag;
+
+        //! save applied-forces下的子项目数
+        if (obj->m_name == "electric-field")
+        {
+            obj->data_->ir.napp_forces = count;
+            msg("ne count= %d\n", obj->data_->ir.napp_forces);
+        }
+
+        auto it = obj->s_deserializers.find(typeTag);
+        if (it == obj->s_deserializers.end())
+        {
+            THROW_TPR_EXCEPTION("Unknown type tag for deserializization: " + typeTag);
+        }
+        it->second(obj);
+    }
+}
+
+
+void Deserializer<KeyValueTreeArray>::deserialize(AppliedForces* obj)
+{
+    THROW_TPR_EXCEPTION("Have not support deserialize KeyValueTreeArray");
+}
+
+void Deserializer<std::string>::deserialize(AppliedForces* obj)
+{
+    char val[MAX_LEN];
+    obj->tpr_.do_string(val, obj->data_->vergen);
+    msg("valstring= %s\n", val);
+}
+
+void Deserializer<bool>::deserialize(AppliedForces* obj)
+{
+    bool val;
+    obj->tpr_.do_bool(&val, obj->data_->vergen);
+    msg("valbool= %s\n", val ? "True" : "Flase");
+}
+
+void Deserializer<char>::deserialize(AppliedForces* obj)
+{
+    unsigned char val;
+    obj->tpr_.do_uchar(&val);
+    msg("valchar= %c\n", val);
+}
+
+
+void Deserializer<unsigned char>::deserialize(AppliedForces* obj)
+{
+    unsigned char val;
+    obj->tpr_.do_uchar(&val);
+    msg("valuchar= %c\n", val);
+}
+
+void Deserializer<int>::deserialize(AppliedForces* obj)
+{
+    int val;
+    obj->tpr_.do_int(&val);
+    msg("valint= %d\n", val);
+}
+
+void Deserializer<int64_t>::deserialize(AppliedForces* obj)
+{
+    int64_t val;
+    obj->tpr_.do_int64(&val);
+    msg("valint64= %lld\n", val);
+}
+
+void Deserializer<float>::deserialize(AppliedForces* obj)
+{
+    float val;
+    obj->tpr_.do_float(&val);
+    msg("valfloat= %f\n", val);
+
+    //! add float value
+    obj->m_efield[obj->m_name].push_back(val);
+}
+
+void Deserializer<double>::deserialize(AppliedForces* obj)
+{
+    double val;
+    obj->tpr_.do_double(&val);
+    msg("valdouble= %f\n", val);
 }

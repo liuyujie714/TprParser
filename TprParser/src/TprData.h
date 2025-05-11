@@ -306,8 +306,8 @@ struct TprData
             int n = 0, nt = 0; // 时间，空间项数，<=1
         } elec_old_gmx[DIM];   // 低版本tpr用
         //! 高版本tpr用：
-        int elec_nf = 0; //< 存在applied-forces项目，必须是>=1
-        int elec_ne = 0; //< 电场项，必须是1
+        int ncount      = 0; //< 存在applied-forces项目，必须=1
+        int napp_forces = 0; //< applied-forces下的子项目数目
     } ir;
 
 

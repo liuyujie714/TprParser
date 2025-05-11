@@ -2197,15 +2197,15 @@ bool TprReader::do_ir()
         INSERT_POS(ef);
         try
         {
+#    if 0
             char          tempstr[MAX_LEN];
             unsigned char typeTag;
 
-            if (!tpr_.do_int(&data_->ir.elec_nf)) return TPR_FAILED;
-            msg("nf count= %d\n", data_->ir.elec_nf);
+            if (!tpr_.do_int(&data_->ir.ncount)) return TPR_FAILED;
+            msg("nf count= %d\n", data_->ir.ncount);
 
-#if 1
             //! 'applied-forces' item
-            for (int i = 0; i < data_->ir.elec_nf; i++)
+            for (int i = 0; i < data_->ir.ncount; i++)
             {
                 if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                 msg("name= '%s'\n", tempstr); ///< 'applied-forces' str
@@ -2213,10 +2213,10 @@ bool TprReader::do_ir()
                 msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
 
                 // 属于applied-forces的数目elec_ne
-                if (!tpr_.do_int(&data_->ir.elec_ne)) return TPR_FAILED;
-                msg("ne count= %d\n", data_->ir.elec_ne);
+                if (!tpr_.do_int(&data_->ir.napp_forces)) return TPR_FAILED;
+                msg("ne count= %d\n", data_->ir.napp_forces);
                 //! j==0时是'electric-field'
-                for (int j = 0; j < data_->ir.elec_ne; j++)
+                for (int j = 0; j < data_->ir.napp_forces; j++)
                 {
                     if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
                     msg("name= '%s'\n", tempstr);
@@ -2252,13 +2252,29 @@ bool TprReader::do_ir()
                         }
                     }
 
-                    // TODO: when ir.elec_ne>1 for high gromacs , support 'density-guided-simulation', 'qmmm-cp2k:' to read
+                    // TODO: when ir.napp_forces>1 for high gromacs , support 'density-guided-simulation', 'qmmm-cp2k:' to read
                     break;
                 }
             }
-#else 
-            // TODO: Use AppliedForces class  
-#endif
+#    else
+            //! Use AppliedForces class
+            AppliedForces app(tpr_, data_);
+            app.deserialize();
+            const std::vector<std::string> c_order = {"E0", "omega", "t0", "sigma"};
+            for (const auto& it : app.m_efield)
+            {
+                //! keep order
+                auto pos = std::find(c_order.begin(), c_order.end(), it.first);
+                if (pos != c_order.end())
+                {
+                    myassert(it.second.size() == 3, "electric filed too few parameters");
+                    auto idx                = std::distance(c_order.begin(), pos);
+                    ir->elec_field[idx]     = it.second[0];
+                    ir->elec_field[idx + 4] = it.second[1];
+                    ir->elec_field[idx + 8] = it.second[2];
+                }
+            }
+#    endif
         }
         catch (const std::exception& e)
         {
@@ -3574,8 +3590,8 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         return TPR_SUCCESS;
     }
     // 高版本电场
-    else if (data_->filever >= tpxv_GenericParamsForElectricField && data_->ir.elec_nf == 1
-             && data_->ir.elec_ne >= 1)
+    else if (data_->filever >= tpxv_GenericParamsForElectricField && data_->ir.ncount == 1
+             && data_->ir.napp_forces >= 1)
     {
         FileSerializer newtpr(fout_, "wb");
         // write ef before
@@ -3586,14 +3602,14 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
 
         //! write electric field
         // 1. Firstly write nf,  'applied-forces' string and type
-        if (!newtpr.do_int(&data_->ir.elec_nf)) return TPR_FAILED;
+        if (!newtpr.do_int(&data_->ir.ncount)) return TPR_FAILED;
         char          str[] = "applied-forces";
         unsigned char otype = 'O'; // obj
         if (!newtpr.do_string(str, data_->vergen)) return TPR_FAILED;
         if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
 
         // 2. Then write ne and 'electric-field' and type
-        if (!newtpr.do_int(&data_->ir.elec_ne)) return TPR_FAILED;
+        if (!newtpr.do_int(&data_->ir.napp_forces)) return TPR_FAILED;
         char str2[] = "electric-field";
         if (!newtpr.do_string(str2, data_->vergen)) return TPR_FAILED;
         if (!newtpr.do_uchar(&otype, data_->vergen)) return TPR_FAILED;
