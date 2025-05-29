@@ -185,6 +185,8 @@ struct TprData
     vecI2D           resnames;
     vecI2D           atomicnumbers;
 
+        std::vector<int>   index; ///< atom index, 0-based
+    std::vector<std::vector<Excls>> excls;
     // mdp parameters
     struct
     {
