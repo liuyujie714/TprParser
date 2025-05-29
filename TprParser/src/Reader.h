@@ -103,6 +103,9 @@ public:
     //< get integer mdp parameters
     int get_mdp_integer(const char* prop) const;
 
+    //< get global exclusions list (0-based) for each atom
+    const auto& get_exclusions() const { return data_->atoms.excls; }
+
     //< get electric field parts, throw error if can not find electric field
     const std::vector<float>& get_ef() const;
 

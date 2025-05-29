@@ -56,16 +56,28 @@ bool TprReader::tpr_header()
     return TPR_SUCCESS;
 }
 
+// clang-format off
 template<typename T>
-static void print_vec(const char* name, T* arr, int len = DIM * DIM)
+typename std::enable_if<std::is_fundamental_v<T>, void>::type 
+static print_vec(const char* name, T *arr, int len = DIM * DIM)
 {
 #ifdef _DEBUG
     msg(name);
     for (int i = 0; i < len; i++)
-        fprintf(stdout, "%f ", static_cast<float>(arr[i]));
+    {
+        if constexpr (std::is_same_v<T, int>) 
+        { 
+            fprintf(stdout, "%d ", arr[i]); 
+        }
+        else 
+        { 
+            fprintf(stdout, "%f ", arr[i]); 
+        }
+    }
     fprintf(stdout, "\n");
 #endif // _DEBUG
 }
+// clang-format on
 
 bool TprReader::tpr_body()
 {
@@ -248,6 +260,7 @@ bool TprReader::tpr_mtop()
     data_->atoms.charge.resize(data_->natoms);
     data_->atoms.atomnumber.resize(data_->natoms);
     data_->atoms.type.resize(data_->natoms);
+    data_->atoms.excls.resize(data_->natoms);
     unsigned int idx             = 0;
     int          startedresindex = 1;
     for (int i = 0; i < data_->nmolblock; i++)
@@ -255,6 +268,7 @@ bool TprReader::tpr_mtop()
         int m = data_->molbtype[i];
         for (int j = 0; j < data_->molbnmol[i]; j++)
         {
+            unsigned int  startexcl = idx;
             std::set<int> residx;
             for (int k = 0; k < data_->molbnatoms[i]; k++)
             {
@@ -271,11 +285,30 @@ bool TprReader::tpr_mtop()
                 data_->atoms.charge[idx]     = data_->charges[m][k];
                 data_->atoms.atomnumber[idx] = data_->atomicnumbers[m][k];
                 data_->atoms.type[idx]       = data_->types[m][k];
+
+                //! get global exclusions index for each atom
+                for (const auto& iexcl : data_->excls[m][k].index)
+                {
+                    data_->atoms.excls[startexcl + k].emplace_back(iexcl + startexcl);
+                }
+
                 idx++;
             }
             startedresindex += static_cast<int>(residx.size());
         }
     }
+
+#ifdef _DEBUG
+    for (int i = 0; i < data_->atoms.excls.size(); i++)
+    {
+        fprintf(stdout, "INFO) %d -> ", i);
+        for (const auto& v : data_->atoms.excls[i])
+        {
+            fprintf(stdout, "%d ", v);
+        }
+        fprintf(stdout, "\n");
+    }
+#endif // DEBUG
 
     return TPR_SUCCESS;
 }
@@ -903,7 +936,6 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
                 float noRfac = 0;
                 tpr_.do_real(&noRfac, prec);
             }
-
             break;
         case F_LJ:
             tpr_.do_real(&iparams->lj.c6, prec);
@@ -1087,7 +1119,7 @@ bool TprReader::do_atoms()
 {
     const int      n = data_->nmoltypes;
     float          rdum;
-    int            idum, idum2;
+    int            idum;
     unsigned char  ucdum;
     unsigned short usdum;
 
@@ -1103,6 +1135,7 @@ bool TprReader::do_atoms()
     data_->atomtypeids.resize(n);
     data_->atomicnumbers.resize(n);
     data_->resnames.resize(n);
+    data_->excls.resize(n);
     for (int i = 0; i < F_NRE; i++)
     {
         data_->ilist.interactionlist[i].resize(n);
@@ -1116,9 +1149,10 @@ bool TprReader::do_atoms()
         if (!tpr_.do_int(&data_->molnames[i])) return TPR_FAILED;
         msg("data_->molnames[i]= %d\n", data_->molnames[i]);
 
-        // 每个moltype的原子数目
+        // 每个moltype的原子数目 (atoms->nr)
         if (!tpr_.do_int(&data_->atomsinmol[i])) return TPR_FAILED;
-        // 每个moltype的残基数目
+        msg("data_->atomsinmol[i]= %d\n", data_->atomsinmol[i]);
+        // 每个moltype的残基数目 (atoms->nres)
         if (!tpr_.do_int(&data_->resinmol[i])) return TPR_FAILED;
 
         // allocate for 2D vector
@@ -1193,15 +1227,44 @@ bool TprReader::do_atoms()
         if (!tpr_.do_int(&idum)) return TPR_FAILED;
         std::vector<int> temp(idum + 1); // need +1
         if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
-        // doListOfLists
-        if (!tpr_.do_int(&idum)) return TPR_FAILED;
-        if (!tpr_.do_int(&idum2)) return TPR_FAILED;
-        temp.resize(idum + 1); // need +1
-        if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
-        temp.resize(idum2); // not need +1
-        if (!tpr_.do_vector(temp.data(), idum2, data_->prec)) return TPR_FAILED;
-    }
 
+        //! doListOfLists, [ exclusions ] in itp
+        int              nlist, nelem; //!< should always > 0
+        std::vector<int> listranges, elements;
+        if (!tpr_.do_int(&nlist)) return TPR_FAILED;
+        msg("nlistranges= %d\n", nlist);
+        if (!tpr_.do_int(&nelem)) return TPR_FAILED;
+        msg("nelements= %d\n", nelem);
+        listranges.resize(nlist + 1); // need +1
+        if (!tpr_.do_vector(listranges.data(), nlist + 1, data_->prec)) return TPR_FAILED;
+        print_vec("listRanges_= ", listranges.data(), nlist + 1);
+        elements.resize(nelem); // not need +1
+        if (!tpr_.do_vector(elements.data(), nelem, data_->prec)) return TPR_FAILED;
+        print_vec("elements_= ", elements.data(), nelem);
+
+        //! store exclusions list for each mol
+        myassert(data_->atomsinmol[i] == nlist,
+                 "Assert failed: nlistranges should be equal to atomsinmol");
+        data_->excls[i].resize(nlist);
+        for (int j = 0; j < nlist; j++)
+        {
+            int start = listranges[j];
+            int end   = listranges[j + 1]; ///< end not included
+#ifdef _DEBUG
+            fprintf(stdout, "INFO) [%d..%d] ", start, end - 1);
+            for (int k = start; k < end; k++)
+            {
+                fprintf(stdout, "%d ", elements[k]);
+            }
+            fprintf(stdout, "\n");
+#endif
+            auto& excl = data_->excls[i][j];
+            excl.range = {start, end - 1};
+            excl.index.insert(excl.index.end(), elements.begin() + start, elements.begin() + end);
+            print_vec("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
+            print_vec("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
+        }
+    }
 
     // do molblock
     if (!tpr_.do_int(&data_->nmolblock)) return TPR_FAILED;
@@ -1213,6 +1276,8 @@ bool TprReader::do_atoms()
     {
         if (!tpr_.do_int(&data_->molbtype[i])) return TPR_FAILED;
         if (!tpr_.do_int(&data_->molbnmol[i])) return TPR_FAILED;
+        //! NOTE: this value should be equal to atomsinmol[i] (numAtomsPerMolecule)
+        //! https://github.com/gromacs/gromacs/blob/9b6c6300e283306ecbb5018e96f4f25acd3831db/src/gromacs/fileio/tpxio.cpp#L2726
         if (!tpr_.do_int(&data_->molbnatoms[i])) return TPR_FAILED;
         msg("data_->molbtype[i]= %d\n", data_->molbtype[i]);
         msg("data_->molbnmol[i]= %d\n", data_->molbnmol[i]);

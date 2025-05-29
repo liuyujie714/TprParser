@@ -1,6 +1,6 @@
 # Description
 
-`TprParser` is a convenient Python module for reading and setting simulation parameters of gromacs `tpr` file. It does not rely on the GROMACS library and `only` requires C++ and pure Python environment.
+`TprParser` is a convenient Python module for reading and setting simulation parameters of gromacs `tpr` file. It does **NOT** rely on the GROMACS library and `only` requires C++ and pure Python environment.
 
 This module mainly aimed to modify **atom property** of `tpr` and create a new tpr file (named `new.tpr`) after use any one `set_` method. 
 
@@ -8,9 +8,13 @@ The module supports many functions to get topology properties, such as atoms coo
 
 Many properties can be set up by this module, such as total simulation time `nsteps`, simulation integrator interval `dt`, output control parameters (`nstxout, nstvout, etc.`) and temperature/pressure coupling parameters.
 
+
+
 # Compatibility
 
 GROMACS tpr version should between `4.0` to `2025`, too old tpr to be read by this module.
+
+
 
 # Installation
 
@@ -37,6 +41,8 @@ GROMACS tpr version should between `4.0` to `2025`, too old tpr to be read by th
   pip install TprParser --upgrade -i https://pypi.org/simple
   ```
 
+
+
 # Usage
 
 Write your python program like this:
@@ -44,6 +50,8 @@ Write your python program like this:
 ```python
 from TprParser.TprReader import TprReader	# import this module
 ```
+
+
 
 ## Get atom property
 
@@ -80,6 +88,18 @@ propers = reader.get_bonded('dihedrals')
 # get all improper dihedrals pairs (1-based index) and it's parameters
 impropers = reader.get_bonded('impropers')
 
+```
+
+
+
+## Get non-bonded paramaters
+
+```python
+# get paris (1-based index) and it's parameters
+pairs = reader.get_nonbonded('pairs')
+
+# get atomtypes lj parameters for each atoms [sigma, epsion], which crossbonding to reader.get_name('type')
+pairs = reader.get_nonbonded('lj')[:, 1:]
 ```
 
 
@@ -198,5 +218,6 @@ If `TprParser` is utilized in your work, please cite as follows in main text:
 
 ## TODO
 
-* More parameters can be modified
-* Get more essential parameters , such as `Virual Site`
+* more parameters can be modified
+* obtain more essential parameters , such as `Virual Site`
+

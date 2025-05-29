@@ -454,7 +454,7 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
     TRY_THROW_EXCEPTION_FROM_OBJ(get_bonded, vec, type);
 
     // type to releated the number of atoms
-    Py_ssize_t nat = 2;
+    int nat = 2;
     switch (std::toupper(type[0]))
     {
             // bonds
@@ -487,7 +487,7 @@ static PyObject* get_nonbonded(PyObject* self, PyObject* args)
     TRY_THROW_EXCEPTION_FROM_OBJ(get_nonbonded, vec, type);
 
     // type to releated the number of atoms
-    Py_ssize_t nat = 2;
+    int nat = 2;
     switch (std::toupper(type[0]))
     {
         case 'P': // pairs

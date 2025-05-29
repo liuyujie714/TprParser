@@ -173,7 +173,7 @@ struct TprData
     std::vector<int> molnames;
     std::vector<int> molbtype;
     std::vector<int> molbnmol;
-    std::vector<int> molbnatoms; // 每个单分子有多少个原子构成
+    std::vector<int> molbnatoms; //! 每个单分子有多少个原子构成, = atomsinmol
     vecF2D           charges;
     vecF2D           masses;
     vecI2D           resids;
@@ -185,8 +185,14 @@ struct TprData
     vecI2D           resnames;
     vecI2D           atomicnumbers;
 
-        std::vector<int>   index; ///< atom index, 0-based
+    struct Excls
+    {
+        std::array<int, 2> range; ///< list [start, end] positions, included end
+        std::vector<int>   index; ///< atom index, 0-based, NOTE: the order has be sorted by gmx
+    };
+    //! atom exclusions list for each moltype
     std::vector<std::vector<Excls>> excls;
+
     // mdp parameters
     struct
     {
@@ -317,24 +323,25 @@ struct TprData
     {
         vecI2D           interactionlist[F_NRE];
         std::vector<int> nr[F_NRE];
-    } ilist,                   // 分子相互作用列表
-        inter_molecular_ilist; // 全局指定的分子间相互作用
+    } ilist,                   ///< 分子相互作用列表
+        inter_molecular_ilist; ///< 全局指定的分子间相互作用
 
     // 原子属性
     struct
     {
-        std::vector<float>          x; //< coordinates
-        std::vector<float>          v; //< velocity
-        std::vector<float>          f; //< force
+        std::vector<float>          x; ///< coordinates
+        std::vector<float>          v; ///< velocity
+        std::vector<float>          f; ///< force
         std::vector<std::string>    atomname;
         std::vector<std::string>    resname;
-        std::vector<std::string>    atomtypename;   // atom type name from .ff
-        std::vector<int>            atomtypenumber; // atomtype number, -1=unknown, 0=VSite
+        std::vector<std::string>    atomtypename;   ///< atom type name from .ff
+        std::vector<int>            atomtypenumber; ///< atomtype number, -1=unknown, 0=VSite
         std::vector<int>            resid;
         std::vector<float>          mass;
         std::vector<float>          charge;
-        std::vector<int>            atomnumber; // atomic number, -1=unknown, 0=VSite
-        std::vector<unsigned short> type;       // unused ?
+        std::vector<int>            atomnumber; ///< atomic number, -1=unknown, 0=VSite
+        std::vector<unsigned short> type;       ///< unused ?
+        vecI2D excls; ///< atom exclusions inedx (0-based, is global index in system) list for each atom
     } atoms;
 
     //! 此处没有进行去重复，一个角可以存在多类参数
