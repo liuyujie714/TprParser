@@ -44,7 +44,7 @@ setup(
     author='Yujie Liu',
     author_email='',
     python_requires='>=3.8',
-    install_requires=['typing_extensions', 'numpy'],
+    install_requires=['typing_extensions<=4.12.2', 'numpy'],
     exclude=['setup.py'],
     ext_modules=[module],
     # put TprReader.py/__init__.py in TprParser folder to site-packages
