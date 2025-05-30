@@ -130,6 +130,28 @@ class TprReader:
         """
         return TprParser_.get_prec(self.tprCapsule)
     
+    def get_exclusions(self):
+        """ @brief get global atom exclusions index (0-based) for each atom
+
+        Return
+        ------
+        return a 2D np.array for each atom list, if atom has no exclusions, return only self index list. 
+        The list length should be same as total natoms, the order of index has been sorted.
+
+        Example
+        -------
+        >>> tpr = TprReader('one_wat_tip4p_excls.tpr') # has exclusions
+        >>> exclusions = tpr.get_exclusions() 
+        # [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]]
+        >>> h = TprReader('one_wat_tip3p_excls.tpr') # has exclusions
+        >>> h.get_exclusions()
+        # [[0, 1, 2], [0, 1, 2], [0, 1, 2]]
+        >>> h = TprReader('one_wat_tip3p_noexcls.tpr') # no exclusions
+        >>> h.get_exclusions()
+        # [[0], [1], [2]]
+        """
+        return TprParser_.get_exclusions(self.tprCapsule)
+    
     def get_mdp_integer(self, keyword:str):
         """ @brief get integer keyword of tpr
 

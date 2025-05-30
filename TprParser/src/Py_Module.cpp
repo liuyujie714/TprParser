@@ -526,6 +526,52 @@ static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject* kwargs)
     Py_RETURN_TRUE;
 }
 
+//< get exclusions index (0-based) for each atom
+static PyObject* get_exclusions(PyObject* self, PyObject* args)
+{
+    PyObject* capsule = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &capsule)) { return NULL; }
+    std::vector<std::vector<int>> excls;
+    TRY_THROW_EXCEPTION_FROM_OBJ(get_exclusions, excls);
+
+    //! convert 2D vector to python list
+    PyObject* list = PyList_New(excls.size());
+    if (!list)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Can not new list for vector for get_exclusions");
+        return NULL;
+    }
+
+    for (size_t i = 0; i < excls.size(); i++)
+    {
+        PyObject* sublist = PyList_New(excls[i].size());
+        if (!sublist)
+        {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "Can not sublist list for vector for get_exclusions");
+            Py_DECREF(list); // free list
+            return NULL;
+        }
+        for (size_t j = 0; j < excls[i].size(); j++)
+        {
+            PyObject* value = PyLong_FromLong(static_cast<long>(excls[i][j]));
+            if (!value)
+            {
+                PyErr_SetString(PyExc_RuntimeError, "Can not convert excls[i][j] to pyobj");
+                Py_DECREF(sublist); // free sublist
+                Py_DECREF(list);    // free list
+                return NULL;
+            }
+            PyList_SET_ITEM(sublist, j, value);
+        }
+
+        PyList_SET_ITEM(list, i, sublist);
+    }
+
+    return list;
+}
+
 
 static PyMethodDef methods[] = {
     {"load", reader_new, METH_VARARGS, "Create a new TprReader instance"},
@@ -562,6 +608,11 @@ static PyMethodDef methods[] = {
      get_nonbonded,
      METH_VARARGS,
      "Get pairs (1-based index)/LJ parameters of each atom information from tpr"},
+    {"get_exclusions",
+     get_exclusions,
+     METH_VARARGS,
+     "Get global atom exclusion index (0-based) for each atom"},
+
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef tpr_module = {
