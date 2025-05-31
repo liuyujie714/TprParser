@@ -1,8 +1,10 @@
 from setuptools import setup, Extension
 import numpy, os
 
+
 # Always update program version
 __version__ = '0.1.56'
+
 
 # Description
 long_doc = ""
@@ -45,10 +47,12 @@ setup(
     author_email='',
     python_requires='>=3.8',
     install_requires=['typing_extensions<=4.12.2', 'numpy'],
-    exclude=['setup.py'],
     ext_modules=[module],
     # put TprReader.py/__init__.py in TprParser folder to site-packages
-    py_modules=['TprParser.TprReader', 'TprParser.__init__', 'TprParser.TprMakeTop'],
+    py_modules=['TprParser.TprReader', 
+                'TprParser.__init__', 
+                'TprParser.TprMakeTop',
+                'TprParser.version'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
