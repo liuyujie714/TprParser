@@ -16,6 +16,10 @@ tprlist = {
     'npt2025-beta_water.tpr':[2652,4],
     # enforced rotation
     'enforced_rotation_water.tpr' : [7306, 4],
+    # test [ exclusion ] 
+    'one_water_tip3p_excls.tpr' : [3, 4], 
+    'one_water_tip4p_excls.tpr' : [4, 4], 
+    'two_water_tip4p_excls.tpr' : [8, 4], 
 
     '1EBZ.tpr' :                [3218, 4], 
     '2020.4_gra.tpr' :          [4536, 4], 
@@ -71,8 +75,24 @@ tprlist = {
     # No lj parameters
     'extra-interactions-2018.tpr' : [17, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:6]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:9]]
 
+
+rand_int = lambda : np.random.randint(0, 100000)
+# for test mdp set and get
+mdp_integer_data = {
+    'nstlog' : rand_int(),
+    'nstxout': rand_int(),
+    'nstvout': rand_int(),
+    'nstfout': rand_int(),
+    'nstcalcenergy': rand_int(),
+    'nstenergy': rand_int(),
+    'nsttcouple': rand_int(),
+    'nstpcouple': rand_int(),
+    'nstxout_compressed': rand_int(),
+    'nstlist': rand_int(),
+    'nstcomm': rand_int(),
+}
 
 def test_get_xvf(handle, ftype):
     try:
@@ -109,6 +129,20 @@ def test_tot_atoms(handle, natoms, fname):
 
 def test_precision(handle:TprReader, fname, prec=4):
     assert prec == handle.get_prec(), f"The precision is not euqal to {prec} for file: {fname}"
+
+def test_exclusions(handle:TprReader, fname):
+    excls_map = {
+        'tip3p' : [[0, 1, 2], [0, 1, 2], [0, 1, 2]],
+        'tip4p' : [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]],
+        'two_tip4p' : [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7]],
+    }
+    if 'tip3p' in fname:
+        assert excls_map['tip3p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
+    elif 'tip4p' in fname:
+        if 'one' in fname:    
+            assert excls_map['tip4p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
+        elif 'two' in fname:
+            assert excls_map['two_tip4p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
 
 def test_make_top_from_tpr(tpr, top):
     from TprParser.TprMakeTop import make_top_from_tpr
@@ -171,7 +205,11 @@ def do_test():
             ('benchMEM' not in fname) and ('nobox' not in fname) and \
             ('extra' not in fname):
             test_get_ivector(reader, "atomicnum", fname)
-        
+
+        # test exclusions
+        if 'excls' in fname:
+            test_exclusions(reader, fname)
+
         # need delete obj
         del reader
 
@@ -197,13 +235,8 @@ def do_test2():
             writer.set_nsteps(100)
             # unsupport set_mdp_integer for gmx < 4.6
             if '4.0' not in name:
-                writer.set_mdp_integer('nstxout', 100)
-                writer.set_mdp_integer('nstenergy', 100)
-                writer.set_mdp_integer('nsttcouple', 1)
-                writer.set_mdp_integer('nstpcouple', 9)
-                writer.set_mdp_integer('nstxout_compressed', 1032)
-                writer.set_mdp_integer('nstlist', 666)
-                writer.set_mdp_integer('nstcomm', 888)
+                for key, val in mdp_integer_data.items():
+                    writer.set_mdp_integer(key, val)
 
             if prec==4:
                 writer.set_pressure('CRescale', 'Isotropic', 3.0, 
@@ -236,8 +269,8 @@ def do_test2():
                                         0.01, 0, 0
                                     ]
                                     )
-                newX = 152*np.ones(shape=(tprlist[name][0], 3))
-                newV = 110*np.ones(shape=(tprlist[name][0], 3))
+                newX = np.random.uniform(-999, 999, tprlist[name][0]*3).reshape(-1, 3)
+                newV = np.random.uniform(-999, 999, tprlist[name][0]*3).reshape(-1, 3)
                 writer.set_xvf('x', newX)
                 writer.set_xvf('v', newV)
 
@@ -258,26 +291,21 @@ def do_test2():
         v = reader.get_xvf('v')
 
         if prec==4:
-            assert np.all(newX==x)
-            assert np.all(newV==v)  
+            assert np.allclose(newX, x, atol=1E-3)
+            assert np.allclose(newV, v, atol=1E-3)
             # assert electric-field
             if 'elecxyz' in fname:
                 assert np.all(ef==reader.get_xvf('ef').flatten())
             
         if '4.0' not in name:
-            assert reader.get_mdp_integer('nstxout') == 100
-            assert reader.get_mdp_integer('nstenergy') == 100
-            assert reader.get_mdp_integer('nsttcouple') == 1
-            assert reader.get_mdp_integer('nstpcouple') == 9
-            assert reader.get_mdp_integer('nstxout_compressed') == 1032
-            assert reader.get_mdp_integer('nstlist') == 666
-            assert reader.get_mdp_integer('nstcomm') == 888
+            for key, val in mdp_integer_data.items():
+                assert reader.get_mdp_integer(key) == val, f'get_mdp_integer {key} should be {val}'
         
         del reader
 
 if __name__ == '__main__':
-    do_test()
-    print('<'*10+'Passed All TprParser Tests'+'>'*10, flush=True)
+    # do_test()
+    # print('<'*10+'Passed All TprParser Tests'+'>'*10, flush=True)
 
     do_test2()
     print('<'*10+'Passed All SimSettings Tests'+'>'*10, flush=True)

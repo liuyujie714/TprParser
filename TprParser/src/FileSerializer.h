@@ -19,6 +19,12 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define SAVELEN 512
 
+/* A workaround for VS2022 > 17.1 for static_assert in if constexpr, same as / Zc:static_assert-
+* https://learn.microsoft.com/en-us/cpp/overview/cpp-conformance-improvements?view=msvc-170
+*/
+template<typename>
+constexpr bool dependent_false = false;
+
 /* \brief A class for file Serializer in binary mode.
  * Supports big file operator in different system, considered data endianism
  */
@@ -326,7 +332,7 @@ public:
             }
             else
             {
-                THROW_TPR_EXCEPTION(std::string("Unsupport type for do_vector: ") + typeid(T).name());
+                static_assert(dependent_false<T>, "T is unsupported type for do_vector");
             }
         }
         return TPR_SUCCESS;
