@@ -304,8 +304,8 @@ def do_test2():
         del reader
 
 if __name__ == '__main__':
-    # do_test()
-    # print('<'*10+'Passed All TprParser Tests'+'>'*10, flush=True)
+    do_test()
+    print('<'*10+'Passed All TprParser Tests'+'>'*10, flush=True)
 
     do_test2()
     print('<'*10+'Passed All SimSettings Tests'+'>'*10, flush=True)

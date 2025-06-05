@@ -31,7 +31,7 @@ enum class PressureCoupling : int
     CRescale,
     Count
 };
-static const char* c_PressureCoupling[static_cast<int>(PressureCoupling::Count)] =
+static const char* c_PressureCoupling[] =
     {"No", "Berendsen", "ParrinelloRahman", "Isotropic", "Mttk", "CRescale"};
 
 //< pressure coupling type
@@ -42,10 +42,7 @@ enum class PressureCouplingType : int
     Anisotropic,
     Count
 };
-static const char* c_PressureCouplingType[static_cast<int>(PressureCouplingType::Count)] = {
-    "Isotropic",
-    "SemiIsotropic",
-    "Anisotropic"};
+static const char* c_PressureCouplingType[] = {"Isotropic", "SemiIsotropic", "Anisotropic"};
 
 //< temperature coupling methods
 enum class TemperatureCoupling : int
@@ -59,7 +56,7 @@ enum class TemperatureCoupling : int
     VRescale,
     Count,
 };
-static const char* c_TemperatureCoupling[static_cast<int>(TemperatureCoupling::Count)] =
+static const char* c_TemperatureCoupling[] =
     {"No", "Berendsen", "NoseHoover", "Yes", "Andersen", "AndersenMassive", "VRescale"};
 
 
@@ -79,17 +76,17 @@ enum class ParamsInteger : int
     nstcomm,
     Count,
 };
-static const char* c_mdp_integer[static_cast<int>(ParamsInteger::Count)] = {"nstlog",
-                                                                            "nstxout",
-                                                                            "nstvout",
-                                                                            "nstfout",
-                                                                            "nstenergy",
-                                                                            "nstxout_compressed",
-                                                                            "nsttcouple",
-                                                                            "nstpcouple",
-                                                                            "nstcalcenergy",
-                                                                            "nstlist",
-                                                                            "nstcomm"};
+static const char* c_mdp_integer[] = {"nstlog",
+                                      "nstxout",
+                                      "nstvout",
+                                      "nstfout",
+                                      "nstenergy",
+                                      "nstxout_compressed",
+                                      "nsttcouple",
+                                      "nstpcouple",
+                                      "nstcalcenergy",
+                                      "nstlist",
+                                      "nstcomm"};
 
 // vector of tpr, X or V or F
 enum class VecProps : int
@@ -103,8 +100,7 @@ enum class VecProps : int
     ef,  // electric field
     Count
 };
-static const char* c_mdp_vector[static_cast<int>(VecProps::Count)] =
-    {"x", "v", "f", "m", "q", "box", "ef"};
+static const char* c_mdp_vector[] = {"x", "v", "f", "m", "q", "box", "ef"};
 
 // int vector of tpr, such resid
 enum class IVectorProps : int
@@ -114,9 +110,7 @@ enum class IVectorProps : int
     atomicnum, // atomic number
     Count
 };
-static const char* c_int_vector[static_cast<int>(IVectorProps::Count)] = {"resid",
-                                                                          "atnum",
-                                                                          "atomicnum"};
+static const char* c_int_vector[] = {"resid", "atnum", "atomicnum"};
 
 // vector of tpr, resname / atomname / atomtype name
 enum class StringType : int
@@ -126,7 +120,7 @@ enum class StringType : int
     type, // atomtype name
     Count
 };
-static const char* c_name_vector[static_cast<int>(StringType::Count)] = {"res", "atom", "type"};
+static const char* c_name_vector[] = {"res", "atom", "type"};
 
 
 // type of bonded
@@ -138,10 +132,7 @@ enum class BondedType : int
     impropers,
     Count
 };
-static const char* c_bonded_type[static_cast<int>(BondedType::Count)] = {"bonds",
-                                                                         "angles",
-                                                                         "dihedrals",
-                                                                         "impropers"};
+static const char* c_bonded_type[] = {"bonds", "angles", "dihedrals", "impropers"};
 
 //< Non bonded type
 enum class NonBondedType : int
@@ -151,15 +142,15 @@ enum class NonBondedType : int
     LJ_14,    // that is [ pairs ]
     Count
 };
-static const char* c_nonbonded_type[static_cast<int>(NonBondedType::Count)] = {"lj",
-                                                                               "type",
-                                                                               "pairs"};
+static const char* c_nonbonded_type[] = {"lj", "type", "pairs"};
 
 
-//< check key words in a c_string ignore case, return enum value if find, else return ENUM::Count
-template<typename ENUM, const int count = static_cast<int>(ENUM::Count)>
-static inline ENUM check_string(const char* str, const char* arr[])
+//< check key words in a c_string array ignore case, return enum value if find, else return ENUM::Count
+template<typename ENUM, const int count = static_cast<int>(ENUM::Count), int N>
+static inline ENUM check_string(const char* str, const char* (&arr)[N])
 {
+    //! check length must be equal
+    static_assert(N == count, "c_string length is not equal to enum length");
     for (int i = 0; i < count; i++)
     {
         if (!mystricmp(str, arr[i])) return static_cast<ENUM>(i);
