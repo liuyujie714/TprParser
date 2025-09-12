@@ -10,7 +10,7 @@ public:
     {
     }
 
-
+    
     int                       get_precision() const { return TprReader::get_precision(); }
     const std::vector<float>& get_ef() const { return TprReader::get_ef(); }
 
@@ -47,9 +47,22 @@ public:
 
 EMSCRIPTEN_BINDINGS(my_module)
 {
-    emscripten::register_vector<int>("std::vector<int>");
-    emscripten::register_vector<float>("std::vector<float>");
-    emscripten::register_vector<std::string>("std::vector<std::string>");
+    emscripten::class_<Bonded>("Bonded")
+        .constructor<int, int, int, const std::vector<float>&>()
+        .constructor<int, int, int, int, const std::vector<float>&>()
+        .constructor<int, int, int, int, int, const std::vector<float>&>()
+        .property("a", &Bonded::a)
+        .property("b", &Bonded::b)
+        .property("c", &Bonded::c)
+        .property("d", &Bonded::d)
+        .property("ff", &Bonded::ff)
+        .property("ifunc", &Bonded::ifunc)
+        ;
+
+    emscripten::register_vector<int>("VecInt");
+    emscripten::register_vector<float>("VecFloat");
+    emscripten::register_vector<std::string>("VecString");
+    emscripten::register_vector<Bonded>("VecBonded");
 
     emscripten::class_<TprReaderWrapper>("TprReader")
         .constructor<const std::string&, bool, bool, bool>()
@@ -59,7 +72,7 @@ EMSCRIPTEN_BINDINGS(my_module)
         .function("get_xvf", &TprReaderWrapper::get_xvf)
         .function("get_ivector", &TprReaderWrapper::get_ivector)
         .function("get_name", &TprReaderWrapper::get_name)
-        // .function("get_bonded", &TprReaderWrapper::get_bonded)
+        .function("get_bonded", &TprReaderWrapper::get_bonded)
         // .function("get_nonbonded", &TprReaderWrapper::get_nonbonded)
         ;
 }

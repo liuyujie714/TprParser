@@ -167,7 +167,7 @@ public:
     }
 
     // read/write unsigned char, return TPR_SUCCESS if succeed
-    // actually read unsigned int if vergen < 27 and convert to unsigned short
+    // actually read unsigned int if vergen < 27 and convert to unsigned char
     bool do_uchar(unsigned char* val, int vergen = 26) const
     {
         static_assert(sizeof(unsigned char) == 1, "sizeof unsigned char must be 1");
@@ -335,10 +335,11 @@ public:
         return TPR_SUCCESS;
     }
 
-    // Reads in a string by first reading an integer containing the
-    // string's length, then reading in the string itself and storing
-    // it in str. If the length is greater than max, it is truncated
-    // and the rest of the string is skipped in the file
+    /* \brief Reads in a string by first reading an integer containing the
+    * string's length (=strlen(), exclude null terminated), then reading in the string itself and storing
+    * it in str. If the length is greater than max, it is truncated
+    * and the rest of the string is skipped in the file
+    */
     bool xdr_string(char* str, int maxlen) const
     {
         int size;

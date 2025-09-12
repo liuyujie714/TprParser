@@ -31,19 +31,20 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
 
 bool TprReader::tpr_header()
 {
-    // read the first int at the first of tpr
+    // read the first unused int at the first of tpr
     int tempint;
     if (!tpr_.do_int(&tempint)) return TPR_FAILED;
+    msg("First int: %d\n", tempint);
 
     // read string contains gmx version: VERSION xxx
-    char filever[MAX_LEN];
-    if (!tpr_.xdr_string(filever, MAX_LEN)) return TPR_FAILED;
+    char version[MAX_LEN];
+    if (!tpr_.xdr_string(version, MAX_LEN)) return TPR_FAILED;
     // check it, make sure it's a valid tpr file
-    if (std::strncmp(filever, "VERSION", 7) != 0)
+    if (std::strncmp(version, "VERSION", 7) != 0)
     {
         THROW_TPR_EXCEPTION("Input file is not a valid tpr file, so can not be read by TprParser");
     }
-    msg("gmx version: %s\n", filever);
+    msg("gmx version: %s\n", version);
 
     // read precision int
     if (!tpr_.do_int(&data_->prec)) return TPR_FAILED;
@@ -58,7 +59,7 @@ bool TprReader::tpr_header()
 
 // clang-format off
 template<typename T>
-typename std::enable_if<std::is_fundamental_v<T>, void>::type 
+typename std::enable_if_t<std::is_fundamental_v<T>, void>
 static print_vec(const char* name, T *arr, int len = DIM * DIM)
 {
 #ifdef _DEBUG
@@ -98,6 +99,10 @@ bool TprReader::tpr_body()
      */
     if (data_->filever >= 77 && data_->filever <= 79)
     {
+        //< read a unused int, is Right ?
+        int tempint;
+        if (!tpr_.do_int(&tempint)) return TPR_FAILED;
+
         char release[MAX_LEN];
         if (!tpr_.xdr_string(release, MAX_LEN)) return TPR_FAILED;
         msg("%s\n", release);
@@ -167,7 +172,9 @@ bool TprReader::tpr_body()
         }
     }
     if (data_->vergen > tpx_generation)
+    {
         data_->bIr = false; // This can only happen if TopOnlyOK=TRUE
+    }
 
     // read box size
     if (data_->bBox)
@@ -299,15 +306,15 @@ bool TprReader::tpr_mtop()
     }
 
 #ifdef _DEBUG
-    for (int i = 0; i < data_->atoms.excls.size(); i++)
-    {
-        fprintf(stdout, "INFO) %d -> ", i);
-        for (const auto& v : data_->atoms.excls[i])
-        {
-            fprintf(stdout, "%d ", v);
-        }
-        fprintf(stdout, "\n");
-    }
+    //for (int i = 0; i < data_->atoms.excls.size(); i++)
+    //{
+    //    fprintf(stdout, "INFO) %d -> ", i);
+    //    for (const auto& v : data_->atoms.excls[i])
+    //    {
+    //        fprintf(stdout, "%d ", v);
+    //    }
+    //    fprintf(stdout, "\n");
+    //}
 #endif // DEBUG
 
     return TPR_SUCCESS;
@@ -1237,10 +1244,10 @@ bool TprReader::do_atoms()
         msg("nelements= %d\n", nelem);
         listranges.resize(nlist + 1); // need +1
         if (!tpr_.do_vector(listranges.data(), nlist + 1, data_->prec)) return TPR_FAILED;
-        print_vec("listRanges_= ", listranges.data(), nlist + 1);
+        //print_vec("listRanges_= ", listranges.data(), nlist + 1);
         elements.resize(nelem); // not need +1
         if (!tpr_.do_vector(elements.data(), nelem, data_->prec)) return TPR_FAILED;
-        print_vec("elements_= ", elements.data(), nelem);
+        //print_vec("elements_= ", elements.data(), nelem);
 
         //! store exclusions list for each mol
         myassert(data_->atomsinmol[i] == nlist,
@@ -1251,18 +1258,18 @@ bool TprReader::do_atoms()
             int start = listranges[j];
             int end   = listranges[j + 1]; ///< end not included
 #ifdef _DEBUG
-            fprintf(stdout, "INFO) [%d..%d] ", start, end - 1);
-            for (int k = start; k < end; k++)
-            {
-                fprintf(stdout, "%d ", elements[k]);
-            }
-            fprintf(stdout, "\n");
+            //fprintf(stdout, "INFO) [%d..%d] ", start, end - 1);
+            //for (int k = start; k < end; k++)
+            //{
+            //    fprintf(stdout, "%d ", elements[k]);
+            //}
+            //fprintf(stdout, "\n");
 #endif
             auto& excl = data_->excls[i][j];
             excl.range = {start, end - 1};
             excl.index.insert(excl.index.end(), elements.begin() + start, elements.begin() + end);
-            print_vec("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
-            print_vec("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
+            //print_vec("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
+            //print_vec("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
         }
     }
 
