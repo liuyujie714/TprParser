@@ -8,10 +8,12 @@
 
 #include <iostream>
 
+#include "EdrReader.h"
 #include "Reader.h"
 
 int main(int argc, char* argv[])
 {
+#if 0
     try
     {
         // TprReader reader("test/em.tpr");
@@ -116,6 +118,17 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "%s\n", e.what());
     }
+
+#elif 1
+    try
+    {
+        auto p = std::make_unique<EdrReader>(argv[1], "ene.csv");
+    }
+    catch (const std::exception& e)
+    {
+        fprintf(stderr, "%s\n", e.what());
+    }
+#endif
 
     return 0;
 }

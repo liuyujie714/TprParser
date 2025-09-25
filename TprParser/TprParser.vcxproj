@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\EdrReader.h" />
     <ClInclude Include="src\FileSerializer.h" />
     <ClInclude Include="src\define.h" />
     <ClInclude Include="src\endianswap.h" />
@@ -29,6 +30,7 @@
     <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\EdrReader.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Py_Module.cpp" />
     <ClCompile Include="src\Reader.cpp" />

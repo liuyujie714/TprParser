@@ -10,7 +10,7 @@ public:
     {
     }
 
-    
+
     int                       get_precision() const { return TprReader::get_precision(); }
     const std::vector<float>& get_ef() const { return TprReader::get_ef(); }
 
@@ -56,8 +56,7 @@ EMSCRIPTEN_BINDINGS(my_module)
         .property("c", &Bonded::c)
         .property("d", &Bonded::d)
         .property("ff", &Bonded::ff)
-        .property("ifunc", &Bonded::ifunc)
-        ;
+        .property("ifunc", &Bonded::ifunc);
 
     emscripten::register_vector<int>("VecInt");
     emscripten::register_vector<float>("VecFloat");

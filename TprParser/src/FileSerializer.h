@@ -336,10 +336,10 @@ public:
     }
 
     /* \brief Reads in a string by first reading an integer containing the
-    * string's length (=strlen(), exclude null terminated), then reading in the string itself and storing
-    * it in str. If the length is greater than max, it is truncated
-    * and the rest of the string is skipped in the file
-    */
+     * string's length (=strlen(), exclude null terminated), then reading in the string itself and storing
+     * it in str. If the length is greater than max, it is truncated
+     * and the rest of the string is skipped in the file
+     */
     bool xdr_string(char* str, int maxlen) const
     {
         int size;

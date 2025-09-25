@@ -39,6 +39,9 @@
     <ClInclude Include="src\TprException.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\EdrReader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -51,6 +54,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\Utils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EdrReader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

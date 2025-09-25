@@ -306,15 +306,15 @@ bool TprReader::tpr_mtop()
     }
 
 #ifdef _DEBUG
-    //for (int i = 0; i < data_->atoms.excls.size(); i++)
+    // for (int i = 0; i < data_->atoms.excls.size(); i++)
     //{
-    //    fprintf(stdout, "INFO) %d -> ", i);
-    //    for (const auto& v : data_->atoms.excls[i])
-    //    {
-    //        fprintf(stdout, "%d ", v);
-    //    }
-    //    fprintf(stdout, "\n");
-    //}
+    //     fprintf(stdout, "INFO) %d -> ", i);
+    //     for (const auto& v : data_->atoms.excls[i])
+    //     {
+    //         fprintf(stdout, "%d ", v);
+    //     }
+    //     fprintf(stdout, "\n");
+    // }
 #endif // DEBUG
 
     return TPR_SUCCESS;
@@ -1244,10 +1244,10 @@ bool TprReader::do_atoms()
         msg("nelements= %d\n", nelem);
         listranges.resize(nlist + 1); // need +1
         if (!tpr_.do_vector(listranges.data(), nlist + 1, data_->prec)) return TPR_FAILED;
-        //print_vec("listRanges_= ", listranges.data(), nlist + 1);
+        // print_vec("listRanges_= ", listranges.data(), nlist + 1);
         elements.resize(nelem); // not need +1
         if (!tpr_.do_vector(elements.data(), nelem, data_->prec)) return TPR_FAILED;
-        //print_vec("elements_= ", elements.data(), nelem);
+        // print_vec("elements_= ", elements.data(), nelem);
 
         //! store exclusions list for each mol
         myassert(data_->atomsinmol[i] == nlist,
@@ -1258,18 +1258,18 @@ bool TprReader::do_atoms()
             int start = listranges[j];
             int end   = listranges[j + 1]; ///< end not included
 #ifdef _DEBUG
-            //fprintf(stdout, "INFO) [%d..%d] ", start, end - 1);
-            //for (int k = start; k < end; k++)
+            // fprintf(stdout, "INFO) [%d..%d] ", start, end - 1);
+            // for (int k = start; k < end; k++)
             //{
-            //    fprintf(stdout, "%d ", elements[k]);
-            //}
-            //fprintf(stdout, "\n");
+            //     fprintf(stdout, "%d ", elements[k]);
+            // }
+            // fprintf(stdout, "\n");
 #endif
             auto& excl = data_->excls[i][j];
             excl.range = {start, end - 1};
             excl.index.insert(excl.index.end(), elements.begin() + start, elements.begin() + end);
-            //print_vec("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
-            //print_vec("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
+            // print_vec("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
+            // print_vec("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
         }
     }
 
