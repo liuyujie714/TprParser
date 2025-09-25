@@ -18,7 +18,7 @@ include_directories(${Python3_INCLUDE_DIRS} "${NUMPY_INCLUDE_PATH}")
 
 
 # 添加可执行文件
-add_executable(TprReader src/main.cpp src/Reader.cpp src/Utils.cpp)
+add_executable(TprReader src/main.cpp src/Reader.cpp src/Utils.cpp src/EdrReader.cpp)
 
 # 添加动态链接库
 add_library(TprParser_ SHARED src/Reader.cpp src/Py_Module.cpp src/Utils.cpp)
