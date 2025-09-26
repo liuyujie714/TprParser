@@ -5,7 +5,6 @@
 #include "TprException.h"
 
 #define MAX_STRLEN 1024
-constexpr int Prec   = 4;
 constexpr int Vergen = 28;
 
 bool EdrReader::do_enexnms()
@@ -94,6 +93,10 @@ bool EdrReader::do_parser()
     {
         // store fr.t
         times_.emplace_back(fr_.t);
+        msg("fr.t= %g\n", fr_.t);
+
+        // clear fr data
+        fr_.clear();
     }
 
     return TPR_SUCCESS;
@@ -101,12 +104,32 @@ bool EdrReader::do_parser()
 
 bool EdrReader::do_enx()
 {
-    do_eheader(-1);
+    if (!do_eheader(-1)) return TPR_FAILED;
+
+    // Check sanity of this header 
+    bool bSane = fr_.nre > 0;
+    for (int b = 0; b < fr_.nblock; b++)
+    {
+        bSane = bSane || (fr_.block[b].nsub > 0);
+    }
+    if (!(fr_.step >= 0 && bSane))
+    {
+        THROW_TPR_EXCEPTION("there may be something wrong with energy file");
+    }
+
+    if (fr_.nre > fr_.e_alloc)
+    {
+        for (int i = fr_.e_alloc; i < fr_.nre; i++)
+        {
+            // TODO:
+        }
+        fr_.e_alloc = fr_.nre;
+    }
 
     for (int i = 0; i < fr_.nre; i++)
     {
         float ene;
-        if (!edr_->do_float(&ene)) return TPR_FAILED;
+        if (!edr_->do_real(&ene, precision_)) return TPR_FAILED;
         // save energy
         data_[i].value.emplace_back(ene);
 
@@ -114,13 +137,13 @@ bool EdrReader::do_enx()
         if (file_version_ == 1 || fr_.nsum > 0 || fr_.nsum > 1)
         {
             float eav, esum, fdum;
-            if (!edr_->do_float(&eav)) return TPR_FAILED;
-            if (!edr_->do_float(&esum)) return TPR_FAILED;
+            if (!edr_->do_real(&eav, precision_)) return TPR_FAILED;
+            if (!edr_->do_real(&esum, precision_)) return TPR_FAILED;
 
             if (file_version_ == 1)
             {
                 // Old, unused real
-                if (!edr_->do_float(&fdum)) return TPR_FAILED;
+                if (!edr_->do_real(&fdum, precision_)) return TPR_FAILED;
             }
         }
     }
@@ -136,31 +159,31 @@ bool EdrReader::do_enx()
                 case xdr_int:
                 {
                     std::vector<int> temp(nr);
-                    if (!edr_->do_vector(temp.data(), nr, Prec, Vergen)) return TPR_FAILED;
+                    if (!edr_->do_vector(temp.data(), nr, precision_, Vergen)) return TPR_FAILED;
                     break;
                 }
                 case xdr_float:
                 {
                     std::vector<float> temp(nr);
-                    if (!edr_->do_vector(temp.data(), nr, Prec, Vergen)) return TPR_FAILED;
+                    if (!edr_->do_vector(temp.data(), nr, precision_, Vergen)) return TPR_FAILED;
                     break;
                 }
                 case xdr_double:
                 {
                     std::vector<double> temp(nr);
-                    if (!edr_->do_vector(temp.data(), nr, Prec, Vergen)) return TPR_FAILED;
+                    if (!edr_->do_vector(temp.data(), nr, precision_, Vergen)) return TPR_FAILED;
                     break;
                 }
                 case xdr_int64:
                 {
                     std::vector<int64_t> temp(nr);
-                    if (!edr_->do_vector(temp.data(), nr, Prec, Vergen)) return TPR_FAILED;
+                    if (!edr_->do_vector(temp.data(), nr, precision_, Vergen)) return TPR_FAILED;
                     break;
                 }
                 case xdr_char:
                 {
                     std::vector<unsigned char> temp(nr);
-                    if (!edr_->do_vector(temp.data(), nr, Prec, Vergen)) return TPR_FAILED;
+                    if (!edr_->do_vector(temp.data(), nr, precision_, Vergen)) return TPR_FAILED;
                     break;
                 }
                 case xdr_string:
@@ -189,8 +212,28 @@ bool EdrReader::do_eheader(int nre_test)
     bool  bOK        = false;
     float fdum       = -2e10;
     int   idum;
-    if (!edr_->do_float(&fdum)) return TPR_FAILED;
-    // msg("fdum= %g\n", fdum);
+
+    // determine the precision
+    const auto base = edr_->ftell_();
+    if (file_version_ == 1)
+    {
+        edr_->fseek_(base + 12, SEEK_SET);
+        int nre;
+        if (!edr_->do_int(&nre)) return TPR_FAILED;
+        precision_ = (nre == nre_ ? 8 : 4);
+    }
+    else
+    {
+        edr_->fseek_(base + 4, SEEK_SET);
+        int magic;
+        if (!edr_->do_int(&magic)) return TPR_FAILED;
+        precision_ = (magic != -7777777 ? 8 : 4);
+    }
+    edr_->fseek_(base, SEEK_SET);
+    const auto dreal = (precision_ == 8 ? DataType::xdr_double : DataType::xdr_float);
+
+    if (!edr_->do_real(&fdum, precision_)) return TPR_FAILED;
+    msg("float dum= %g\n", fdum);
     if (fdum > -1e10)
     {
         // Assume we are reading an old format
@@ -200,7 +243,7 @@ bool EdrReader::do_eheader(int nre_test)
         // step
         if (!edr_->do_int(&idum)) return TPR_FAILED;
         fr_.step = idum;
-        // msg("time= %g, step= %lld\n", fdum, (int64_t)idum);
+        msg("time= %g, step= %lld\n", fdum, (int64_t)idum);
     }
     else
     {
@@ -222,7 +265,7 @@ bool EdrReader::do_eheader(int nre_test)
         if (!edr_->do_double(&fr_.t)) return TPR_FAILED;
         // read step as int64
         if (!edr_->do_int64(&fr_.step)) return TPR_FAILED;
-        // msg("time= %g, step= %lld\n", fr_.t, fr_.step);
+        //msg("time= %g, step= %lld\n", fr_.t, fr_.step);
         //  nsum
         if (!edr_->do_int(&fr_.nsum)) return TPR_FAILED;
         if (file_version_ >= 3)
@@ -257,7 +300,7 @@ bool EdrReader::do_eheader(int nre_test)
 
     if (ndisre != 0)
     {
-        if (file_version_ > 4)
+        if (file_version_ >= 4)
         {
             THROW_TPR_EXCEPTION("Distance restraint blocks in old style in new style file");
         }
@@ -280,6 +323,7 @@ bool EdrReader::do_eheader(int nre_test)
             "number).");
     }
 
+    //msg("fr.nblock= %d\n", fr_.nblock);
     fr_.add_blocks(fr_.nblock);
 
     int startb = 0;
@@ -290,8 +334,8 @@ bool EdrReader::do_eheader(int nre_test)
         fr_.block[0].id          = enxDISRE;
         fr_.block[0].sub[0].nr   = ndisre;
         fr_.block[0].sub[1].nr   = ndisre;
-        fr_.block[0].sub[0].type = DataType::xdr_float;
-        fr_.block[0].sub[1].type = DataType::xdr_float;
+        fr_.block[0].sub[0].type = dreal;
+        fr_.block[0].sub[1].type = dreal;
         startb++;
     }
 
@@ -305,7 +349,7 @@ bool EdrReader::do_eheader(int nre_test)
             if (!edr_->do_int(&nrint)) return TPR_FAILED;
             fr_.block[b].id          = static_cast<EnumEnx>(b - startb);
             fr_.block[b].sub[0].nr   = nrint;
-            fr_.block[b].sub[0].type = DataType::xdr_float;
+            fr_.block[b].sub[0].type = dreal;
         }
         else
         {
@@ -314,7 +358,7 @@ bool EdrReader::do_eheader(int nre_test)
             if (!edr_->do_int(&nsub)) return TPR_FAILED;
             fr_.block[b].nsub = nsub;
             fr_.block[b].add_subblocks(nsub);
-            for (int i = 0; i < nsub; ++i)
+            for (int i = 0; i < nsub; i++)
             {
                 auto sub = &(fr_.block[b].sub[i]);
                 if (!edr_->do_int(reinterpret_cast<int*>(&sub->type))) return TPR_FAILED;
@@ -343,6 +387,7 @@ void EdrReader::write_data(const std::string& fout) const
     // check data
     if (!data_.empty() && times_.size() != data_[0].value.size())
     {
+        msg("%zu %zu\n", times_.size(), data_[0].value.size());
         THROW_TPR_EXCEPTION("Wrong size of times_");
     }
 

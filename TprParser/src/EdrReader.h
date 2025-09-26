@@ -82,7 +82,15 @@ struct Frame
     int                nblock       = 0;
     int                nblock_alloc = 0;
     int                e_size       = 0;
+    int                e_alloc      = 0;
     std::vector<Block> block;
+
+    void clear()
+    {
+        block.clear();
+        t = dt = 0;
+        step = nsteps = nsum = nre = nblock = nblock_alloc = e_size = e_alloc = 0;
+    }
 
     void add_blocks(int n)
     {
@@ -131,6 +139,7 @@ private:
     int                             file_version_ = 0;
     int                             nre_          = 0;     //< the number of items
     bool                            is_old_       = false; // is old format edr
+    int                             precision_ = 4; // precision for read float 
     Frame                           fr_;                   // a frame data structure
 };
 
