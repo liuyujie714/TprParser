@@ -3,7 +3,7 @@ import numpy, os
 
 
 # Always update program version
-__version__ = '0.1.56'
+__version__ = '0.1.57'
 
 
 # Description
@@ -27,15 +27,26 @@ elif os.name == 'posix':
 else:
     raise OSError("Unsupported OS %s" % os.name)
 
-module = Extension(
+tpr_module = Extension(
     name='TprParser_',  # module name from PyMODINIT_FUNC PyInit_TprParser_(void) 
     include_dirs=[numpy.get_include()], # need numpy
     language='c++',
     extra_compile_args=CXXFLAGS, # C++ standard
     define_macros=[('_CRT_SECURE_NO_WARNINGS', 1)], # for MSVC
-    sources=['src/Py_Module.cpp', 'src/Reader.cpp', 'src/Utils.cpp'], # source code path
+    sources=['src/Py_Tpr.cpp', 'src/Reader.cpp', 'src/Utils.cpp'], # source code path
     extra_link_args=LINKER  # link to c++ library
 )
+
+edr_module = Extension(
+    name='EdrParser_',  # module name from PyMODINIT_FUNC PyInit_EdrParser_(void) 
+    include_dirs=[numpy.get_include()], # need numpy
+    language='c++',
+    extra_compile_args=CXXFLAGS, # C++ standard
+    define_macros=[('_CRT_SECURE_NO_WARNINGS', 1)], # for MSVC
+    sources=['src/Py_Edr.cpp', 'src/EdrReader.cpp'], # source code path
+    extra_link_args=LINKER  # link to c++ library
+)
+
 setup(
     name='TprParser',
     version=__version__,
@@ -47,11 +58,12 @@ setup(
     author_email='',
     python_requires='>=3.8',
     install_requires=['typing_extensions<=4.12.2', 'numpy'],
-    ext_modules=[module],
+    ext_modules=[tpr_module, edr_module],
     # put TprReader.py/__init__.py in TprParser folder to site-packages
     py_modules=['TprParser.TprReader', 
                 'TprParser.__init__', 
                 'TprParser.TprMakeTop',
+                'TprParser.EdrReader',
                 'TprParser.version'],
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -7,6 +7,7 @@
 #define MAX_STRLEN 1024
 constexpr int Vergen = 26; // char use int to read
 
+
 bool EdrReader::do_enexnms()
 {
     int magic;
@@ -426,4 +427,25 @@ void EdrReader::write_data(const std::string& fout) const
 
     fclose(fp);
     fp = nullptr;
+}
+
+
+std::map<std::string, std::vector<double>> EdrReader::get_ene() const
+{
+    // check data
+    if (!data_.empty() && times_.size() != data_[0].value.size())
+    {
+        msg("%zu %zu\n", times_.size(), data_[0].value.size());
+        THROW_TPR_EXCEPTION("Wrong size of times_");
+    }
+
+    // get data
+    std::map<std::string, std::vector<double>> ret;
+    ret.insert(std::make_pair("Time", times_));
+    for (const auto& item : data_)
+    {
+        ret.insert(std::make_pair(item.name, item.value));
+    }
+
+    return ret;
 }

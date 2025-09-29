@@ -39,9 +39,13 @@ jobs:
         python setup.py build
         python setup.py install
 
-    - name: Tests
+    - name: Tests tpr
       run:
         python TprParser/TestTprReader.py
+    
+    - name: Test Edr
+      run:
+        python TprParser/TestEdrReader.py
 
   RockyLinux:
     runs-on: ubuntu-latest
@@ -74,9 +78,13 @@ jobs:
         python setup.py build
         python setup.py install
     
-    - name: Tests
-      run: 
+    - name: Tests tpr
+      run:
         python TprParser/TestTprReader.py
+    
+    - name: Test Edr
+      run:
+        python TprParser/TestEdrReader.py
 
   WindowsBuild:
     runs-on: windows-latest
@@ -104,9 +112,13 @@ jobs:
         python setup.py build
         python setup.py install
 
-    - name: Tests
-      run: 
+    - name: Tests tpr
+      run:
         python TprParser/TestTprReader.py
+    
+    - name: Test Edr
+      run:
+        python TprParser/TestEdrReader.py
 
 
   Mingw64Build:
@@ -148,6 +160,11 @@ jobs:
         python setup.py build
         python setup.py install
 
-    - name: Tests
-      run: 
+    - name: Tests tpr
+      run:
         python TprParser/TestTprReader.py
+    
+    - name: Test Edr
+      run:
+        python TprParser/TestEdrReader.py
+

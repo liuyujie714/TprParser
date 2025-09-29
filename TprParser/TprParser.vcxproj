@@ -32,9 +32,11 @@
   <ItemGroup>
     <ClCompile Include="src\EdrReader.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Py_Module.cpp" />
+    <ClCompile Include="src\Py_Edr.cpp" />
+    <ClCompile Include="src\Py_Tpr.cpp" />
     <ClCompile Include="src\Reader.cpp" />
     <ClCompile Include="src\Utils.cpp" />
+    <ClCompile Include="源.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

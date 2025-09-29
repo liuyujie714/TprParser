@@ -1,42 +1,42 @@
 #ifndef _DEBUG
 
-#include <cinttypes> // toupper
+#    include <cinttypes> // toupper
 
-#include "numpy/arrayobject.h"
-#include "Python.h"
-#include "Reader.h"
+#    include "numpy/arrayobject.h"
+#    include "Python.h"
+#    include "Reader.h"
 
-#define xstr(x) #x
-#define tostr(x) xstr(x)
-#define xcat(x, y) x##y
-#define cat(x, y) xcat(x, y)
+#    define xstr(x) #x
+#    define tostr(x) xstr(x)
+#    define xcat(x, y) x##y
+#    define cat(x, y) xcat(x, y)
 
-#define RAW_MODULE_NAME TprParser_ // use name "TprParser_"
-#define MODULE_NAME tostr(RAW_MODULE_NAME)
-#define PYINIT_FUNC cat(PyInit_, RAW_MODULE_NAME)
+#    define RAW_MODULE_NAME TprParser_ // use name "TprParser_"
+#    define MODULE_NAME tostr(RAW_MODULE_NAME)
+#    define PYINIT_FUNC cat(PyInit_, RAW_MODULE_NAME)
 
 //< For Python API, I use NULL instead of nullptr
 
 // A macro for simply writing, executed a function and return ret with ... parameters
-#define TRY_THROW_EXCEPTION_FROM_OBJ(funcname, ret, ...)                                         \
-    do                                                                                           \
-    {                                                                                            \
-        TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, MODULE_NAME)); \
-        if (!reader)                                                                             \
-        {                                                                                        \
-            PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");                       \
-            return NULL;                                                                         \
-        }                                                                                        \
-        try                                                                                      \
-        {                                                                                        \
-            ret = reader->funcname(__VA_ARGS__);                                                 \
-        }                                                                                        \
-        catch (const std::exception& e)                                                          \
-        {                                                                                        \
-            PyErr_SetString(PyExc_RuntimeError, e.what());                                       \
-            return NULL;                                                                         \
-        }                                                                                        \
-    } while (0)
+#    define TRY_THROW_EXCEPTION_FROM_OBJ(funcname, ret, ...)                                         \
+        do                                                                                           \
+        {                                                                                            \
+            TprReader* reader = static_cast<TprReader*>(PyCapsule_GetPointer(capsule, MODULE_NAME)); \
+            if (!reader)                                                                             \
+            {                                                                                        \
+                PyErr_SetString(PyExc_RuntimeError, "Invalid capsule object");                       \
+                return NULL;                                                                         \
+            }                                                                                        \
+            try                                                                                      \
+            {                                                                                        \
+                ret = reader->funcname(__VA_ARGS__);                                                 \
+            }                                                                                        \
+            catch (const std::exception& e)                                                          \
+            {                                                                                        \
+                PyErr_SetString(PyExc_RuntimeError, e.what());                                       \
+                return NULL;                                                                         \
+            }                                                                                        \
+        } while (0)
 
 
 // free

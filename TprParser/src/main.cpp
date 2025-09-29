@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 #elif 1
     try
     {
-        auto p = std::make_unique<EdrReader>(argv[1], "ene.csv");
+        auto p = std::make_unique<EdrReader>(argv[1]);
     }
     catch (const std::exception& e)
     {

@@ -1,6 +1,7 @@
 #ifndef EDR_READER_H
 #define EDR_READER_H
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -110,13 +111,19 @@ struct Frame
 class EdrReader
 {
 public:
-    EdrReader(const std::string& fname, const std::string& fout)
+    EdrReader(const std::string& fname)
         : edr_(std::make_unique<FileSerializer>(fname.c_str(), "rb"))
     {
         do_parser();
-        write_data(fout);
+        // write_data("ene.csv");
     }
     ~EdrReader() { msg("Finished!\n"); }
+
+    // get all energys
+    std::map<std::string, std::vector<double>> get_ene() const;
+
+    //! write data to csv file
+    void write_data(const std::string& fout) const;
 
 private:
     //! read edr version magic and nre & call do_edr_strings
@@ -129,12 +136,10 @@ private:
     bool do_enx();
     //! do header
     bool do_eheader(int nre_test);
-    //! write data to csv file
-    void write_data(const std::string& fout) const;
 
 private:
     std::vector<EdrData>            data_;
-    std::vector<double>             times_;
+    std::vector<double>             times_; // all time in ps
     std::unique_ptr<FileSerializer> edr_;
     int                             file_version_ = 0;
     int                             nre_          = 0;     //< the number of items
