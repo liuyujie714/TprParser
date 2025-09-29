@@ -139,7 +139,7 @@ private:
     int                             file_version_ = 0;
     int                             nre_          = 0;     //< the number of items
     bool                            is_old_       = false; // is old format edr
-    int                             precision_ = 4; // precision for read float 
+    int                             precision_    = 4;     // precision for read float
     Frame                           fr_;                   // a frame data structure
 };
 

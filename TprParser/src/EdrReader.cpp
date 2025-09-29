@@ -5,7 +5,7 @@
 #include "TprException.h"
 
 #define MAX_STRLEN 1024
-constexpr int Vergen = 28;
+constexpr int Vergen = 26; // char use int to read
 
 bool EdrReader::do_enexnms()
 {
@@ -38,6 +38,7 @@ bool EdrReader::do_enexnms()
         if (!edr_->do_int(&nre_)) return TPR_FAILED;
     }
     msg("nre= %d\n", nre_);
+    msg("file_version_= %d\n", file_version_);
 
     if (file_version_ != edr_version)
     {
@@ -52,7 +53,7 @@ bool EdrReader::do_enexnms()
 bool EdrReader::do_edr_strings()
 {
     // read items name and unit
-    char        name[1024], unit[1024];
+    char        name[MAX_STRLEN], unit[MAX_STRLEN];
     std::string gname, gunit;
     data_.resize(nre_);
     for (int i = 0; i < nre_; i++)
@@ -63,7 +64,7 @@ bool EdrReader::do_edr_strings()
         }
 
         gname = name;
-        if (file_version_ > 2)
+        if (file_version_ >= 2)
         {
             if (!edr_->xdr_string(unit, MAX_STRLEN))
             {
@@ -91,9 +92,8 @@ bool EdrReader::do_parser()
     // loop all frames
     while (do_enx())
     {
-        // store fr.t
-        times_.emplace_back(fr_.t);
-        msg("fr.t= %g\n", fr_.t);
+        // store fr.t only for fr.nre == nre_
+        if (fr_.nre == nre_) { times_.emplace_back(fr_.t); }
 
         // clear fr data
         fr_.clear();
@@ -106,7 +106,7 @@ bool EdrReader::do_enx()
 {
     if (!do_eheader(-1)) return TPR_FAILED;
 
-    // Check sanity of this header 
+    // Check sanity of this header
     bool bSane = fr_.nre > 0;
     for (int b = 0; b < fr_.nblock; b++)
     {
@@ -230,6 +230,7 @@ bool EdrReader::do_eheader(int nre_test)
         precision_ = (magic != -7777777 ? 8 : 4);
     }
     edr_->fseek_(base, SEEK_SET);
+    msg("base= %lld\n", base);
     const auto dreal = (precision_ == 8 ? DataType::xdr_double : DataType::xdr_float);
 
     if (!edr_->do_real(&fdum, precision_)) return TPR_FAILED;
@@ -243,7 +244,6 @@ bool EdrReader::do_eheader(int nre_test)
         // step
         if (!edr_->do_int(&idum)) return TPR_FAILED;
         fr_.step = idum;
-        msg("time= %g, step= %lld\n", fdum, (int64_t)idum);
     }
     else
     {
@@ -265,8 +265,8 @@ bool EdrReader::do_eheader(int nre_test)
         if (!edr_->do_double(&fr_.t)) return TPR_FAILED;
         // read step as int64
         if (!edr_->do_int64(&fr_.step)) return TPR_FAILED;
-        //msg("time= %g, step= %lld\n", fr_.t, fr_.step);
-        //  nsum
+        // msg("time= %g, step= %lld\n", fr_.t, fr_.step);
+        //   nsum
         if (!edr_->do_int(&fr_.nsum)) return TPR_FAILED;
         if (file_version_ >= 3)
         {
@@ -281,8 +281,11 @@ bool EdrReader::do_eheader(int nre_test)
         }
         else { fr_.dt = 0; }
     }
+    msg("fr.t= %g, fr.step= %lld\n", fr_.t, fr_.step);
+
     // fr.nre
     if (!edr_->do_int(&fr_.nre)) return TPR_FAILED;
+    msg("fr.nre= %d\n", fr_.nre);
     // ndisre
     int ndisre = 0;
     if (file_version_ < 4)
@@ -294,6 +297,7 @@ bool EdrReader::do_eheader(int nre_test)
         // now reserved for possible future use
         if (!edr_->do_int(&idum)) return TPR_FAILED;
     }
+    msg("ndisre= %d\n", ndisre);
     // nblock
     if (!edr_->do_int(&fr_.nblock)) return TPR_FAILED;
     if (fr_.nblock < 0) { THROW_TPR_EXCEPTION("Negative nblock in edr file"); }
@@ -311,7 +315,7 @@ bool EdrReader::do_eheader(int nre_test)
         && ((fr_.nre > 0 && fr_.nre != nre_test) || fr_.nre < 0 || ndisre < 0 || fr_.nblock < 0))
     {
         bWrongPrec = true;
-        return TPR_SUCCESS;
+        THROW_TPR_EXCEPTION("bWrongPrec");
     }
 
     /* we now know what these should be, or we've already bailed out because
@@ -323,7 +327,7 @@ bool EdrReader::do_eheader(int nre_test)
             "number).");
     }
 
-    //msg("fr.nblock= %d\n", fr_.nblock);
+    // msg("fr.nblock= %d\n", fr_.nblock);
     fr_.add_blocks(fr_.nblock);
 
     int startb = 0;
