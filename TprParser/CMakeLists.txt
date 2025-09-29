@@ -21,7 +21,7 @@ include_directories(${Python3_INCLUDE_DIRS} "${NUMPY_INCLUDE_PATH}")
 add_executable(TprReader src/main.cpp src/Reader.cpp src/Utils.cpp src/EdrReader.cpp)
 
 # Ìí¼Ó¶¯Ì¬Á´½Ó¿â
-add_library(TprParser_ SHARED src/Reader.cpp src/Py_Tpr.cpp src/Utils.cpp src/Py_Edr.cpp )
+add_library(TprParser_ SHARED src/Reader.cpp src/EdrReader.cpp src/Py_Tpr.cpp src/Utils.cpp src/Py_Edr.cpp )
 
 # windows or linux 
 if(WIN32)
