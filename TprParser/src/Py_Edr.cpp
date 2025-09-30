@@ -1,7 +1,6 @@
 #ifndef _DEBUG
 
 #    include "EdrReader.h"
-#    include "numpy/arrayobject.h"
 #    include "Python.h"
 
 //===========================EdrParser========================================
@@ -147,9 +146,6 @@ static struct PyModuleDef edr_module = {
 // EdrParser_  module name
 PyMODINIT_FUNC PyInit_EdrParser_(void)
 {
-    // if is numpy
-    import_array(); // 使用numpy相关的函数时候必须先调用这个
-
     return PyModule_Create(&edr_module);
 }
 

@@ -59,9 +59,6 @@
     <ClCompile Include="src\EdrReader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="源.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\Py_Edr.cpp">
       <Filter>源文件</Filter>
     </ClCompile>

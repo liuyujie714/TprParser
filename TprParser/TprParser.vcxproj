@@ -36,7 +36,6 @@
     <ClCompile Include="src\Py_Tpr.cpp" />
     <ClCompile Include="src\Reader.cpp" />
     <ClCompile Include="src\Utils.cpp" />
-    <ClCompile Include="源.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -183,6 +183,7 @@ bool EdrReader::do_enx()
                 }
                 case xdr_char:
                 {
+                    // actually read int to unsigned char
                     std::vector<unsigned char> temp(nr);
                     if (!edr_->do_vector(temp.data(), nr, precision_, Vergen)) return TPR_FAILED;
                     break;

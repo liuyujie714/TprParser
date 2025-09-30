@@ -38,10 +38,4 @@ for edr in glob.glob('test_edr/*.edr'):
         a = np.array(data[k])
         b = np.array(energies[k])
         # Constr. rmsd is not match to edr
-        if k == 'Constr. rmsd':
-            continue
-        try:
-            assert np.allclose(a, b, rtol=1E-3), f'{a} != {b} for {k} in {xvg}'
-        except:
-            assert k == 'Box-Vel-XX' or k == 'Box-Vel-YY' or k == 'Box-Vel-ZZ'
-            assert np.allclose(a, b, rtol=1E-1), f'{a} != {b} for {k} in {xvg}'
+        assert np.allclose(a, b, rtol=1E-4, atol=1E-6), f'{a} != {b} for {k} in {xvg}'

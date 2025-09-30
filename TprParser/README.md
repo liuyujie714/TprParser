@@ -66,9 +66,10 @@ velocity = reader.get_xvf('v')
 charge = reader.get_mq('q')
 mass = reader.get_mq('m')
 
-# get residue or atom name of each atom
-resnames = reader.get_name('res')
+# get residue or atom name or atomtype of each atom
+resnames  = reader.get_name('res')
 atomnames = reader.get_name('atom')
+atomtypes = reader.get_name('type')
 ```
 
 
@@ -114,7 +115,7 @@ reader.set_xvf('x', newcoords)
 
 
 
-# Modify system pressure
+## Modify system pressure
 
 Such as define a function to do this work:
 
@@ -152,7 +153,7 @@ reader.set_pressure('Berendsen', 'anisotropic', 1.0, ref_p, compress, deform)
 
 
 
-# Modify system temperature
+## Modify system temperature
 
 ```python
 # set Berendsen algorithm and tau_t=0.2, ref_t=400 K for one temperature coupling group
@@ -161,7 +162,7 @@ reader.set_temperature(etc='Berendsen', tau_t=[0.2], ref_t=[400])
 
 
 
-# Modify electric field parameters
+## Modify electric field parameters
 
 NOTE: `TprParser` must be >= `0.1.53`
 ```python
@@ -177,7 +178,7 @@ reader.set_xvf('ef', newEF)
 
 
 
-# Modify multiple parameters
+## Modify multiple parameters
 Use `SimSettings` class to do this work
 ```python
 from TprParser.TprReader import SimSettings
@@ -190,7 +191,7 @@ with SimSettings('input.tpr', 'output.tpr') as writer:
 
 
 
-# Make a gromacs top
+## Make a gromacs top
 
 Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Virtual Site, Restraint` is missing!
 
@@ -198,6 +199,27 @@ Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `
 from TprParser.TprMakeTop import make_top_from_tpr
 
 make_top_from_tpr('md.tpr', 'out.top')
+```
+
+
+
+## Read gromacs edr file
+
+Note: `TprParser` must be >= `0.1.57`. 
+
+```python
+from TprParser.EdrReader import EdrReader
+
+# return a dictionary of all energies
+# use gromacs unit, such as Energy -> KJ/mol, Length -> nm
+energies = EdrReader('yourfile.edr').get_ene()
+
+# available energies name
+print(energies.keys())
+
+# get vaules by available key
+times = energies['Time']  				# ps
+temperature = energies['Temperature']   # K
 ```
 
 
