@@ -53,58 +53,34 @@ struct SubBlock
 
 struct Block
 {
-    EnumEnx               id   = enxOR;
-    int                   nsub = 0;
+    EnumEnx               id = enxOR;
     std::vector<SubBlock> sub;
-    int                   nsub_alloc = 0;
 
-    void add_subblocks(int n)
-    {
-        nsub = n;
-        if (n > nsub_alloc)
-        {
-            for (int i = 0; i < n - nsub_alloc; i++)
-            {
-                sub.emplace_back(SubBlock());
-            }
-            nsub_alloc = n;
-        }
-    }
+    // resize to n subblocks
+    void add_subblocks(int n) { sub.resize(n); }
 };
 
 struct Frame
 {
-    double             t            = 0; // frame time in ps
-    double             dt           = 0; // frame dt in ps
-    int64_t            step         = 0;
-    int64_t            nsteps       = 0;
-    int                nsum         = 0;
-    int                nre          = 0;
-    int                nblock       = 0;
-    int                nblock_alloc = 0;
-    int                e_size       = 0;
-    int                e_alloc      = 0;
+    double             t       = 0; // frame time in ps
+    double             dt      = 0; // frame dt in ps
+    int64_t            step    = 0;
+    int64_t            nsteps  = 0;
+    int                nsum    = 0;
+    int                nre     = 0;
+    int                e_size  = 0;
+    int                e_alloc = 0;
     std::vector<Block> block;
 
     void clear()
     {
         block.clear();
         t = dt = 0;
-        step = nsteps = nsum = nre = nblock = nblock_alloc = e_size = e_alloc = 0;
+        step = nsteps = nsum = nre = e_size = e_alloc = 0;
     }
 
-    void add_blocks(int n)
-    {
-        nblock = n;
-        if (n > nblock_alloc)
-        {
-            for (int i = 0; i < n - nblock_alloc; i++)
-            {
-                block.emplace_back(Block());
-            }
-            nblock_alloc = n;
-        }
-    }
+    // resize to n blocks
+    void add_blocks(int n) { block.resize(n); }
 };
 
 /* \brief A class to read gromacs edr binary file */

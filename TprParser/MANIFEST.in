@@ -4,4 +4,6 @@ include src/*
 exclude src/main.cpp
 exclude src/emcc.cpp
 exclude src/emccbuild.bat
+exclude test_edr/**/*
+exclude test/*
 include LICENSE

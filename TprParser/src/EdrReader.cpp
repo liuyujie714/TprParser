@@ -1,3 +1,8 @@
+/*
+ * This code derives from pyedr
+ * https://github.com/MDAnalysis/panedr/blob/master/pyedr/pyedr/pyedr.py
+ */
+
 #include "EdrReader.h"
 
 #include <fstream>
@@ -109,9 +114,9 @@ bool EdrReader::do_enx()
 
     // Check sanity of this header
     bool bSane = fr_.nre > 0;
-    for (int b = 0; b < fr_.nblock; b++)
+    for (size_t b = 0; b < fr_.block.size(); b++)
     {
-        bSane = bSane || (fr_.block[b].nsub > 0);
+        bSane = bSane || (fr_.block[b].sub.size() > 0);
     }
     if (!(fr_.step >= 0 && bSane))
     {
@@ -150,9 +155,9 @@ bool EdrReader::do_enx()
     }
 
     // read the blocks
-    for (size_t b = 0; b < fr_.nblock; b++)
+    for (size_t b = 0; b < fr_.block.size(); b++)
     {
-        for (size_t s = 0; s < fr_.block[b].nsub; s++)
+        for (size_t s = 0; s < fr_.block[b].sub.size(); s++)
         {
             const int nr = fr_.block[b].sub[s].nr;
             switch (fr_.block[b].sub[s].type)
@@ -301,8 +306,9 @@ bool EdrReader::do_eheader(int nre_test)
     }
     msg("ndisre= %d\n", ndisre);
     // nblock
-    if (!edr_->do_int(&fr_.nblock)) return TPR_FAILED;
-    if (fr_.nblock < 0) { THROW_TPR_EXCEPTION("Negative nblock in edr file"); }
+    int nblock;
+    if (!edr_->do_int(&nblock)) return TPR_FAILED;
+    if (nblock < 0) { THROW_TPR_EXCEPTION("Negative nblock in edr file"); }
 
     if (ndisre != 0)
     {
@@ -310,11 +316,10 @@ bool EdrReader::do_eheader(int nre_test)
         {
             THROW_TPR_EXCEPTION("Distance restraint blocks in old style in new style file");
         }
-        fr_.nblock += 1;
+        nblock += 1;
     }
 
-    if (nre_test >= 0
-        && ((fr_.nre > 0 && fr_.nre != nre_test) || fr_.nre < 0 || ndisre < 0 || fr_.nblock < 0))
+    if (nre_test >= 0 && ((fr_.nre > 0 && fr_.nre != nre_test) || fr_.nre < 0 || ndisre < 0 || nblock < 0))
     {
         bWrongPrec = true;
         THROW_TPR_EXCEPTION("bWrongPrec");
@@ -329,8 +334,8 @@ bool EdrReader::do_eheader(int nre_test)
             "number).");
     }
 
-    // msg("fr.nblock= %d\n", fr_.nblock);
-    fr_.add_blocks(fr_.nblock);
+    // msg("fr.nblock= %d\n", nblock);
+    fr_.add_blocks(nblock);
 
     int startb = 0;
     if (ndisre > 0)
@@ -345,7 +350,7 @@ bool EdrReader::do_eheader(int nre_test)
         startb++;
     }
 
-    for (int b = startb; b < fr_.nblock; b++)
+    for (int b = startb; b < nblock; b++)
     {
         // blocks in old version files always have 1 subblock that consists of reals.
         if (file_version_ < 4)
@@ -362,7 +367,6 @@ bool EdrReader::do_eheader(int nre_test)
             if (!edr_->do_int(reinterpret_cast<int*>(&fr_.block[b].id))) return TPR_FAILED;
             int nsub;
             if (!edr_->do_int(&nsub)) return TPR_FAILED;
-            fr_.block[b].nsub = nsub;
             fr_.block[b].add_subblocks(nsub);
             for (int i = 0; i < nsub; i++)
             {

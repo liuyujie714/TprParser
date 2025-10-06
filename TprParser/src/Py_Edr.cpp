@@ -88,7 +88,7 @@ static PyObject* get_ene(PyObject* self, PyObject* args)
         }
 
         // 将 double 值转换为 Python float 对象并添加到列表中
-        for (Py_ssize_t i = 0; i < values.size(); i++)
+        for (size_t i = 0; i < values.size(); i++)
         {
             PyObject* py_value = PyFloat_FromDouble(values[i]);
             if (!py_value)
