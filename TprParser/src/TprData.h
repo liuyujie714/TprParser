@@ -159,7 +159,7 @@ struct TprData
     bool               bIr;       //< if has ir
     bool               bTop;      //< if has top
     bool               bX;        //< if has coordinates
-    bool               bV;        //< if has velocity
+    bool               bV;        //< if has velocity, maybe is ALL zero
     bool               bF;        //< if has force
     bool               bBox;      //< if has box
     bool               bInter;    //< if has inter-molecular bonds
@@ -169,7 +169,7 @@ struct TprData
     int                atnr; // the number of LJ type
 
     std::vector<int> atomsinmol;
-    std::vector<int> resinmol;
+    std::vector<int> resinmol; // atoms_->nres
     std::vector<int> molnames;
     std::vector<int> molbtype;
     std::vector<int> molbnmol;
@@ -177,12 +177,12 @@ struct TprData
     vecF2D           charges;
     vecF2D           masses;
     vecI2D           resids;
-    std::vector<int> trueresids; // actually residues number in tpr
     vecI2D           ptypes;
     vecU2D           types; // LJ param type id
     vecI2D           atomnameids;
     vecI2D           atomtypeids;
-    vecI2D           resnames;
+    vecI2D           resnameids; // for resname
+    vecI2D           resnrids;   // ri[j].nr, for resid
     vecI2D           atomicnumbers;
 
     struct Excls

@@ -13,7 +13,7 @@
 
 int main(int argc, char* argv[])
 {
-#if 0
+#if 1
     try
     {
         // TprReader reader("test/em.tpr");
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            TprReader reader(argv[1]);
+            TprReader reader(argv[1], true);
         }
     }
     catch (const std::exception& e)

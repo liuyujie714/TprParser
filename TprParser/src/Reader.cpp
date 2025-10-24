@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath> // pow
+#include <cstdio>
 #include <set>
 
 #include "TprException.h"
@@ -120,6 +121,16 @@ bool TprReader::tpr_body()
 
         if (!tpr_.xdr_string(buf, MAX_LEN)) return TPR_FAILED;
         msg("fileTag= %s\n", buf);
+    }
+
+    // check again
+    constexpr bool TopOnlyOK = true; // can topology only
+    if ((data_->filever <= tpx_incompatible_version) || ((data_->filever > tpx_version) && !TopOnlyOK)
+        || (data_->vergen > tpx_generation) || tpx_version == 80) /*80 was used by both 5.0-dev and 4.6-dev*/
+    {
+        char msg[256];
+        sprintf(msg, "reading tpx file version %d with version %d program", data_->filever, tpx_version);
+        THROW_TPR_EXCEPTION(msg);
     }
 
     // natoms and ngtc
@@ -268,26 +279,58 @@ bool TprReader::tpr_mtop()
     data_->atoms.atomnumber.resize(data_->natoms);
     data_->atoms.type.resize(data_->natoms);
     data_->atoms.excls.resize(data_->natoms);
-    unsigned int idx             = 0;
-    int          startedresindex = 1;
+    unsigned int idx = 0;
+    // 确定重新编号
+    int maxResiduesPerMoleculeToTriggerRenumber_ = 1; // 只需要编号单个残基
+    // 体系只有一种分子
+    if (data_->nmolblock == 1 && data_->molbnmol[0] == 1)
+    {
+        maxResiduesPerMoleculeToTriggerRenumber_ = 0;
+    }
+    // 确定最大不重新编号残基
+    int highestResidueNumber_ = 0;
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int m = data_->molbtype[i];
+        if (data_->resinmol[m] > maxResiduesPerMoleculeToTriggerRenumber_)
+        {
+            for (int j = 0; j < data_->molbnmol[i]; j++)
+            {
+                for (int k = 0; k < data_->molbnatoms[i]; k++)
+                {
+                    const int resind = data_->resids[m][k];
+                    if (data_->resnrids[m][resind] > highestResidueNumber_)
+                    {
+                        highestResidueNumber_ = data_->resnrids[m][resind];
+                    }
+                }
+            }
+        }
+    }
+
     for (int i = 0; i < data_->nmolblock; i++)
     {
         int m = data_->molbtype[i];
         for (int j = 0; j < data_->molbnmol[i]; j++)
         {
-            unsigned int  startexcl = idx;
-            std::set<int> residx;
+            unsigned int startexcl = idx;
             for (int k = 0; k < data_->molbnatoms[i]; k++)
             {
-                int resind                 = data_->resids[m][k];
+                // local resid for each moltype
+                const int resind           = data_->resids[m][k];
                 data_->atoms.atomname[idx] = &data_->symtab[SAVELEN * data_->atomnameids[m][k]];
-                data_->atoms.resname[idx]  = &data_->symtab[SAVELEN * data_->resnames[m][resind]];
+                data_->atoms.resname[idx]  = &data_->symtab[SAVELEN * data_->resnameids[m][resind]];
                 data_->atoms.atomtypename[idx] = &data_->symtab[SAVELEN * data_->atomtypeids[m][k]];
 
-                // 此处的残基编号有问题，当tpr中不连续时候处理不了
-                residx.insert(resind);
-                data_->atoms.resid[idx] = resind + startedresindex;
-
+                // 特殊处理残基编号，参考write_hconf_mtop in groio.cpp
+                // https://github.com/gromacs/gromacs/blob/5ede0e331914576d9940e2d632ab5fc73ccc77a0/src/gromacs/topology/mtop_atomloops.cpp#L76
+                int resnr = resind; // < data_->resinmol[m] ? data_->resnrids[m][resind] : resind + 1;
+                if (data_->resinmol[m] <= maxResiduesPerMoleculeToTriggerRenumber_)
+                {
+                    resnr = highestResidueNumber_ + 1 + resind;
+                }
+                else { resnr = data_->resnrids[m][resind]; }
+                data_->atoms.resid[idx]      = resnr;
                 data_->atoms.mass[idx]       = data_->masses[m][k];
                 data_->atoms.charge[idx]     = data_->charges[m][k];
                 data_->atoms.atomnumber[idx] = data_->atomicnumbers[m][k];
@@ -301,7 +344,11 @@ bool TprReader::tpr_mtop()
 
                 idx++;
             }
-            startedresindex += static_cast<int>(residx.size());
+            // https://github.com/gromacs/gromacs/blob/5ede0e331914576d9940e2d632ab5fc73ccc77a0/src/gromacs/topology/mtop_atomloops.cpp#L76
+            if (data_->resinmol[m] <= maxResiduesPerMoleculeToTriggerRenumber_)
+            {
+                highestResidueNumber_ += data_->resinmol[m];
+            }
         }
     }
 
@@ -348,8 +395,18 @@ bool TprReader::tpr_xvf()
     if (bGRO_ && data_->bX)
     {
         FILE* fp = fopen("dump.gro", "w");
-
         fprintf(fp, "MOL\n%d\n", data_->natoms);
+
+        // first check if velocity is all zero
+        bool hasVel = false;
+        for (int i = 0; data_->bV && i < data_->natoms; i++)
+        {
+            hasVel |= data_->atoms.v[3L * i + 0] != 0;
+            hasVel |= data_->atoms.v[3L * i + 1] != 0;
+            hasVel |= data_->atoms.v[3L * i + 2] != 0;
+        }
+
+
         for (int i = 0; i < data_->natoms; i++)
         {
             fprintf(fp,
@@ -362,7 +419,7 @@ bool TprReader::tpr_xvf()
                     data_->atoms.x[3L * i + 1],
                     data_->atoms.x[3L * i + 2]);
 
-            if (data_->bV)
+            if (hasVel)
             {
                 fprintf(fp,
                         "%8.4f%8.4f%8.4f",
@@ -491,7 +548,7 @@ bool TprReader::tpr_bonds()
     std::sort(data_->bonds.begin(),
               data_->bonds.end(),
               [](const Bonded& lhs, const Bonded& rhs)
-              { return std::tie(lhs.a, lhs.b) < std::tie(rhs.a, rhs.b); });
+    { return std::tie(lhs.a, lhs.b) < std::tie(rhs.a, rhs.b); });
 
 
     // write a mol2 format
@@ -579,7 +636,7 @@ bool TprReader::tpr_angles()
     std::sort(data_->angles.begin(),
               data_->angles.end(),
               [](const Bonded& lhs, const Bonded& rhs)
-              { return std::tie(lhs.a, lhs.b, lhs.c) < std::tie(rhs.a, rhs.b, rhs.c); });
+    { return std::tie(lhs.a, lhs.b, lhs.c) < std::tie(rhs.a, rhs.b, rhs.c); });
 
     // TODO
     // 1. inter-molecular angles, dihedrals, imp...
@@ -1141,7 +1198,8 @@ bool TprReader::do_atoms()
     data_->atomnameids.resize(n);
     data_->atomtypeids.resize(n);
     data_->atomicnumbers.resize(n);
-    data_->resnames.resize(n);
+    data_->resnameids.resize(n);
+    data_->resnrids.resize(n);
     data_->excls.resize(n);
     for (int i = 0; i < F_NRE; i++)
     {
@@ -1208,22 +1266,21 @@ bool TprReader::do_atoms()
         }
 
         // read residues
-        data_->resnames[i].resize(data_->resinmol[i]);
+        data_->resnameids[i].resize(data_->resinmol[i]);
+        data_->resnrids[i].resize(data_->resinmol[i]);
         for (int j = 0; j < data_->resinmol[i]; j++)
         {
-            if (!tpr_.do_int(&data_->resnames[i][j])) return TPR_FAILED;
-            // msg("data_->resnames[i][j]= %d\n", data_->resnames[i][j]);
-
+            if (!tpr_.do_int(&data_->resnameids[i][j])) return TPR_FAILED;
+            // msg("data_->resnameids[i][j]= %d\n", data_->resnameids[i][j]);
             if (data_->filever >= 63)
             {
-                // true Residue number
-                if (!tpr_.do_int(&idum)) return TPR_FAILED;
-                data_->trueresids.push_back(idum);
+                // true Residue number (ri[j].nr)
+                if (!tpr_.do_int(&data_->resnrids[i][j])) return TPR_FAILED;
 
-                // gmx >= 2020, 只读一字节
+                // gmx >= 2020, 只读一字节 (ri[j].ic)
                 if (!tpr_.do_uchar(&ucdum, data_->vergen)) return TPR_FAILED;
             }
-            else { data_->resnames[i][j] += 1; }
+            else { data_->resnrids[i][j] = j + 1; }
         }
 
         // do_ilists
