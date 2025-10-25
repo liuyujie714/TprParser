@@ -3,4 +3,7 @@ requires = ["setuptools>=42", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-before-build = "rm -rf vmdTprPlugin && cd TprParser"
+before-build = "cd TprParser"
+
+[tool.hatch.build]
+include = ["TprParser/*"]
