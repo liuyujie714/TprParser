@@ -23,6 +23,10 @@ jobs:
           #- [macos-14, macosx_*, arm64]
         python: ["cp38", "cp39", "cp310", "cp311", "cp312", "cp313"]
 
+    defaults:
+      run:
+        working-directory: ./TprParser
+
     steps:
       - uses: actions/checkout@v4
 
