@@ -1,9 +1,9 @@
+[tool.cibuildwheel]
+before-build = "cd TprParser"
+
 [build-system]
 requires = ["setuptools>=42", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
-
-[tool.cibuildwheel]
-before-build = "cd TprParser"
 
 [tool.hatch.build]
 include = ["TprParser/*"]
