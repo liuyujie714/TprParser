@@ -120,11 +120,11 @@ jobs:
 
       - name: Test tpr
         run:
-          python TprParser/TestTprReader.py
+          cd TprParser && python TprParser/TestTprReader.py
      
       - name: Test Edr
         run:
-          python TprParser/TestEdrReader.py
+          cd TprParser && python TprParser/TestEdrReader.py
         
       - name: Package Linux and Windows artifact to release
         run: |
@@ -136,7 +136,7 @@ jobs:
   # https://github.com/pypa/gh-action-pypi-publish/issues/352
   release-TestPyPi:
     needs: [Build_Wheels]
-    if: contains(github.event.head_commit.message, '[pypi]')
+    if: contains(github.event.head_commit.message, '[testpypi]')
     runs-on: ubuntu-latest
 
     permissions:
