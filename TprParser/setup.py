@@ -1,9 +1,19 @@
 from setuptools import setup, Extension
-import numpy, os
+import numpy, os, re
 
 
 # Always update program version
 __version__ = '0.1.58'
+
+# fix version
+finit = 'TprParser/version.py'
+with open(finit, 'r+') as f:
+    lines = f.read()
+    context = re.sub(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]', 
+                     r'__version__ = "{}"'.format(__version__), lines)
+    f.seek(0)
+    f.write(context)
+    f.truncate()
 
 
 # Description
