@@ -24,7 +24,7 @@ class TprReader:
     VecType: TypeAlias = Literal['x', 'X', 'v', 'V', 'f', 'F', 'box', 'BOX', 'ef', 'EF']
     VecType2: TypeAlias = Literal['m', 'M', 'q', 'Q']
     VecType3: TypeAlias = Literal['res', 'atom', 'type']
-    VecType4: TypeAlias = Literal['resid', 'atnum']
+    VecType4: TypeAlias = Literal['resid', 'atnum', 'atomicnum']
     BondedType: TypeAlias = Literal['bonds', 'angles', 'dihedrals', 'impropers']
     NonBondedType: TypeAlias = Literal['pairs', 'lj', 'type']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:

@@ -70,8 +70,11 @@ mass = reader.get_mq('m')
 resnames  = reader.get_name('res')
 atomnames = reader.get_name('atom')
 atomtypes = reader.get_name('type')
-```
 
+# get resids
+resids = reader.get_ivector('resid')
+```
+Note: The behavior of `get_ivector('resid')` is different when `TprParser >= 0.1.58`, the resids is consistent with output of `gmx editconf -o xxx.gro`. If `TprParser < 0.1.58`, the resids is unique for global atoms, same as `MDAnalysis`
 
 
 ## Get bonds/angles/dihedrals(proper and impropers) forcefield parameters
@@ -120,7 +123,7 @@ reader.set_xvf('x', newcoords)
 Such as define a function to do this work:
 
 ```Python
-def Pressure(fname):
+def change_pressure(fname):
     reader = TprReader(fname)
     # 100 bar
     ref_p = [
