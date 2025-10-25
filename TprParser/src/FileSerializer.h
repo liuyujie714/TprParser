@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 
-#include <cstring> // strlen
 #include <cstdint>
+#include <cstring> // strlen
 #include <string>
 #include <type_traits>
 
