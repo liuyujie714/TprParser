@@ -3,4 +3,4 @@ requires = ["setuptools>=42", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-before-build = "rm -rf vmdTprPlugin  wheelhouse && cd TprParser"
+before-build = "rm -rf vmdTprPlugin && mkdir temp && cp -r TprParser/* temp && rm -rf TprParser && cp -r temp/* . && rm -rf temp"
