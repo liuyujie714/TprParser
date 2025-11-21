@@ -3,7 +3,7 @@ import numpy, os, re
 
 
 # Always update program version
-__version__ = '0.1.58'
+__version__ = '0.1.59'
 
 # fix version
 finit = 'TprParser/version.py'

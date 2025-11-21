@@ -213,6 +213,7 @@ enum tpxv
     tpxv_RefScaleMultipleCOMs, /**< Add multiple COM groups for refcoord-scale */
     tpxv_InputHistogramCounts, /**< Provide input histogram counts for current expanded ensemble state */
     tpxv_NNPotIFuncType,       /**< Add interaction function type for neural network potential */
+    tpxv_AwhHistogramTolerance, /**< Add AWH histogram tolerance in gmx2026 */
     tpxv_Count                 /**< the total number of tpxv versions */
 };
 static constexpr int tpx_version = tpxv_Count - 1;
@@ -222,6 +223,7 @@ enum class TpxGeneration : int
     Initial = 26, //! First version is 26
     AddSizeField, //! TPR header modified for writing as a block.
     AddVSite1,    //! ftupd changed to include VSite1 type.
+    AddNNPotIFuncType, //! ftupd changed to include NNPotIFuncType (bumped retrospectively for commit 152bde36).
     Count         //! Number of entries.
 };
 
