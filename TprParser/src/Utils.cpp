@@ -369,25 +369,23 @@ bool AppliedForces::deserialize()
 {
     if (!tpr_.do_int(&data_->ir.ncount)) return TPR_FAILED;
     msg("nf count= %d\n", data_->ir.ncount);
-    if (data_->ir.ncount != 1)
-    {
-        THROW_TPR_EXCEPTION("Something is wrong in AppliedForces, ir.ncount must be 1");
-    }
 
-    char          tempstr[MAX_LEN];
-    unsigned char typeTag;
-    //! 'applied-forces' item
-    if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
-    if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
-    msg("name= '%s'\n", tempstr);    ///< 项目名称，比如'applied-forces'字符串
-    msg("typeTag= '%c'\n", typeTag); // 解序列化类型，比如'O'表示obj
-    auto it = s_deserializers.find(typeTag);
-    if (it == s_deserializers.end())
+    for (int i = 0; i < data_->ir.ncount; i++)
     {
-        THROW_TPR_EXCEPTION("Unknown type tag for deserializization: " + typeTag);
+        char          tempstr[MAX_LEN];
+        unsigned char typeTag;
+        //! 'applied-forces' item
+        if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
+        msg("name= '%s'\n", tempstr);    ///< 项目名称，比如'applied-forces'字符串
+        msg("typeTag= '%c'\n", typeTag); // 解序列化类型，比如'O'表示obj
+        auto it = s_deserializers.find(typeTag);
+        if (it == s_deserializers.end())
+        {
+            THROW_TPR_EXCEPTION("Unknown type tag for deserializization: " + typeTag);
+        }
+        it->second(this);
     }
-    it->second(this);
-
     return TPR_SUCCESS;
 }
 

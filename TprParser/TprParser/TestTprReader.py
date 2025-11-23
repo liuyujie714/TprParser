@@ -14,6 +14,8 @@ tprlist = {
     'CO2_LineAngle.tpr' :   [3000, 4],
     # gmx2025-beta
     'npt2025-beta_water.tpr':[2652,4],
+    # gmx 2026-beta
+    'md2026-beta_water.tpr' :     [2652,4],
     # enforced rotation
     'enforced_rotation_water.tpr' : [7306, 4],
     # test [ exclusion ] 
@@ -75,7 +77,7 @@ tprlist = {
     # No lj parameters
     'extra-interactions-2018.tpr' : [17, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:9]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:10]]
 
 
 rand_int = lambda : np.random.randint(0, 100000)

@@ -1,11 +1,8 @@
 #include "Reader.h"
 
-#include <string.h> // memset
-
 #include <algorithm>
 #include <cmath> // pow
 #include <cstdio>
-#include <set>
 
 #include "TprException.h"
 #include "Utils.h"
@@ -2009,8 +2006,6 @@ bool TprReader::do_ir()
     msg("userint= %d %d %d %d\n", ir->userint1, ir->userint2, ir->userint3, ir->userint4);
     msg("userreal= %g %g %g %g\n", ir->userreal1, ir->userreal2, ir->userreal3, ir->userreal4);
 
-
-#if 1
     // AdResS is removed, but we need to be able to read old files,
     {
         bool bAdress = false;
@@ -2326,66 +2321,6 @@ bool TprReader::do_ir()
         INSERT_POS(ef);
         try
         {
-#    if 0
-            char          tempstr[MAX_LEN];
-            unsigned char typeTag;
-
-            if (!tpr_.do_int(&data_->ir.ncount)) return TPR_FAILED;
-            msg("nf count= %d\n", data_->ir.ncount);
-
-            //! 'applied-forces' item
-            for (int i = 0; i < data_->ir.ncount; i++)
-            {
-                if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
-                msg("name= '%s'\n", tempstr); ///< 'applied-forces' str
-                if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
-                msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
-
-                // 属于applied-forces的数目elec_ne
-                if (!tpr_.do_int(&data_->ir.napp_forces)) return TPR_FAILED;
-                msg("ne count= %d\n", data_->ir.napp_forces);
-                //! j==0时是'electric-field'
-                for (int j = 0; j < data_->ir.napp_forces; j++)
-                {
-                    if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
-                    msg("name= '%s'\n", tempstr);
-                    if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
-                    msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
-
-                    // x or y or z
-                    int ndim;
-                    if (!tpr_.do_int(&ndim)) return TPR_FAILED;
-                    msg("nx count= %d\n", ndim); // == DIM
-                    for (int k = 0; k < ndim; k++)
-                    {
-                        if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
-                        msg("name= '%s'\n", tempstr);
-                        if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
-                        msg("typeTag= '%c'\n", typeTag); // 'O' -> obj
-
-                        // E0, omega, t0, sigma
-                        int nd;
-                        if (!tpr_.do_int(&nd)) return TPR_FAILED;
-                        msg("nd count= %d\n", nd); // == 4
-                        myassert(nd == 4, "The electricfield size must have four parameters");
-
-                        for (int m = 0; m < nd; m++)
-                        {
-                            if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
-                            msg("name= '%s'\n", tempstr);
-                            if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
-                            msg("typeTag= '%c'\n", typeTag); // 'f' -> float
-
-                            if (!tpr_.do_real(&ir->elec_field[k * nd + m], data_->prec))
-                                return TPR_FAILED;
-                        }
-                    }
-
-                    // TODO: when ir.napp_forces>1 for high gromacs , support 'density-guided-simulation', 'qmmm-cp2k:' to read
-                    break;
-                }
-            }
-#    else
             //! Use AppliedForces class
             AppliedForces app(tpr_, data_);
             app.deserialize();
@@ -2403,7 +2338,6 @@ bool TprReader::do_ir()
                     ir->elec_field[idx + 8] = it.second[2];
                 }
             }
-#    endif
         }
         catch (const std::exception& e)
         {
@@ -2417,8 +2351,6 @@ bool TprReader::do_ir()
 
     // TODO: internal parameters for mdrun modules
 
-
-#endif // 0
 
     return TPR_SUCCESS;
 }
@@ -3719,8 +3651,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
         return TPR_SUCCESS;
     }
     // 高版本电场
-    else if (data_->filever >= tpxv_GenericParamsForElectricField && data_->ir.ncount == 1
-             && data_->ir.napp_forces >= 1)
+    else if (data_->filever >= tpxv_GenericParamsForElectricField && data_->ir.napp_forces >= 1)
     {
         FileSerializer newtpr(fout_, "wb");
         // write ef before
