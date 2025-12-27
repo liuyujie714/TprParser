@@ -22,7 +22,7 @@ jobs:
           #- [macos-13, macosx_*, x86_64]
           - [windows-2022, win_amd64, AMD64]
           #- [macos-14, macosx_*, arm64]
-        python: ["cp38", "cp39", "cp310", "cp311", "cp312", "cp313"]
+        python: ["cp38", "cp39", "cp310", "cp311", "cp312", "cp313", "cp314"]
 
     defaults:
       run:
