@@ -47,6 +47,9 @@ public:
      */
     bool tpr_dihedrals();
 
+    /* \breif dump all virtual sites parameters */
+    bool tpr_vsites();
+
     //< dump non-bonded parameters, includes LJ and paris
     bool tpr_nonbonded();
 
@@ -105,6 +108,9 @@ public:
 
     //< get global exclusions list (0-based) for each atom
     const auto& get_exclusions() const { return data_->atoms.excls; }
+
+    //< get virtual site parameters
+    const auto& get_vsites() const { return data_->vsites; }
 
     //< get electric field parts, throw error if can not find electric field
     const std::vector<float>& get_ef() const;

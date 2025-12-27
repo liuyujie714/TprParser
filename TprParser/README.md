@@ -107,6 +107,17 @@ pairs = reader.get_nonbonded('lj')[:, 1:]
 
 
 
+## Get virtual sites parameters
+
+NOTE: `TprParser` must be >= `0.1.60`
+
+```python
+# get paris (1-based index) and it's parameters
+vsites = reader.get_vsites()
+```
+
+
+
 ## Modify atom property
 
 ```python
@@ -243,5 +254,6 @@ If `TprParser` is utilized in your work, please cite as follows in main text:
 ## TODO
 
 * more parameters can be modified
-* obtain more essential parameters , such as `Virual Site`
+
+
 

@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            TprReader reader(argv[1], true);
+            TprReader reader(argv[1]);
         }
     }
     catch (const std::exception& e)
@@ -129,6 +129,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s\n", e.what());
     }
 #endif
+    printf("Finished!\n");
 
     return 0;
 }

@@ -22,6 +22,7 @@ tprlist = {
     'one_water_tip3p_excls.tpr' : [3, 4], 
     'one_water_tip4p_excls.tpr' : [4, 4], 
     'two_water_tip4p_excls.tpr' : [8, 4], 
+    'CO2_vsites.tpr'            : [5000, 4], 
 
     '1EBZ.tpr' :                [3218, 4], 
     '2020.4_gra.tpr' :          [4536, 4], 
@@ -77,7 +78,7 @@ tprlist = {
     # No lj parameters
     'extra-interactions-2018.tpr' : [17, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:10]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:11]]
 
 
 rand_int = lambda : np.random.randint(0, 100000)
@@ -146,6 +147,12 @@ def test_exclusions(handle:TprReader, fname):
         elif 'two' in fname:
             assert excls_map['two_tip4p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
 
+def test_get_vsites(handle:TprReader, fname):
+    try:
+        ret = handle.get_vsites()
+    except:
+        sys.exit(f'Can not execute get_vsites() function for {fname}')
+
 def test_make_top_from_tpr(tpr, top):
     from TprParser.TprMakeTop import make_top_from_tpr
     try:
@@ -182,7 +189,8 @@ def do_test():
         # test bonded
         test_get_bonded(reader, 'bonds')
         # pure water use settle, no angle
-        if 'water' not in fname:
+        # CO2 use constraints, no angle
+        if 'water' not in fname and 'CO2' not in fname:
             test_get_bonded(reader, 'angles')
         # these tpr has not dihedrals
         if name not in NoDihedrals:
@@ -211,6 +219,9 @@ def do_test():
         # test exclusions
         if 'excls' in fname:
             test_exclusions(reader, fname)
+        
+        # test virtual sites
+        test_get_vsites(reader, fname)
 
         # need delete obj
         del reader

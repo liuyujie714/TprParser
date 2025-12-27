@@ -72,7 +72,7 @@ struct Bonded
         unreachable();
     }
     // const version
-    int operator[](size_t idx) const
+    const int& operator[](size_t idx) const
     {
         assert(idx >= 0 && idx < 4);
         switch (idx)
@@ -129,7 +129,7 @@ struct NonBonded
     }
 
     // const version
-    int operator[](size_t idx) const
+    const int& operator[](size_t idx) const
     {
         assert(idx >= 0 && idx < 2);
         return idx == 0 ? a : b;
@@ -139,6 +139,21 @@ struct NonBonded
     int                b     = 0; // atom2 of [ pairs ]
     int                ifunc = 0;
     std::vector<float> ff{}; // non-bonded parameters
+};
+
+struct VirtualSites
+{
+    VirtualSites() = default;
+
+    VirtualSites(const std::vector<int>& iatoms, int ifunc, const std::vector<float>& ff)
+        : iatoms{iatoms}, ifunc(ifunc), ff{ff}
+    {
+    }
+
+    /* atom index (1-based) for virtual sites, the first atom is vsite */
+    std::vector<int>   iatoms;
+    int                ifunc = 0; // functon type
+    std::vector<float> ff{};      // vsite parameters
 };
 
 
@@ -359,6 +374,8 @@ struct TprData
     std::vector<NonBonded> atomtypesLJ;
     // all atoms LJ parameters
     std::vector<NonBonded> ljparams;
+    // vsites parameters
+    std::vector<VirtualSites> vsites;
 
     // mdp属性位置, 所有变量都必须初始化为0
     struct

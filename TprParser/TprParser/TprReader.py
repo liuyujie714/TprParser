@@ -151,6 +151,25 @@ class TprReader:
         # [[0], [1], [2]]
         """
         return TprParser_.get_exclusions(self.tprCapsule)
+
+    def get_vsites(self):
+        """ @brief get atom virtual sites (1-based index) force field parameters from tpr if exis
+
+        Return
+        ------
+        return a np.array(dtype=object), the length is the number of vsites. 
+        For each vsites, composed of [atomid pairs + force field parameters], float precision error can be ignored
+
+        Exapmple:
+        --------
+        >>> vsites = reader.get_vsites()
+        # print all information about the first bonds
+        >>> print(vsites)
+        # print the first virtual site information, composed of [atomid pairs + functype + ff parameters]
+        >>> print(vsites[0])
+        [2, 4, 5, 1, 1.0863800048828125]
+        """
+        return TprParser_.get_vsites(self.tprCapsule)
     
     def get_mdp_integer(self, keyword:str):
         """ @brief get integer keyword of tpr

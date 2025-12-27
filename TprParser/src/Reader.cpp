@@ -23,6 +23,7 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
     if (tpr_bonds() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_bonds()"); }
     if (tpr_angles() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_angles()"); }
     if (tpr_dihedrals() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_dihedrals()"); }
+    if (tpr_vsites() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_vsites()"); }
     if (tpr_nonbonded() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_nonbonded()"); }
     if (do_ir() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_ir()"); }
 }
@@ -720,6 +721,52 @@ bool TprReader::tpr_dihedrals()
     return TPR_SUCCESS;
 }
 
+bool TprReader::tpr_vsites()
+{
+    const int vsiteTypes[] = {
+        F_VSITE1, F_VSITE2, F_VSITE2FD, F_VSITE3, F_VSITE3FD, F_VSITE3FAD, F_VSITE3OUT, F_VSITE4FD, F_VSITE4FDN, F_VSITEN};
+    // how many atoms for each vsite type
+    const int nvisiteAtoms[] = {2, 3, 3, 4, 4, 4, 4, 5, 5, 1};
+    static_assert(asize(vsiteTypes) == asize(nvisiteAtoms),
+                  "The number of vsiteTypes must equal to nvisiteAtoms");
+    constexpr int nvsites     = asize(vsiteTypes);
+    int           vsiteoffset = 0;
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int mtype = data_->molbtype[i];
+        for (int j = 0; j < data_->molbnmol[i]; j++)
+        {
+            for (int k = 0; k < nvsites; k++)
+            {
+                int ftype  = vsiteTypes[k];
+                int nspace = nvisiteAtoms[k] + 1; // add itype
+                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
+                {
+                    int              itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
+                    std::vector<int> iatoms(nvisiteAtoms[k]); // atom index (1-based)
+                    for (int k = 0; k < nvisiteAtoms[k]; k++)
+                    {
+                        int idx = nspace * m + k + 1;
+                        iatoms[k] = 1 + data_->ilist.interactionlist[ftype][mtype][idx] + vsiteoffset;
+                    }
+                    auto param = get_vsite_type(ftype, &iparams_[itype]);
+                    // debug print
+                    print_vec("ivsite ", iatoms.data(), nvisiteAtoms[k]);
+                    msg("vsite type: %d\n", param.first);
+                    print_vec("vsite ff parameters ", param.second.data(), (int)param.second.size());
+
+                    data_->vsites.emplace_back(iatoms,      // involved atoms index (1-based)
+                                               param.first, // ifunc or vsiten.n
+                                               param.second);
+                }
+            }
+            vsiteoffset += data_->atomsinmol[mtype];
+        }
+    }
+
+    return TPR_SUCCESS;
+}
+
 bool TprReader::tpr_nonbonded()
 {
     // get LJ
@@ -804,8 +851,8 @@ bool TprReader::tpr_nonbonded()
 bool TprReader::tpr_readff()
 {
     int    ntypes;
-    double reppow = 12.0;
-    float  fudge  = 0.5;
+    double reppow  = 12.0;
+    float  fudgeQQ = 0.5;
 
     if (!tpr_.do_int(&data_->atnr)) return TPR_FAILED;
     if (!tpr_.do_int(&ntypes)) return TPR_FAILED;
@@ -818,9 +865,12 @@ bool TprReader::tpr_readff()
         if (!tpr_.do_int(&functype_[i])) return TPR_FAILED;
     }
     if (data_->filever >= 66)
+    {
         if (!tpr_.do_double(&reppow)) return TPR_FAILED;
-    if (!tpr_.do_real(&fudge, data_->prec)) return TPR_FAILED;
-    msg("fudge= %f\n", fudge);
+    }
+    if (!tpr_.do_real(&fudgeQQ, data_->prec)) return TPR_FAILED;
+    msg("reppow= %f\n", reppow);
+    msg("fudgeQQ= %f\n", fudgeQQ);
 
     // 调整所有函数类型
     iparams_.resize(ntypes);
@@ -1147,30 +1197,27 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
         case F_GB13_NOLONGERUSED:
         case F_GB14_NOLONGERUSED:
             // Implicit solvent parameters can still be read, but never used
-            // if (serializer->reading())
+            if (filever < 68)
             {
-                if (filever < 68)
-                {
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                }
-                if (filever < tpxv_RemoveImplicitSolvation)
-                {
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                    tpr_.do_real(&rdum, prec);
-                }
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+            }
+            if (filever < tpxv_RemoveImplicitSolvation)
+            {
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
+                tpr_.do_real(&rdum, prec);
             }
             break;
         case F_CMAP:
             tpr_.do_int(&iparams->cmap.cmapA);
             tpr_.do_int(&iparams->cmap.cmapB);
             break;
-        default: msg("Unknown function type %d", ftype);
+        default: msg("Unknown function type %d", ftype); return TPR_FAILED;
     }
 
     return TPR_SUCCESS;

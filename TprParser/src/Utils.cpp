@@ -217,6 +217,47 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
     return std::make_pair(-1, ffparam);
 }
 
+// clang-format off
+std::pair<int, std::vector<float>> get_vsite_type(int ftype, const t_iparams* param)
+{
+    std::vector<float> ffparam;
+    switch (ftype)
+    {
+        case F_VSITE1: 
+            return std::make_pair(1, ffparam); 
+            break; // VSite1 has 0 parameters
+        case F_VSITE2: 
+            ffparam.push_back(param->vsite.a); 
+            return std::make_pair(1, ffparam);
+        case F_VSITE2FD: 
+            ffparam.push_back(param->vsite.a); 
+            return std::make_pair(2, ffparam);
+        case F_VSITE3:    // functype= 1
+        case F_VSITE3FD:  // functype= 2
+        case F_VSITE3FAD: // functype= 3
+            ffparam.push_back(param->vsite.a);
+            ffparam.push_back(param->vsite.b);
+            return std::make_pair(ftype - F_VSITE3 + 1, ffparam);
+        case F_VSITE3OUT: // functype= 4
+        case F_VSITE4FD:  // functype= 1 ?
+        case F_VSITE4FDN: // functype= 2
+        {
+            ffparam.push_back(param->vsite.a);
+            ffparam.push_back(param->vsite.b);
+            ffparam.push_back(param->vsite.c);
+            int type = 4;
+            type     = ftype == F_VSITE4FD ? 1 : ftype == F_VSITE4FDN ? 2 : type;
+            return std::make_pair(type, ffparam);
+        }
+        case F_VSITEN: // functype=1/2/3
+            return std::make_pair(param->vsiten.n, ffparam);
+        default: break;
+    }
+
+    return std::make_pair(-1, ffparam);
+}
+// clang-format on
+
 std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams* param)
 {
     std::vector<float> ffparam;
