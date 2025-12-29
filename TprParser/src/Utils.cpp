@@ -250,7 +250,7 @@ std::pair<int, std::vector<float>> get_vsite_type(int ftype, const t_iparams* pa
             return std::make_pair(type, ffparam);
         }
         case F_VSITEN: // functype=1/2/3
-            ffparam.push_back(param->vsite.a);
+            ffparam.push_back(param->vsiten.a);
             return std::make_pair(param->vsiten.n, ffparam);
         default: break;
     }

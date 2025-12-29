@@ -726,7 +726,7 @@ bool TprReader::tpr_vsites()
     const int vsiteTypes[] = {
         F_VSITE1, F_VSITE2, F_VSITE2FD, F_VSITE3, F_VSITE3FD, F_VSITE3FAD, F_VSITE3OUT, F_VSITE4FD, F_VSITE4FDN, F_VSITEN};
     // how many atoms for each vsite type
-    const int nvisiteAtoms[] = {2, 3, 3, 4, 4, 4, 4, 5, 5, 1};
+    const int nvisiteAtoms[] = {2, 3, 3, 4, 4, 4, 4, 5, 5, 2};
     static_assert(asize(vsiteTypes) == asize(nvisiteAtoms),
                   "The number of vsiteTypes must equal to nvisiteAtoms");
     constexpr int nvsites     = asize(vsiteTypes);
@@ -744,10 +744,10 @@ bool TprReader::tpr_vsites()
                 {
                     int              itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
                     std::vector<int> iatoms(nvisiteAtoms[k]); // atom index (1-based)
-                    for (int k = 0; k < nvisiteAtoms[k]; k++)
+                    for (int n = 0; n < nvisiteAtoms[k]; n++)
                     {
-                        int idx = nspace * m + k + 1;
-                        iatoms[k] = 1 + data_->ilist.interactionlist[ftype][mtype][idx] + vsiteoffset;
+                        int idx = nspace * m + n + 1;
+                        iatoms[n] = 1 + data_->ilist.interactionlist[ftype][mtype][idx] + vsiteoffset;
                     }
                     auto param = get_vsite_type(ftype, &iparams_[itype]);
                     // debug print
