@@ -851,8 +851,8 @@ bool TprReader::tpr_nonbonded()
 bool TprReader::tpr_readff()
 {
     int    ntypes;
-    double reppow  = 12.0;
-    float  fudgeQQ = 0.5;
+    double reppow  = 12.0; // The repulsion power for VdW: C12*r^-reppow
+    float  fudgeQQ = 0.5;  // The scaling factor for Coulomb 1-4: f*q1*q2
 
     if (!tpr_.do_int(&data_->atnr)) return TPR_FAILED;
     if (!tpr_.do_int(&ntypes)) return TPR_FAILED;
@@ -1351,8 +1351,14 @@ bool TprReader::do_atoms()
         // print_vec("elements_= ", elements.data(), nelem);
 
         //! store exclusions list for each mol
-        myassert(data_->atomsinmol[i] == nlist,
-                 "Assert failed: nlistranges should be equal to atomsinmol");
+        if (data_->atomsinmol[i] != nlist)
+        {
+            fprintf(stdout,
+                    "Warning!!! data_->atomsinmol[i] != nlist <%d!=%d>, maybe your tpr from gmx "
+                    "convert-tpr while gmx <= 2020, it has wrong exclusions list\n",
+                    data_->atomsinmol[i],
+                    nlist);
+        }
         data_->excls[i].resize(nlist);
         for (int j = 0; j < nlist; j++)
         {

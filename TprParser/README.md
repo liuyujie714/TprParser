@@ -73,7 +73,9 @@ atomtypes = reader.get_name('type')
 # get resids
 resids = reader.get_ivector('resid')
 ```
+
 Note: The behavior of `get_ivector('resid')` is different when `TprParser >= 0.1.58`, the resids is consistent with output of `gmx editconf -o xxx.gro`. If `TprParser < 0.1.58`, the resids is unique for global atoms, same as `MDAnalysis`
+
 
 
 ## Get bonds/angles/dihedrals(proper and impropers) forcefield parameters
@@ -231,7 +233,7 @@ energies = EdrReader('yourfile.edr').get_ene()
 print(energies.keys())
 
 # get vaules by available key
-times = energies['Time']  				# ps
+times = energies['Time']                # ps
 temperature = energies['Temperature']   # K
 ```
 

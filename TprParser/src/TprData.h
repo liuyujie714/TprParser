@@ -336,6 +336,7 @@ struct TprData
 
     struct
     {
+        //! layout: |type1|at1|at2|at3|type2|at1|at2|type1|at1|at2|at3|type3|at1|at2|
         vecI2D           interactionlist[F_NRE];
         std::vector<int> nr[F_NRE];
     } ilist,                   ///< 分子相互作用列表
