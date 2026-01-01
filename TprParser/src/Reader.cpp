@@ -498,7 +498,7 @@ bool TprReader::tpr_bonds()
                     int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
 
                     // ffparameters, NOTE: itype==-1 for F_CONNBONDS
-                    std::pair<int, std::vector<float>> temp2 = {5, {}};
+                    std::pair<int, std::vector<float>> temp2 = {5, {}}; // functype=5
                     auto param = ftype == F_CONNBONDS ? temp2 : get_bond_type(ftype, &iparams_[itype]);
 
                     if (ftype == F_SETTLE)
