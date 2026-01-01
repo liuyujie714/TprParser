@@ -114,7 +114,7 @@ pairs = reader.get_nonbonded('lj')[:, 1:]
 NOTE: `TprParser` must be >= `0.1.60`
 
 ```python
-# get virtual site type + paris (1-based index) + it's parameters
+# get virtual site type + atom index (1-based index) + it's parameters
 vsites = reader.get_vsites()
 ```
 
