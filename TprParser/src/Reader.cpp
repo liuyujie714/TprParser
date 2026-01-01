@@ -4,7 +4,7 @@
 #include <cmath> // pow
 #include <cstdio>
 #include <string>
-#include <utility> 
+#include <utility>
 
 #include "TprException.h"
 #include "Utils.h"
@@ -470,7 +470,7 @@ bool TprReader::tpr_bonds()
                                     F_G96BONDS,
                                     F_MORSE,
                                     F_CUBICBONDS,
-                                    F_CONNBONDS,  // 无力场参数, itype=-1
+                                    F_CONNBONDS, // 无力场参数, itype=-1
                                     F_HARMONIC,
                                     F_FENEBONDS,
                                     F_RESTRBONDS,
@@ -498,7 +498,7 @@ bool TprReader::tpr_bonds()
                     int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
 
                     // ffparameters, NOTE: itype==-1 for F_CONNBONDS
-                    std::pair<int, std::vector<float>> temp2 = { 4, {} };
+                    std::pair<int, std::vector<float>> temp2 = {5, {}};
                     auto param = ftype == F_CONNBONDS ? temp2 : get_bond_type(ftype, &iparams_[itype]);
 
                     if (ftype == F_SETTLE)

@@ -36,9 +36,7 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
             ffparam.push_back(param->cubic.kb);
             ffparam.push_back(param->cubic.kcub);
             return std::make_pair(4, ffparam);
-        case F_CONNBONDS: 
-            
-            return std::make_pair(5, ffparam);
+        case F_CONNBONDS: return std::make_pair(5, ffparam);
         case F_HARMONIC:
             ffparam.push_back(param->harmonic.rA);
             ffparam.push_back(param->harmonic.krA);
