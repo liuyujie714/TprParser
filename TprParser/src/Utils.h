@@ -42,7 +42,7 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
 std::pair<int, std::vector<float>> get_vsite_type(int ftype, const t_iparams* param);
 
 /* \brief return nonbonded (LJ/LJ-14) function type id and force parameters,
- * ifunc=1 is LJ-14, ifunc=3 is LJ
+ * ifunc=1 is LJ-14, ifunc=3 is LJ, ifunc=2 is Buckingham
  * \return return std::pair(-1, {}) if failed
  */
 std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams* param);

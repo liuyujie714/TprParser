@@ -26,7 +26,7 @@ class TprReader:
     VecType3: TypeAlias = Literal['res', 'atom', 'type']
     VecType4: TypeAlias = Literal['resid', 'atnum', 'atomicnum']
     BondedType: TypeAlias = Literal['bonds', 'angles', 'dihedrals', 'impropers']
-    NonBondedType: TypeAlias = Literal['pairs', 'lj', 'type']
+    NonBondedType: TypeAlias = Literal['pairs', 'lj', 'type', 'bh']
     def __init__(self, fname, bGRO = False, bMol2 = False, bCharge = False) -> None:
         self.tprCapsule = TprParser_.load(fname, bGRO, bMol2, bCharge)
     
@@ -158,16 +158,36 @@ class TprReader:
         Return
         ------
         return a np.array(dtype=object), the length is the number of vsites. 
-        For each vsites, composed of [atomid pairs + force field parameters], float precision error can be ignored
+        For each vsites, composed of [vistetype + atomid pairs + force field parameters], float precision error can be ignored
+
+        Note:
+        ----
+        For `virtual_sitesn`, the parameters is different from other virtual sites, we can not get functype
+        >>> [ virtual_sitesn ]
+        >>> ; Site   funct    from
+        >>> 15        1        1     2     3     4 ; COG
+        will be converted to:
+        >>> ['virtual_sitesn', 15, 1, 4, 0.25]
+        >>> ['virtual_sitesn', 15, 2, 4, 0.25]
+        >>> ['virtual_sitesn', 15, 3, 4, 0.25]
+        >>> ['virtual_sitesn', 15, 4, 4, 0.25]
+        Here last `4` is the number of atoms (`from`) for the vsite
+
+        Another, for `virtual_sites3` with functype 3, we can not get theta & d becauese the parameters have been converted in `grompp`
+        >>> [ virtual_sites3 ]
+        >>> ; Site  from               funct   theta      d
+        >>> 9       4     5     6      3       120        0.5
+        will be converted to:
+        >>> ['virtual_sites3', 9, 4, 5, 6, 3, -0.25, 0.4330126941204071]
 
         Exapmple:
         --------
         >>> vsites = reader.get_vsites()
         # print all information about the first bonds
         >>> print(vsites)
-        # print the first virtual site information, composed of [atomid pairs + functype + ff parameters]
+        # print the first virtual site information, composed of [vistetype + atomid pairs + functype + ff parameters]
         >>> print(vsites[0])
-        [2, 4, 5, 1, 1.0863800048828125]
+        ['virtual_sites2', 14, 1, 2, 1, 0.7439755797386169]
         """
         return TprParser_.get_vsites(self.tprCapsule)
     
@@ -297,13 +317,15 @@ class TprReader:
     
     def get_nonbonded(self, type:NonBondedType):
         
-        """ @brief get pairs (1-based index)/LJ parameters of each atom/atomtype LJ information from tpr.
+        """ @brief get pairs (1-based index)/LJ/Buckingham parameters of each atom/atomtype LJ/Buckingham information from tpr.
         
         type='pairs', the length is the number of nonbonded, composed of [atomid pairs + force field parameters] (ifunc=1)
 
         type='lj', the length is the number of atoms, composed of [force field parameters] (ifunc=3)
 
         type='type', the length is the number of [ atomtypes ], composed of [force field parameters] (ifunc=3)
+
+        type='bh' (Buckingham), the length is the number of [ atomtypes ], composed of [force field parameters] (ifunc=2)
 
         Returns
         -------

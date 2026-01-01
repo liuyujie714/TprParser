@@ -79,6 +79,20 @@ def _get_dihedrals(rd:TprReader, type:str = 'dihedrals'):
         pass
     return dihedrals
 
+def _get_vsites(rd:TprReader):
+    """ @brief get virtual sites from tpr handle
+
+    Return
+    ------
+    return None if No virtual sites exits
+    """
+    vistes = None
+    try:
+        vistes = rd.get_vsites()
+    except:
+        pass
+    return vistes
+
 def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
     """ @brief Make a gromacs top from given tpr file
 
@@ -229,6 +243,18 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
                 for param in dihedrals[i][5:]:
                     context.append(' %10.6e' %param)
             context.append('\n')
+
+    # virtual sites
+    vsites = _get_vsites(rd)
+    if vsites is not None:
+        for viste in vsites:
+            context.append(f'\n[ {viste[0]} ]\n')
+            s = ' '.join([f'{i:>g}' for i in viste[1:]])+'\n'
+            # virtual_sitesn has different format, so comment
+            if viste[0]=="virtual_sitesn":
+                s = ';'+s
+            context.append(s)
+
     # add tail
     context.append('\n[ system ]\n System\n')
     context.append('\n[ molecules ]\nMOL      1\n')

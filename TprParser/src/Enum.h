@@ -138,11 +138,12 @@ static const char* c_bonded_type[] = {"bonds", "angles", "dihedrals", "impropers
 enum class NonBondedType : int
 {
     LJ,
-    atomtype, // only [ atomtypes ]
+    atomtype, // only LJ [ atomtypes ]
     LJ_14,    // that is [ pairs ]
+    BH,       // only Buckingham [ atomtypes ]
     Count
 };
-static const char* c_nonbonded_type[] = {"lj", "type", "pairs"};
+static const char* c_nonbonded_type[] = {"lj", "type", "pairs", "bh"};
 
 
 //< check key words in a c_string array ignore case, return enum value if find, else return ENUM::Count

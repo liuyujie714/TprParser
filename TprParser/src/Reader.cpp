@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath> // pow
 #include <cstdio>
+#include <string>
+#include <utility> 
 
 #include "TprException.h"
 #include "Utils.h"
@@ -468,9 +470,10 @@ bool TprReader::tpr_bonds()
                                     F_G96BONDS,
                                     F_MORSE,
                                     F_CUBICBONDS,
-                                    // F_CONNBONDS, // 无参数，这个应该只存在以qmmm中
+                                    F_CONNBONDS,  // 无力场参数, itype=-1
                                     F_HARMONIC,
                                     F_FENEBONDS,
+                                    F_RESTRBONDS,
                                     F_CONSTR,
                                     F_CONSTRNC,
                                     F_TABBONDS,
@@ -494,8 +497,9 @@ bool TprReader::tpr_bonds()
                     // the id of type
                     int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
 
-                    // ffparameters
-                    auto param = get_bond_type(ftype, &iparams_[itype]);
+                    // ffparameters, NOTE: itype==-1 for F_CONNBONDS
+                    std::pair<int, std::vector<float>> temp2 = { 4, {} };
+                    auto param = ftype == F_CONNBONDS ? temp2 : get_bond_type(ftype, &iparams_[itype]);
 
                     if (ftype == F_SETTLE)
                     {
@@ -725,9 +729,19 @@ bool TprReader::tpr_vsites()
 {
     const int vsiteTypes[] = {
         F_VSITE1, F_VSITE2, F_VSITE2FD, F_VSITE3, F_VSITE3FD, F_VSITE3FAD, F_VSITE3OUT, F_VSITE4FD, F_VSITE4FDN, F_VSITEN};
+    const std::string vsiteNames[] = {"virtual_sites1",
+                                      "virtual_sites2",
+                                      "virtual_sites2",
+                                      "virtual_sites3",
+                                      "virtual_sites3",
+                                      "virtual_sites3",
+                                      "virtual_sites3",
+                                      "virtual_sites4",
+                                      "virtual_sites4",
+                                      "virtual_sitesn"};
     // how many atoms for each vsite type
     const int nvisiteAtoms[] = {2, 3, 3, 4, 4, 4, 4, 5, 5, 2};
-    static_assert(asize(vsiteTypes) == asize(nvisiteAtoms),
+    static_assert(asize(vsiteTypes) == asize(nvisiteAtoms) && asize(vsiteTypes) == asize(vsiteNames),
                   "The number of vsiteTypes must equal to nvisiteAtoms");
     constexpr int nvsites     = asize(vsiteTypes);
     int           vsiteoffset = 0;
@@ -739,7 +753,19 @@ bool TprReader::tpr_vsites()
             for (int k = 0; k < nvsites; k++)
             {
                 int ftype  = vsiteTypes[k];
-                int nspace = nvisiteAtoms[k] + 1; // add itype
+                int nspace = nvisiteAtoms[k] + 1; // the array interval of each interaction
+                /*
+                 F_VSITEN虚拟位点特殊，会被分割成每对原子+力场参数，比如：
+                 [ virtual_sitesn ]
+                 ; Site   funct    from
+                 15        1        1     2     3     4 ; COG
+                 tpr中会变成：
+                 15 1 0.25
+                 15 2 0.25
+                 15 3 0.25
+                 15 4 0.25
+                */
+                msg(">>= %d %d\n", data_->ilist.nr[ftype][mtype], nspace);
                 for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
                 {
                     int              itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
@@ -751,11 +777,12 @@ bool TprReader::tpr_vsites()
                     }
                     auto param = get_vsite_type(ftype, &iparams_[itype]);
                     // debug print
-                    print_vec("ivsite ", iatoms.data(), nvisiteAtoms[k]);
-                    msg("vsite type: %d\n", param.first);
+                    msg("vsite func: %d\n", param.first);
+                    print_vec("ivsite:     ", iatoms.data(), nvisiteAtoms[k]);
                     print_vec("vsite ff parameters ", param.second.data(), (int)param.second.size());
 
-                    data_->vsites.emplace_back(iatoms,      // involved atoms index (1-based)
+                    data_->vsites.emplace_back(vsiteNames[ftype - F_VSITE1],
+                                               iatoms,      // involved atoms index (1-based)
                                                param.first, // ifunc or vsiten.n
                                                param.second);
                 }
@@ -777,6 +804,13 @@ bool TprReader::tpr_nonbonded()
         {
             auto param = get_nonbonded_type(functype_[i], &iparams_[i]);
             tempLJ.emplace_back(param.first, param.second);
+        }
+
+        // Buckingham potential
+        else if (functype_[i] == F_BHAM)
+        {
+            auto param = get_nonbonded_type(functype_[i], &iparams_[i]);
+            data_->atomtypesBH.emplace_back(param.first, param.second);
         }
     }
 
@@ -3580,6 +3614,12 @@ const std::vector<NonBonded>& TprReader::get_nonbonded(const char* type) const
                 THROW_TPR_EXCEPTION("Can not get LJ_14(pairs) information from tpr");
             }
             return data_->pairs;
+        case NonBondedType::BH:
+            if (data_->atomtypesBH.empty())
+            {
+                THROW_TPR_EXCEPTION("Can not get atomtype Buckingham information from tpr");
+            }
+            return data_->atomtypesBH;
         default: THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type); break;
     }
 }

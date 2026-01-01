@@ -75,8 +75,10 @@ tprlist = {
     'elecxyz_2024.tpr':     [45, 4], # along xyz
     # FEP
     'benchBFC_FEP.tpr' :    [43952,4],
-    # No lj parameters
+    # BHAM & No lj parameters, for test all extra interactions
     'extra-interactions-2018.tpr' : [17, 4],
+    'extra-interactions-2025.tpr' : [18, 4],
+    'extra-interactions-2026.tpr' : [18, 4],
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:11]]
 

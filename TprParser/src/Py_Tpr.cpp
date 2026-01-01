@@ -497,6 +497,7 @@ static PyObject* get_nonbonded(PyObject* self, PyObject* args)
             break;
         case 'L': // LJ for each atoms
         case 'T': // LJ for unique atomtype
+        case 'B': // Buckingham for unique atomtype
             nat = 0;
             break;
         default: break;
@@ -553,8 +554,8 @@ static PyObject* get_vsites(PyObject* self, PyObject* args)
         const VirtualSites& vsite  = vec[i];
         size_t              natoms = vsite.iatoms.size();
 
-        // 创建展开的列表：所有原子索引 + ifunc + 所有ff参数
-        PyObject* item = PyList_New(natoms + 1 + vsite.ff.size());
+        // 创建展开的列表：name + 所有原子索引 + ifunc + 所有ff参数
+        PyObject* item = PyList_New(1 + natoms + 1 + vsite.ff.size()); // 添加name位置
         if (!item)
         {
             PyErr_SetString(PyExc_RuntimeError, "Can not create vsite item");
@@ -564,7 +565,18 @@ static PyObject* get_vsites(PyObject* self, PyObject* args)
 
         Py_ssize_t idx = 0;
 
-        // 1. 添加原子索引（1-based）
+        // 1. 添加name
+        PyObject* name_obj = PyUnicode_FromString(vsite.name.c_str());
+        if (!name_obj)
+        {
+            PyErr_SetString(PyExc_RuntimeError, "Can not convert name to pyobj");
+            Py_DECREF(item);
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(item, idx++, name_obj);
+
+        // 2. 添加原子索引（1-based）
         for (size_t j = 0; j < natoms; j++)
         {
             PyObject* value = PyLong_FromLong(static_cast<long>(vsite.iatoms[j]));
@@ -578,7 +590,7 @@ static PyObject* get_vsites(PyObject* self, PyObject* args)
             PyList_SET_ITEM(item, idx++, value);
         }
 
-        // 2. 添加函数类型
+        // 3. 添加函数类型
         PyObject* ifunc_obj = PyLong_FromLong(static_cast<long>(vsite.ifunc));
         if (!ifunc_obj)
         {
@@ -589,7 +601,7 @@ static PyObject* get_vsites(PyObject* self, PyObject* args)
         }
         PyList_SET_ITEM(item, idx++, ifunc_obj);
 
-        // 3. 添加力场参数
+        // 4. 添加力场参数
         for (size_t j = 0; j < vsite.ff.size(); j++)
         {
             PyObject* value = PyFloat_FromDouble(static_cast<double>(vsite.ff[j]));

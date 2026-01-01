@@ -111,7 +111,7 @@ struct NonBonded
     {
     }
 
-    // LJ set
+    // LJ set or Buckingham set
     NonBonded(int functype, const std::vector<float>& ffparam) : ifunc(functype), ff{ffparam} {}
     // LJ set by copy constructor
     NonBonded(const NonBonded& rhs) noexcept
@@ -145,12 +145,13 @@ struct VirtualSites
 {
     VirtualSites() = default;
 
-    VirtualSites(const std::vector<int>& iatoms, int ifunc, const std::vector<float>& ff)
-        : iatoms{iatoms}, ifunc(ifunc), ff{ff}
+    VirtualSites(const std::string& name, const std::vector<int>& iatoms, int ifunc, const std::vector<float>& ff)
+        : name(name), iatoms{iatoms}, ifunc(ifunc), ff{ff}
     {
     }
 
     /* atom index (1-based) for virtual sites, the first atom is vsite */
+    std::string        name; // virtual site name, such as 'virtual_sites3'
     std::vector<int>   iatoms;
     int                ifunc = 0; // functon type
     std::vector<float> ff{};      // vsite parameters
@@ -336,11 +337,12 @@ struct TprData
 
     struct
     {
-        //! layout: |type1|at1|at2|at3|type2|at1|at2|type1|at1|at2|at3|type3|at1|at2|
-        vecI2D           interactionlist[F_NRE];
-        std::vector<int> nr[F_NRE];
-    } ilist,                   ///< 分子相互作用列表
-        inter_molecular_ilist; ///< 全局指定的分子间相互作用
+
+        vecI2D interactionlist[F_NRE]; //! layout: |type1|at1|at2|at3|type2|at1|at2|type1|at1|at2|at3|type3|at1|at2|
+
+        std::vector<int> nr[F_NRE]; //! 相互作用数组元素个数
+    } ilist,                        ///< 分子相互作用列表
+        inter_molecular_ilist;      ///< 全局指定的分子间相互作用
 
     // 原子属性
     struct
@@ -373,6 +375,8 @@ struct TprData
     std::vector<NonBonded> pairs;
     // only the atomtype LJ parameters
     std::vector<NonBonded> atomtypesLJ;
+    // only the atomtype Buckingham parameters
+    std::vector<NonBonded> atomtypesBH;
     // all atoms LJ parameters
     std::vector<NonBonded> ljparams;
     // vsites parameters

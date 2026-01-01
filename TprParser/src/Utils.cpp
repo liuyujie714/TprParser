@@ -36,7 +36,9 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
             ffparam.push_back(param->cubic.kb);
             ffparam.push_back(param->cubic.kcub);
             return std::make_pair(4, ffparam);
-        case F_CONNBONDS: return std::make_pair(5, ffparam);
+        case F_CONNBONDS: 
+            
+            return std::make_pair(5, ffparam);
         case F_HARMONIC:
             ffparam.push_back(param->harmonic.rA);
             ffparam.push_back(param->harmonic.krA);
@@ -234,7 +236,7 @@ std::pair<int, std::vector<float>> get_vsite_type(int ftype, const t_iparams* pa
             return std::make_pair(2, ffparam);
         case F_VSITE3:    // functype= 1
         case F_VSITE3FD:  // functype= 2
-        case F_VSITE3FAD: // functype= 3
+        case F_VSITE3FAD: // functype= 3, itp中原始参数theta & d 已经被转换了
             ffparam.push_back(param->vsite.a);
             ffparam.push_back(param->vsite.b);
             return std::make_pair(ftype - F_VSITE3 + 1, ffparam);
@@ -275,6 +277,11 @@ std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams
             ffparam.push_back(param->lj14.c6B);
             ffparam.push_back(param->lj14.c12B);
             return std::make_pair(1, ffparam);
+        case F_BHAM: // buckingham, I set up functyepe=2
+            ffparam.push_back(param->bham.a);
+            ffparam.push_back(param->bham.b);
+            ffparam.push_back(param->bham.c);
+            return std::make_pair(2, ffparam);
         default: break;
     }
     return std::make_pair(-1, ffparam);
