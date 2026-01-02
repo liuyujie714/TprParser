@@ -1636,6 +1636,7 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 81)
     {
+        INSERT_POS(integer.cutoff_scheme);
         // cutoff_scheme
         if (!tpr_.do_int(&ir->cutoff_scheme)) return TPR_FAILED;
     }
@@ -1718,6 +1719,7 @@ bool TprReader::do_ir()
     if (!tpr_.do_real(&ir->x_compression_precision, data_->prec)) return TPR_FAILED;
     msg("xtc prec= %g\n", ir->x_compression_precision);
 
+    INSERT_POS(verletbuf_tol);
     if (data_->filever >= 81)
     {
         if (!tpr_.do_real(&ir->verletbuf_tol, data_->prec)) return TPR_FAILED;
@@ -3367,6 +3369,21 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
     }
 
+    // for cutoff-scheme, must be filever >= 81 (gmx 4.6)
+    bool isVerlet = false;
+    if (!mystricmp(prop, "cutoff_scheme"))
+    {
+        if (data_->filever < 81)
+        {
+            THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
+        }
+        if (val != static_cast<int>(CutoffScheme::Group) && val != static_cast<int>(CutoffScheme::Verlet))
+        {
+            THROW_TPR_EXCEPTION("Unknown cutoff-scheme, should be 0 (Verlet) or 1 (Group)");
+        }
+        isVerlet = (val == static_cast<int>(CutoffScheme::Verlet));
+    }
+
     long        fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     if (fsize && !data_->property.integer.empty())
@@ -3386,10 +3403,26 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         // write new epi in a int
         if (!newtpr.do_int(&val)) return TPR_FAILED;
 
+        // should change verletbuf_tol to 0.005 (default value) if cutoff-scheme is verlet
+        if (isVerlet)
+        {
+            // write context between cuttoff-scheme to verletbuf_tol
+            long current = (long)newtpr.ftell_();
+            long len     = data_->property.verletbuf_tol - current;
+            if (newtpr.fwrite_(&buffer[current], len * sizeof(char), 1) != 1)
+            {
+                THROW_TPR_EXCEPTION("fwrite_ error between cuttoff-scheme to verletbuf_tol");
+            }
+
+            // write a real
+            float verletbuf_tol = 0.005f;
+            if (!newtpr.do_real(&verletbuf_tol, data_->prec)) return TPR_FAILED;
+        }
+
         // write keyword after
-        constexpr int size = sizeof(int);
-        long          len  = fsize - keypos - size;
-        if (newtpr.fwrite_(&buffer[keypos + size], len * sizeof(char), 1) != 1)
+        long current = (long)newtpr.ftell_();
+        long len     = fsize - current;
+        if (newtpr.fwrite_(&buffer[current], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in keyword after");
         }
@@ -3646,6 +3679,7 @@ int TprReader::get_mdp_integer(const char* prop) const
         case ParamsInteger::nstcalcenergy: return data_->ir.nstcalcenergy;
         case ParamsInteger::nstlist: return data_->ir.nstlist;
         case ParamsInteger::nstcomm: return data_->ir.nstcomm;
+        case ParamsInteger::cutoff_scheme: return data_->ir.cutoff_scheme;
         default: break;
     }
     return -1;

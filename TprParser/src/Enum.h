@@ -20,6 +20,15 @@ enum class PbcType : int
     Default = Xyz
 };
 
+//! Cutoff scheme
+enum class CutoffScheme : int
+{
+    Verlet,
+    Group,
+    Count,
+    Default = Verlet
+};
+
 //< pressure coupling methods
 enum class PressureCoupling : int
 {
@@ -74,6 +83,7 @@ enum class ParamsInteger : int
     nstcalcenergy,
     nstlist,
     nstcomm,
+    cutoff_scheme,
     Count,
 };
 static const char* c_mdp_integer[] = {"nstlog",
@@ -86,7 +96,9 @@ static const char* c_mdp_integer[] = {"nstlog",
                                       "nstpcouple",
                                       "nstcalcenergy",
                                       "nstlist",
-                                      "nstcomm"};
+                                      "nstcomm",
+                                      "cutoff_scheme"};
+
 
 // vector of tpr, X or V or F
 enum class VecProps : int

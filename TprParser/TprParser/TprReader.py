@@ -112,7 +112,7 @@ class TprReader:
         Parameters
         ----------
         keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
-        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm
+        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm,  cutoff_scheme
         val: an int value for keyword
 
         Returns
@@ -197,7 +197,7 @@ class TprReader:
         Parameters
         ----------
         keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
-        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm
+        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm, cutoff_scheme
 
         Returns
         -------
@@ -336,7 +336,7 @@ class TprReader:
 
 
 class SimSettings():
-    """ @breif A wrapper of TprParser for setting multiple mdp parameters
+    """ @brief A wrapper of TprParser for setting multiple mdp parameters
 
     Parameters
     ---------
@@ -357,7 +357,7 @@ class SimSettings():
         shutil.copy(fin, self.tempname) # copy src to temp.tpr
 
     def __movefile(self):
-        """ @breif Move generated self.newname to self.tempname
+        """ @brief Move generated self.newname to self.tempname
         """
         shutil.move(self.newname, self.tempname)
 

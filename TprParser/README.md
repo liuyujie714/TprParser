@@ -100,7 +100,7 @@ impropers = reader.get_bonded('impropers')
 ## Get non-bonded paramaters
 
 ```python
-# get paris (1-based index) and it's parameters
+# get pairs (1-based index) and it's parameters
 pairs = reader.get_nonbonded('pairs')
 
 # get atomtypes lj parameters for each atoms [sigma, epsion], which crossbonding to reader.get_name('type')
@@ -208,7 +208,7 @@ with SimSettings('input.tpr', 'output.tpr') as writer:
 
 ## Make a gromacs top
 
-Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Virtual Site, Restraint` is missing!
+Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Restraint` is missing!
 
 ```python
 from TprParser.TprMakeTop import make_top_from_tpr
@@ -255,7 +255,7 @@ If `TprParser` is utilized in your work, please cite as follows in main text:
 
 ## TODO
 
-* more parameters can be modified
+* More parameters can be modified
 
 
 

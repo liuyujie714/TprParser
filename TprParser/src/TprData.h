@@ -385,13 +385,14 @@ struct TprData
     // mdp属性位置, 所有变量都必须初始化为0
     struct
     {
-        long nsteps = 0; //< the started nsteps position in tpr
-        long dt     = 0; //< the started dt position in tpr
-        long x      = 0; //< the started atom coordinates position in tpr
-        long v      = 0; //< the started atom velocity position in tpr
-        long f      = 0; //< the started atom force position in tpr
-        long box    = 0; //< the box position in tpr
-        long ef     = 0; //< the electric field started position in tpr
+        long nsteps = 0;        //< the started nsteps position in tpr
+        long dt     = 0;        //< the started dt position in tpr
+        long x      = 0;        //< the started atom coordinates position in tpr
+        long v      = 0;        //< the started atom velocity position in tpr
+        long f      = 0;        //< the started atom force position in tpr
+        long box    = 0;        //< the box position in tpr
+        long ef     = 0;        //< the electric field started position in tpr
+        long verletbuf_tol = 0; // < tolerance of verlet buffer started position in tpr, for Verlet scheme
 
 
         // 压力设置参数位置
@@ -448,14 +449,16 @@ struct TprData
             long nstlist = 0;
             long nstcomm = 0;
 
+            // must be data_->filever >= 81
+            long cutoff_scheme = 0;
+
             //< return True if can not read any one position
             bool empty() const
             {
-                return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed
-                         && nsttcouple && nstpcouple && nstcalcenergy && nstlist && nstcomm);
+                return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed && nsttcouple
+                         && nstpcouple && nstcalcenergy && nstlist && nstcomm);
             }
         } integer;
-
     } property;
 };
 

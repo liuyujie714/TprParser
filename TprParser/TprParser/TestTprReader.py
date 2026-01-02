@@ -24,7 +24,7 @@ tprlist = {
     'two_water_tip4p_excls.tpr' : [8, 4], 
     'CO2_vsites.tpr'            : [5000, 4], 
 
-    '1EBZ.tpr' :                [3218, 4], 
+    '1EBZ_4.5.5.tpr' :                [3218, 4], 
     '2020.4_gra.tpr' :          [4536, 4], 
     '2022.tpr' :                [165706, 4], 
     '2023demo.tpr' :            [165766, 4],
@@ -162,9 +162,9 @@ def test_make_top_from_tpr(tpr, top):
     except:
         sys.exit(f'Can not execute test_make_top_from_tpr for file: {tpr}')
 
-def do_test():
+def do_reader():
     for index, name in enumerate(tprlist.keys()):
-        print(f'do test {index+1}', flush=True)
+        print(f'do_reader {name}', flush=True)
         fname = 'test/' + name
         try:
             reader = TprReader(fname)
@@ -233,10 +233,11 @@ def do_test():
         # Not LJ parameters ['extra-interactions-2018.tpr']
         test_make_top_from_tpr(fname, 'md.top')
 
-def do_test2():
+def do_writer():
     fout = 'output.tpr'
+    Verlet, Group = range(0, 2)
     for index, name in enumerate(tprlist.keys()):
-        print(f'do test {index+1}', flush=True)
+        print(f'do_writer {name}', flush=True)
         fname = 'test/' + name
 
         # get precision of tpr
@@ -252,6 +253,10 @@ def do_test2():
             if '4.0' not in name:
                 for key, val in mdp_integer_data.items():
                     writer.set_mdp_integer(key, val)
+
+                if '4.5' not in name:
+                    #writer.set_mdp_integer('cutoff_scheme', 0) # verlet
+                    writer.set_mdp_integer('cutoff_scheme', Group) # group
 
             if prec==4:
                 writer.set_pressure('CRescale', 'Isotropic', 3.0, 
@@ -315,12 +320,14 @@ def do_test2():
         if '4.0' not in name:
             for key, val in mdp_integer_data.items():
                 assert reader.get_mdp_integer(key) == val, f'get_mdp_integer {key} should be {val}'
+            if '4.5' not in name:
+                assert reader.get_mdp_integer('cutoff_scheme')==Group, f'get_mdp_integer cutoff_scheme should be {Group}'
         
         del reader
 
 if __name__ == '__main__':
-    do_test()
+    do_reader()
     print('<'*10+'Passed All TprParser Tests'+'>'*10, flush=True)
 
-    do_test2()
+    do_writer()
     print('<'*10+'Passed All SimSettings Tests'+'>'*10, flush=True)
