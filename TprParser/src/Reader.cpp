@@ -676,7 +676,8 @@ bool TprReader::tpr_dihedrals()
                         1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
                         1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
                         param.first,
-                        param.second);
+                        param.second,
+                        true);
                 }
             }
             aoffset += data_->atomsinmol[mtype];
@@ -709,7 +710,8 @@ bool TprReader::tpr_dihedrals()
                         1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
                         1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
                         param.first,
-                        param.second);
+                        param.second,
+                        false);
                 }
             }
             aoffset += data_->atomsinmol[mtype];

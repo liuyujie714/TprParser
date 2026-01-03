@@ -176,7 +176,7 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
                 bonds[i][0], bonds[i][1], bonds[i][2]
             ))
             for param in bonds[i][3:]:
-                context.append(' %10.6e' %param)
+                context.append(' %8g' %param)
             context.append('\n')
     context.append('\n')
 
@@ -190,7 +190,7 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
                 pairs[i][0], pairs[i][1], pairs[i][2]
             ))
             for param in pairs[i][3:]:
-                context.append(' %10.6e' %param)
+                context.append(' %8g' %param)
             context.append('\n')
     context.append('\n')
 
@@ -202,7 +202,7 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
                 angles[i][0], angles[i][1], angles[i][2], angles[i][3]
             ))
             for param in angles[i][4:]:
-                context.append(' %10.6e' %param)
+                context.append(' %8g' %param)
             context.append('\n')
 
     context.append('\n[ dihedrals ] ; proper\n')
@@ -213,15 +213,9 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
                 dihedrals[i][0], dihedrals[i][1], dihedrals[i][2], dihedrals[i][3], 
                 dihedrals[i][4]
             ))
-            # for type=9, remove abandon params
-            if dihedrals[i][4] == 9:
-                param = dihedrals[i][5:]
-                context.append(' %10.6e %10.6e %d' %(
-                    param[0], param[1], int(param[-1])
-                ))
-            else:
-                for param in dihedrals[i][5:]:
-                    context.append(' %10.6e' %param)
+            
+            for param in dihedrals[i][5:]:
+                    context.append(' %8g' %param)
             context.append('\n')
 
     context.append('\n[ dihedrals ] ; improper\n')
@@ -233,23 +227,16 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
                 dihedrals[i][4]
             ))
 
-            # for type=4, remove abandon params
-            if dihedrals[i][4] == 4:
-                param = dihedrals[i][5:]
-                context.append(' %10.6e %10.6e %d' %(
-                    param[0], param[1], 2
-                ))
-            else:
-                for param in dihedrals[i][5:]:
-                    context.append(' %10.6e' %param)
+            for param in dihedrals[i][5:]:
+                    context.append(' %8g' %param)
             context.append('\n')
 
     # virtual sites
     vsites = _get_vsites(rd)
     if vsites is not None:
         for viste in vsites:
-            context.append(f'\n[ {viste[0]} ]\n')
-            s = ' '.join([f'{i:>g}' for i in viste[1:]])+'\n'
+            context.append(f'[ {viste[0]} ]\n')
+            s = ' '.join([f'{i:>8g}' for i in viste[1:]])+'\n'
             # virtual_sitesn has different format, so comment
             if viste[0]=="virtual_sitesn":
                 s = ';'+s

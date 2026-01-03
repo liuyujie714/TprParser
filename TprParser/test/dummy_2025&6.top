@@ -227,19 +227,20 @@ TEST 	    	1
 [dihedrals]
 ; i  j  k  l  funct
   1  2  3  4  1     1 1 1             ; proper dihedrals (3 params)
-  2  3  4  5  1     1 1 1 1 1 1       ; proper dihedrals (6 params)
-  5  6  7  8  3     1 1 1 1 1 1       ; Ryckaert-Bellemans dihedral
-  7  8  9  10 5     1 1 1 1           ; Fourier dihedral
-  8  9  10 11 9     1 1 1             ; proper dihedral (multiple)
-  9  10 11 12 10    1 1 1 1           ; restricted dihedral
-  10 11 12 13 11    1 1 1 1 1 1       ; combined bending-torsion potential
+  2  3  4  5  1     2 2 2 2 2 2       ; proper dihedrals (6 params)
+  5  6  7  8  3     3 3 3 3 3 3       ; Ryckaert-Bellemans dihedral
+  7  8  9  10 5     4 4 4 4           ; Fourier dihedral
+  8  9  10 11 9     5 5 5             ; proper dihedral (multiple)
+  9  10 11 12 10    6 6 6 6           ; restricted dihedral
+  10 11 12 13 11    7 7 7 7 7 7       ; combined bending-torsion potential
   11 12 13 14 8     0 1               ; tabulated dihedral
 
 [dihedrals]
 ; i  j  k  l  funct
   3  4  5  6  2     1 1               ; improper dihedrals (2 params)
-  4  5  6  7  2     1 1 1 1           ; improper dihedrals (4 params)
-  6  7  8  9  4     1 1 1 1 1 1       ; periodic improper dihedral
+  4  5  6  7  2     2 2 2 2           ; improper dihedrals (4 params)
+  6  7  8  9  4     3 3 3 3 3 3       ; periodic improper dihedral
+  5  8  7  4  4     4 4 4 4 4 4       ; periodic improper dihedral, different atom order
 
 [ cmap ]
 ;  ai    aj    ak    al    am funct

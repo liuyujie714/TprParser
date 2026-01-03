@@ -145,6 +145,8 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
         case F_RESTRANGLES:
             ffparam.push_back(param->harmonic.rA);
             ffparam.push_back(param->harmonic.krA);
+            ffparam.push_back(param->harmonic.rB);
+            ffparam.push_back(param->harmonic.krB);
             return std::make_pair(10, ffparam);
         default: break;
     }
@@ -166,15 +168,15 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
             // return 1;
             return std::make_pair(9, ffparam);
         case F_RBDIHS:
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcA[i]);
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcB[i]);
             return std::make_pair(3, ffparam);
         case F_FOURDIHS:
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcA[i]);
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcB[i]);
             return std::make_pair(5, ffparam);
         case F_TABDIHS:
@@ -185,10 +187,14 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
         case F_RESTRDIHS:
             ffparam.push_back(param->pdihs.phiA);
             ffparam.push_back(param->pdihs.cpA);
+            ffparam.push_back(param->pdihs.phiB);
+            ffparam.push_back(param->pdihs.cpB);
             return std::make_pair(10, ffparam);
         case F_CBTDIHS:
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < NR_CBTDIHS; i++)
                 ffparam.push_back(param->cbtdihs.cbtcA[i]);
+            for (int i = 0; i < NR_CBTDIHS; i++)
+                ffparam.push_back(param->cbtdihs.cbtcB[i]);
             return std::make_pair(11, ffparam);
         default: break;
     }
@@ -207,10 +213,11 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
             ffparam.push_back(param->harmonic.krB);
             return std::make_pair(2, ffparam);
         case F_PIDIHS:
-            ffparam.push_back(param->harmonic.rA);
-            ffparam.push_back(param->harmonic.krA);
-            ffparam.push_back(param->harmonic.rB);
-            ffparam.push_back(param->harmonic.krB);
+            ffparam.push_back(param->pdihs.phiA);
+            ffparam.push_back(param->pdihs.cpA);
+            ffparam.push_back(param->pdihs.phiB);
+            ffparam.push_back(param->pdihs.cpB);
+            ffparam.push_back((float)param->pdihs.mult);
             return std::make_pair(4, ffparam);
         default: break;
     }

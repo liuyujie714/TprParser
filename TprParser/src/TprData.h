@@ -46,10 +46,11 @@ struct Bonded
         if (a > c) std::swap(a, c);
     }
 
-    // dihedral
-    Bonded(int ta, int tb, int tc, int td, int functype, const std::vector<float>& ffparam)
+    // dihedral, needSorted=true if need small x x big for atom index
+    Bonded(int ta, int tb, int tc, int td, int functype, const std::vector<float>& ffparam, bool needSorted)
         : a(ta), b(tb), c(tc), d(td), ifunc(functype), ff{ffparam}
     {
+        if (!needSorted) { return; }
         // small x x big
         if (a > d)
         {
@@ -455,8 +456,8 @@ struct TprData
             //< return True if can not read any one position
             bool empty() const
             {
-                return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed && nsttcouple
-                         && nstpcouple && nstcalcenergy && nstlist && nstcomm);
+                return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed
+                         && nsttcouple && nstpcouple && nstcalcenergy && nstlist && nstcomm);
             }
         } integer;
     } property;
