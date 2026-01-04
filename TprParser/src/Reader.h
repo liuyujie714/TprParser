@@ -23,35 +23,38 @@ public:
     ~TprReader() { msg("End of TprReader\n"); }
 
     // read header
-    bool tpr_header();
+    bool do_header();
 
     // read body of tpr
-    bool tpr_body();
+    bool do_body();
 
     // read mtop
-    bool tpr_mtop();
+    bool do_mtop();
 
     //< read coodinates, velocity and force of atoms
-    bool tpr_xvf();
+    bool do_xvf();
 
     //< dump charges and mass
-    bool tpr_chargemass();
+    bool dump_chargemass();
+
+    //< dump a gro/mol2 file
+    bool dump_gro_mol2();
 
     //< dump bonds of tpr, can store angle and harmonic force constant
-    bool tpr_bonds();
+    bool dump_bonds();
 
     //< dump angles of tpr, can store angle and harmonic force constant
-    bool tpr_angles();
+    bool dump_angles();
 
     /*  \brief dump ALL dihedrals of tpr, can store dihedrals parameters
      */
-    bool tpr_dihedrals();
+    bool dump_dihedrals();
 
-    /* \breif dump all virtual sites parameters */
-    bool tpr_vsites();
+    /* \brief dump all virtual sites parameters */
+    bool dump_vsites();
 
     //< dump non-bonded parameters, includes LJ and paris
-    bool tpr_nonbonded();
+    bool dump_nonbonded();
 
     /*< do_ir, have not yet completely completed
      * Unfinished:
@@ -123,7 +126,7 @@ private:
     bool write_ef(std::vector<float>& vec, long pos, long prec) const;
 
     //< read forcefield parameters
-    bool tpr_readff();
+    bool do_readff();
 
     //< read parameters
     bool do_iparams(int ftype, t_iparams* iparams, int filever, int prec);

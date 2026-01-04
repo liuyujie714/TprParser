@@ -153,7 +153,7 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
 
     # atoms
     context.append('[ atoms ]\n')
-    context.append(';   nr  type  resi  res  atom  cgnr     charge      mass\n')
+    context.append(';   nr       type  resi  res  atom  cgnr     charge      mass\n')
     for i in range(natoms):
         context.append('%5d %10s %5d %5s %5s %5d %10.6f %10.6f\n' %(
             i+1, atomtypename[i], resids[i], resname[i], atomname[i], i+1, 

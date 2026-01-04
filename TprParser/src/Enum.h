@@ -8,6 +8,7 @@
 #    include <strings.h>
 #    define mystricmp strcasecmp
 #endif
+#include <string>
 
 enum class PbcType : int
 {
@@ -157,6 +158,19 @@ enum class NonBondedType : int
 };
 static const char* c_nonbonded_type[] = {"lj", "type", "pairs", "bh"};
 
+
+//! convert array to string with ', should be ' prefix
+template<int N>
+static inline std::string arr_to_string(const char* (&arr)[N])
+{
+    std::string ret = ", should be ";
+    for (int i = 0; i < N; i++)
+    {
+        ret += arr[i];
+        if (i < N - 1) { ret += ", "; }
+    }
+    return ret;
+}
 
 //< check key words in a c_string array ignore case, return enum value if find, else return ENUM::Count
 template<typename ENUM, const int count = static_cast<int>(ENUM::Count), int N>

@@ -17,20 +17,26 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
       bMol2_(bMol2),
       bCharge_(bCharge)
 {
-    if (tpr_header() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_header()"); }
-    if (tpr_body() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_body()"); }
-    if (tpr_mtop() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_mtop()"); }
-    if (tpr_xvf() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_xvf()"); }
-    if (tpr_chargemass() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_chargemass()"); }
-    if (tpr_bonds() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_bonds()"); }
-    if (tpr_angles() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_angles()"); }
-    if (tpr_dihedrals() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_dihedrals()"); }
-    if (tpr_vsites() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_vsites()"); }
-    if (tpr_nonbonded() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for tpr_nonbonded()"); }
+    //! read all information from tpr
+    if (do_header() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_header()"); }
+    if (do_body() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_body()"); }
+    if (do_mtop() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_mtop()"); }
+    if (do_xvf() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_xvf()"); }
     if (do_ir() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_ir()"); }
+
+    //! convert all information in readable format
+    if (dump_chargemass() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_chargemass()"); }
+    if (dump_bonds() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_bonds()"); }
+    if (dump_angles() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_angles()"); }
+    if (dump_dihedrals() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_dihedrals()"); }
+    if (dump_vsites() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_vsites()"); }
+    if (dump_nonbonded() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_nonbonded()"); }
+
+    //! put it last
+    if (dump_gro_mol2() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_gro_mol2()"); }
 }
 
-bool TprReader::tpr_header()
+bool TprReader::do_header()
 {
     // read the first unused int at the first of tpr
     int tempint;
@@ -81,7 +87,7 @@ static print_vec(const char* name, T *arr, int len = DIM * DIM)
 }
 // clang-format on
 
-bool TprReader::tpr_body()
+bool TprReader::do_body()
 {
     // read file foramt version of tpr
     if (!tpr_.do_int(&data_->filever)) return TPR_FAILED;
@@ -231,7 +237,7 @@ bool TprReader::tpr_body()
     return TPR_SUCCESS;
 }
 
-bool TprReader::tpr_mtop()
+bool TprReader::do_mtop()
 {
     // do_mtop starts here, which starts by reading the symtab (do_symtab)
     int symtablen;
@@ -262,7 +268,7 @@ bool TprReader::tpr_mtop()
     msg("tempint= %d\n", tempint);
 
     // read forcefiled parameters
-    if (!tpr_readff()) return TPR_FAILED;
+    if (!do_readff()) return TPR_FAILED;
 
     // read type of molecules
     if (!tpr_.do_int(&data_->nmoltypes)) return TPR_FAILED;
@@ -367,7 +373,7 @@ bool TprReader::tpr_mtop()
     return TPR_SUCCESS;
 }
 
-bool TprReader::tpr_xvf()
+bool TprReader::do_xvf()
 {
     if (data_->bX)
     {
@@ -390,7 +396,29 @@ bool TprReader::tpr_xvf()
         if (!tpr_.do_vector(data_->atoms.f.data(), data_->natoms * DIM, data_->prec))
             return TPR_FAILED;
     }
+    return TPR_SUCCESS;
+}
 
+bool TprReader::dump_chargemass()
+{
+    if (bCharge_)
+    {
+        FILE* fp = fopen("chgmass.dat", "w");
+        for (int i = 0; i < data_->atoms.atomname.size(); i++)
+        {
+            fprintf(fp,
+                    "%5s %10.6f %10.6f\n",
+                    data_->atoms.atomname[i].c_str(),
+                    data_->atoms.charge[i],
+                    data_->atoms.mass[i]);
+        }
+        fclose(fp);
+    }
+    return TPR_SUCCESS;
+}
+
+bool TprReader::dump_gro_mol2()
+{
     // write a gro
     if (bGRO_ && data_->bX)
     {
@@ -442,28 +470,42 @@ bool TprReader::tpr_xvf()
                 data_->box[7]);
         fclose(fp);
     }
-    return TPR_SUCCESS;
-}
 
-bool TprReader::tpr_chargemass()
-{
-    if (bCharge_)
+    // write a mol2 format
+    if (bMol2_)
     {
-        FILE* fp = fopen("chgmass.dat", "w");
-        for (int i = 0; i < data_->atoms.atomname.size(); i++)
+        FILE* fp = fopen("dump.mol2", "w");
+        fprintf(fp,
+                "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n",
+                data_->natoms,
+                (int)(data_->bonds.size()));
+        for (int i = 0; i < data_->natoms; i++)
         {
             fprintf(fp,
-                    "%5s %10.6f %10.6f\n",
+                    "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
+                    i + 1,
                     data_->atoms.atomname[i].c_str(),
-                    data_->atoms.charge[i],
-                    data_->atoms.mass[i]);
+                    data_->atoms.x[3L * i + 0] * 10.0,
+                    data_->atoms.x[3L * i + 1] * 10.0,
+                    data_->atoms.x[3L * i + 2] * 10.0,
+                    data_->atoms.atomname[i].c_str()[0],
+                    1,
+                    data_->atoms.resname[i].c_str(),
+                    data_->atoms.charge[i]);
+        }
+        fprintf(fp, "@<TRIPOS>BOND\n");
+        int i = 1;
+        for (auto& bond : data_->bonds)
+        {
+            fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.a, bond.b, 1);
         }
         fclose(fp);
     }
+
     return TPR_SUCCESS;
 }
 
-bool TprReader::tpr_bonds()
+bool TprReader::dump_bonds()
 {
     // bonds type
     const int     interactions[] = {F_BONDS,
@@ -552,42 +594,10 @@ bool TprReader::tpr_bonds()
               [](const Bonded& lhs, const Bonded& rhs)
     { return std::tie(lhs.a, lhs.b) < std::tie(rhs.a, rhs.b); });
 
-
-    // write a mol2 format
-    if (bMol2_)
-    {
-        FILE* fp = fopen("dump.mol2", "w");
-        fprintf(fp,
-                "@<TRIPOS>MOLECULE\nMOL\n%d %d 1 0 0\nSMALL\nUSER_CHARGES\n\n\n@<TRIPOS>ATOM\n",
-                data_->natoms,
-                (int)(data_->bonds.size()));
-        for (int i = 0; i < data_->natoms; i++)
-        {
-            fprintf(fp,
-                    "%3d %5s %8.4f %8.4f %8.4f %c %5d %5s %8.4f\n",
-                    i + 1,
-                    data_->atoms.atomname[i].c_str(),
-                    data_->atoms.x[3L * i + 0] * 10.0,
-                    data_->atoms.x[3L * i + 1] * 10.0,
-                    data_->atoms.x[3L * i + 2] * 10.0,
-                    data_->atoms.atomname[i].c_str()[0],
-                    1,
-                    data_->atoms.resname[i].c_str(),
-                    data_->atoms.charge[i]);
-        }
-        fprintf(fp, "@<TRIPOS>BOND\n");
-        int i = 1;
-        for (auto& bond : data_->bonds)
-        {
-            fprintf(fp, "%5d %5d %5d %5d\n", i++, bond.a, bond.b, 1);
-        }
-        fclose(fp);
-    }
-
     return TPR_SUCCESS;
 }
 
-bool TprReader::tpr_angles()
+bool TprReader::dump_angles()
 {
     // angles type, drop F_SETTLE because angle from bonds
     const int interactions[] = {
@@ -647,7 +657,7 @@ bool TprReader::tpr_angles()
 }
 
 
-bool TprReader::tpr_dihedrals()
+bool TprReader::dump_dihedrals()
 {
     // proper dihedral type
     const int interactions[] = {F_PDIHS, F_RBDIHS, F_RESTRDIHS, F_CBTDIHS, F_FOURDIHS, F_TABDIHS};
@@ -727,7 +737,7 @@ bool TprReader::tpr_dihedrals()
     return TPR_SUCCESS;
 }
 
-bool TprReader::tpr_vsites()
+bool TprReader::dump_vsites()
 {
     const int vsiteTypes[] = {
         F_VSITE1, F_VSITE2, F_VSITE2FD, F_VSITE3, F_VSITE3FD, F_VSITE3FAD, F_VSITE3OUT, F_VSITE4FD, F_VSITE4FDN, F_VSITEN};
@@ -796,7 +806,7 @@ bool TprReader::tpr_vsites()
     return TPR_SUCCESS;
 }
 
-bool TprReader::tpr_nonbonded()
+bool TprReader::dump_nonbonded()
 {
     // get LJ
     std::vector<NonBonded> tempLJ;
@@ -884,7 +894,7 @@ bool TprReader::tpr_nonbonded()
 }
 
 
-bool TprReader::tpr_readff()
+bool TprReader::do_readff()
 {
     int    ntypes;
     double reppow  = 12.0; // The repulsion power for VdW: C12*r^-reppow
@@ -3153,12 +3163,14 @@ bool TprReader::set_pressure(const char*         method,
     PressureCouplingType epct;
     if ((epc = check_string<PressureCoupling>(method, c_PressureCoupling)) == PressureCoupling::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling method: ") + method);
+        THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling method: ") + method
+                            + arr_to_string(c_PressureCoupling));
     }
     if ((epct = check_string<PressureCouplingType>(type, c_PressureCouplingType))
         == PressureCouplingType::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling type: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown pressure coupling type: ") + type
+                            + arr_to_string(c_PressureCouplingType));
     }
     // ref_p and compress
     if (ref_p.size() != DIM * DIM) { THROW_TPR_EXCEPTION("The size of ref_p must be 9"); }
@@ -3273,7 +3285,8 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
     TemperatureCoupling etc;
     if ((etc = check_string<TemperatureCoupling>(method, c_TemperatureCoupling)) == TemperatureCoupling::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown temperature coupling method: ") + method);
+        THROW_TPR_EXCEPTION(std::string("Unknown temperature coupling method: ") + method
+                            + arr_to_string(c_TemperatureCoupling));
     }
     // ref_p and compress
     if (ref_t.size() != tau_t.size())
@@ -3362,7 +3375,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
     ParamsInteger epi;
     if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop);
+        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop + arr_to_string(c_mdp_integer));
     }
 
     // too old tpr unsupport
@@ -3441,7 +3454,7 @@ const std::vector<float>& TprReader::get_xvf(const char* type) const
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown vector property: ") + type + arr_to_string(c_mdp_vector));
     }
 
     switch (evec)
@@ -3498,7 +3511,8 @@ const std::vector<int>& TprReader::get_ivector(const char* type) const
     IVectorProps evec;
     if ((evec = check_string<IVectorProps>(type, c_int_vector)) == IVectorProps::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown int vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown int vector property: ") + type
+                            + arr_to_string(c_int_vector));
     }
 
     switch (evec)
@@ -3540,7 +3554,7 @@ const std::vector<std::string>& TprReader::get_name(const char* type) const
     StringType evec;
     if ((evec = check_string<StringType>(type, c_name_vector)) == StringType::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown vector property: ") + type + arr_to_string(c_name_vector));
     }
 
     switch (evec)
@@ -3579,7 +3593,7 @@ const std::vector<Bonded>& TprReader::get_bonded(const char* type) const
     BondedType evec;
     if ((evec = check_string<BondedType>(type, c_bonded_type)) == BondedType::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown bonded property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown bonded property: ") + type + arr_to_string(c_bonded_type));
     }
 
     switch (evec)
@@ -3626,7 +3640,8 @@ const std::vector<NonBonded>& TprReader::get_nonbonded(const char* type) const
     NonBondedType evec;
     if ((evec = check_string<NonBondedType>(type, c_nonbonded_type)) == NonBondedType::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown nonbonded property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown nonbonded property: ") + type
+                            + arr_to_string(c_nonbonded_type));
     }
 
     switch (evec)
@@ -3665,7 +3680,7 @@ int TprReader::get_mdp_integer(const char* prop) const
     ParamsInteger epi;
     if ((epi = check_string<ParamsInteger>(prop, c_mdp_integer)) == ParamsInteger::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop);
+        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop + arr_to_string(c_mdp_integer));
     }
 
     switch (epi)
@@ -3853,7 +3868,8 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
     {
-        THROW_TPR_EXCEPTION(std::string("Unknown set vector property: ") + type);
+        THROW_TPR_EXCEPTION(std::string("Unknown set vector property: ") + type
+                            + arr_to_string(c_mdp_vector));
     }
 
     // check vector size
