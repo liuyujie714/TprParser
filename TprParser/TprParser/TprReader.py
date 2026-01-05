@@ -158,7 +158,7 @@ class TprReader:
         Return
         ------
         return a np.array(dtype=object), the length is the number of vsites. 
-        For each vsites, composed of [vistetype + atomid pairs + force field parameters], float precision error can be ignored
+        For each vsites, composed of [vistename + atomid pairs + force field parameters], float precision error can be ignored
 
         Note:
         ----
@@ -325,7 +325,7 @@ class TprReader:
 
         type='type', the length is the number of [ atomtypes ], composed of [force field parameters] (ifunc=3)
 
-        type='bh' (Buckingham), the length is the number of [ atomtypes ], composed of [force field parameters] (ifunc=2)
+        type='bh' (Buckingham), the length is the number of [ atomtypes ], composed of [force field parameters] (ifunc=4)
 
         Returns
         -------

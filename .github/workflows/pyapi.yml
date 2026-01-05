@@ -121,6 +121,8 @@ jobs:
 
       - name: Test tpr
         run:
+          # test top
+          pip install MDAnalysis 
           cd TprParser && python TprParser/TestTprReader.py
      
       - name: Test Edr

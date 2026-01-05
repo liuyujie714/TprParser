@@ -2,8 +2,13 @@
 """
 
 from TprParser.TprReader import TprReader, SimSettings
+import MDAnalysis as mda
+from copy import deepcopy
 import sys
 import numpy as np
+
+import warnings
+warnings.filterwarnings("ignore")
 
 # All test tpr file: [natoms, prec]
 tprlist = {
@@ -76,7 +81,12 @@ tprlist = {
     # FEP
     'benchBFC_FEP.tpr' :    [43952,4],
     # BHAM & No lj parameters, for test all extra interactions
-    'extra-interactions-2018.tpr' : [17, 4],
+    'mda_extra-interactions-2018.tpr' : [17, 4],
+    # nyself, from dummy_2025&6.top
+    'extra-interactions-2021.tpr' : [18, 4],
+    'extra-interactions-2022.tpr' : [18, 4],
+    'extra-interactions-2023.tpr' : [18, 4],
+    'extra-interactions-2024.tpr' : [18, 4],
     'extra-interactions-2025.tpr' : [18, 4],
     'extra-interactions-2026.tpr' : [18, 4],
 }
@@ -155,6 +165,153 @@ def test_get_vsites(handle:TprReader, fname):
     except:
         sys.exit(f'Can not execute get_vsites() function for {fname}')
 
+def read_top_ff(fname:str):
+    labels = [
+        'virtual_sites1',
+        'virtual_sites2',
+        'virtual_sites3',
+        'virtual_sites4',
+        'virtual_sitesn',
+        'pairs',
+        'bonds',
+        'constraints',
+        'angles',
+        'dihedrals',
+    ]
+    ff_items = {key: [] for key in labels}
+    with open(fname, 'r') as f:
+        lines = f.readlines()
+        for label in labels:
+            found = False
+            for line in lines:
+                if line.startswith(';'):
+                    continue
+                if line.startswith('[') and label in line:
+                    found = True
+                    continue
+                if found and len(line.strip()) < 2:
+                    found = False
+                if found:
+                    data = list(map(float, line.split(';')[0].strip().split()))
+                    ff_items[label].append(data)
+
+    return ff_items
+def test_mda_top(handle:TprReader, fname:str):
+    u = mda.Universe(fname, topology_format='itp')
+    # below items always exists
+    # compare bonds
+    _bonds = handle.get_bonded('bonds') # 1-based
+    bonds = np.array([[t[0], t[1]] for t in _bonds], dtype=int)
+    mda_bonds = u.atoms.bonds.to_indices()+1
+    assert np.array_equal(bonds, mda_bonds)
+
+    # compare angles
+    _angles = handle.get_bonded('angles')
+    # mda can not read func type=9 (linear angle)
+    angles = np.array([[t[0], t[1], t[2]] for t in _angles if t[3]!=9], dtype=int)
+    mda_angles = u.atoms.angles.to_indices()+1
+    assert np.array_equal(angles, mda_angles)
+
+    # compare propers dihedrals
+    _dihedrals = handle.get_bonded('dihedrals')
+    dihedrals = np.array([[t[0], t[1], t[2], t[3]] for t in _dihedrals], dtype=int)
+    mda_dihedrals = u.atoms.dihedrals.to_indices()+1
+    assert np.array_equal(dihedrals, mda_dihedrals)
+
+    # compare improper dihedrals
+    _imps = handle.get_bonded('impropers')
+    impropers = np.array([[t[0], t[1], t[2], t[3]] for t in _imps], dtype=int)
+    # sort impropers for compare, because tprparser can not sort for improper, keep it original order
+    adjusted = np.array([(d,c,b,a) if a>d else (a,b,c,d) for a,b,c,d in impropers])
+    impropers = adjusted[np.lexsort(adjusted.T[::-1])]
+    mda_impropers = u.atoms.impropers.to_indices()+1
+    assert np.array_equal(impropers, mda_impropers)
+
+    # comare atoms
+    atomnames, resnames, types = handle.get_name('atom'), handle.get_name('res'), handle.get_name('type')
+    assert np.array_equal(atomnames, u.atoms.names), "The atomnames is not euqal for file: {fname}"
+    assert np.array_equal(resnames, u.atoms.resnames), "The resnames is not euqal for file: {fname}"
+    assert np.array_equal(types, u.atoms.types), "The types is not euqal for file: {fname}"
+    charges, masses = handle.get_mq('q'), handle.get_mq('m')
+    assert np.array_equal(charges, u.atoms.charges), "The charges is not euqal for file: {fname}"
+    assert np.array_equal(masses, u.atoms.masses), "The masses is not euqal for file: {fname}"
+
+    # test ff
+    ff_items = read_top_ff(fname)
+    vsites = handle.get_vsites()
+    for vsite in vsites:
+        name = vsite[0]
+        if name=="virtual_sitesn":
+            continue
+        tpr_vsite = vsite[1:]
+        top_vsites = ff_items[name]
+        found = False
+        for top_vsite in top_vsites:
+            size = len(top_vsite)
+            if len(tpr_vsite)>=size and np.allclose(tpr_vsite[:size], top_vsite):
+                found = True
+        if not found:
+            sys.exit(f'Can not match virtual site {name} in file: {fname}')
+    # bonds ff
+    for tpr_bond in _bonds:
+        top_bonds = deepcopy(ff_items['bonds'])
+        # bonds from constraints
+        top_bonds.extend(ff_items['constraints'])
+        found = False
+        for top_bond in top_bonds:
+            size = min(len(top_bond), len(tpr_bond))
+            if top_bond[0]>top_bond[1]:
+                top_bond[0], top_bond[1] = top_bond[1], top_bond[0]
+            if np.allclose(tpr_bond[:size], top_bond[:size]):
+                found = True
+        if not found:
+            sys.exit(f'Can not match bond {tpr_bond} in file: {fname}')
+    # angles ff
+    for tpr_angle in _angles:
+        top_angles = deepcopy(ff_items['angles'])
+        found = False
+        for top_angle in top_angles:
+            size = min(len(top_angle), len(tpr_angle))
+            # exchange atom order
+            if top_angle[0]>top_angle[2]:
+                top_angle[0], top_angle[2] = top_angle[2], top_angle[0]
+            if np.allclose(tpr_angle[:size], top_angle[:size]):
+                found = True
+        if not found:
+            sys.exit(f'Can not match angle {tpr_angle} in file: {fname}')
+    # dihedrals ff
+    for tpr_dihedral in _dihedrals:
+        top_dihedrals = deepcopy(ff_items['dihedrals'])
+        found = False
+        for top_dihedral in top_dihedrals:
+            size = min(len(top_dihedral), len(tpr_dihedral))
+            # exchange atom order
+            if top_dihedral[0]>top_dihedral[3]:
+                top_dihedral[0], top_dihedral[3] = top_dihedral[3], top_dihedral[0]
+                top_dihedral[1], top_dihedral[2] = top_dihedral[2], top_dihedral[1]
+            # type=1 and 9 is same
+            if top_dihedral[4] == 1:
+                top_dihedral[4] = 9
+            # type=3 is RB, it maybe convert from Fourier (type=5), so skip it
+            if tpr_dihedral[4]==3:
+                found = True
+                break
+            if np.allclose(tpr_dihedral[:size], top_dihedral[:size]):
+                found = True
+        if not found:
+            sys.exit(f'Can not match dihedral {tpr_dihedral} in file: {fname}')
+    # impropers ff
+    for tpr_improper in _imps:
+        top_impropers = deepcopy(ff_items['dihedrals'])
+        found = False
+        for top_improper in top_impropers:
+            size = min(len(top_improper), len(tpr_improper))
+            # keep original atom order
+            if np.allclose(tpr_improper[:size], top_improper[:size]):
+                found = True
+        if not found:
+            sys.exit(f'Can not match improper {tpr_improper} in file: {fname}')
+
 def test_make_top_from_tpr(tpr, top):
     from TprParser.TprMakeTop import make_top_from_tpr
     try:
@@ -224,6 +381,10 @@ def do_reader():
         
         # test virtual sites
         test_get_vsites(reader, fname)
+
+        # compare tpr and top
+        if name.startswith('extra-interactions'):
+            test_mda_top(reader, 'test/dummy_2025&6.top')
 
         # need delete obj
         del reader

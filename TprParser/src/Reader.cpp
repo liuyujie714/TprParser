@@ -31,6 +31,7 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
     if (dump_dihedrals() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_dihedrals()"); }
     if (dump_vsites() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_vsites()"); }
     if (dump_nonbonded() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_nonbonded()"); }
+    if (dump_cmap() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_cmap()"); }
 
     //! put it last
     if (dump_gro_mol2() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_gro_mol2()"); }
@@ -162,7 +163,7 @@ bool TprReader::do_body()
     // lambda
     if (!tpr_.do_real(&data_->lambda, data_->prec)) return TPR_FAILED;
     msg("lambda= %f\n", data_->lambda);
-    // bool type
+    // bool type, here read 4 bytes for each bool, it is different from other
     if (!tpr_.do_bool(&data_->bIr)) return TPR_FAILED;
     if (!tpr_.do_bool(&data_->bTop)) return TPR_FAILED;
     if (!tpr_.do_bool(&data_->bX)) return TPR_FAILED;
@@ -777,7 +778,7 @@ bool TprReader::dump_vsites()
                  15 3 0.25
                  15 4 0.25
                 */
-                msg(">>= %d %d\n", data_->ilist.nr[ftype][mtype], nspace);
+                // msg(">>= %d %d\n", data_->ilist.nr[ftype][mtype], nspace);
                 for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
                 {
                     int              itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
@@ -803,6 +804,12 @@ bool TprReader::dump_vsites()
         }
     }
 
+    return TPR_SUCCESS;
+}
+
+bool TprReader::dump_cmap()
+{
+    // TODO
     return TPR_SUCCESS;
 }
 
@@ -874,18 +881,23 @@ bool TprReader::dump_nonbonded()
             }
 
             // [ pairs ]
-            constexpr int ftype = F_LJ14;
-            for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 3; m++)
+            for (int ftype : {F_LJ14, F_LJC14_Q})
             {
-                int  itype = data_->ilist.interactionlist[ftype][mtype][3 * m];
-                int  a     = 3 * m + 1;
-                int  b     = 3 * m + 2;
-                auto param = get_nonbonded_type(ftype, &iparams_[itype]);
-                data_->pairs.emplace_back(1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                                          1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                                          param.first,
-                                          param.second);
+                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 3; m++)
+                {
+                    int  itype = data_->ilist.interactionlist[ftype][mtype][3 * m];
+                    int  a     = 3 * m + 1;
+                    int  b     = 3 * m + 2;
+                    auto param = get_nonbonded_type(ftype, &iparams_[itype]);
+                    data_->pairs.emplace_back(1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
+                                              1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
+                                              param.first,
+                                              param.second);
+                }
             }
+
+            //! TODO: [ pairs_nb ]
+
             aoffset += data_->atomsinmol[mtype];
         }
     }
@@ -1535,19 +1547,30 @@ bool TprReader::do_atomtypes()
 
 bool TprReader::do_cmap()
 {
-    int   ngrid, gridspace;
     float rdum;
+    int   ngrid;
 
+    auto& cmap = data_->cmap;
     if (!tpr_.do_int(&ngrid)) return TPR_FAILED;
-    if (!tpr_.do_int(&gridspace)) return TPR_FAILED;
-    msg("ngrid= %d, gridspace= %d\n", ngrid, gridspace);
+    if (!tpr_.do_int(&cmap.grid_space)) return TPR_FAILED;
+    msg("cmap ngrid= %d, gridspace= %d\n", ngrid, cmap.grid_space);
 
-    for (int i = 0; i < ngrid * gridspace * gridspace; i++)
+    int nelem = cmap.grid_space * cmap.grid_space;
+    cmap.data.resize(ngrid);
+    for (int i = 0; i < ngrid; i++)
     {
-        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
-        if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
+        cmap.data[i].resize(4L * nelem);
+    }
+
+    for (int i = 0; i < ngrid; i++)
+    {
+        for (int j = 0; j < nelem; j++)
+        {
+            if (!tpr_.do_real(&cmap.data[i][4L * j], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&cmap.data[i][4L * j + 1], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&cmap.data[i][4L * j + 2], data_->prec)) return TPR_FAILED;
+            if (!tpr_.do_real(&cmap.data[i][4L * j + 3], data_->prec)) return TPR_FAILED;
+        }
     }
 
     return TPR_SUCCESS;
@@ -2602,7 +2625,7 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
     {
         if (!tpr_.do_int(reinterpret_cast<int*>(&eGeomOld))) return TPR_FAILED;
         msg("eGeomOld= %d\n", static_cast<int>(eGeomOld));
-        if (!tpr_.do_vector(dimOld, DIM, data_->prec, data_->filever)) return TPR_FAILED;
+        if (!tpr_.do_vector(dimOld, DIM, data_->prec)) return TPR_FAILED;
         print_vec("dimOld= ", dimOld, DIM);
         // The inner cylinder radius
         if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;

@@ -53,6 +53,9 @@ public:
     /* \brief dump all virtual sites parameters */
     bool dump_vsites();
 
+    /* \brief dump cmap parameters */
+    bool dump_cmap();
+
     //< dump non-bonded parameters, includes LJ and paris
     bool dump_nonbonded();
 

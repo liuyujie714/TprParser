@@ -91,6 +91,7 @@ public:
     }
 
     // read/write bool, return TPR_SUCCESS if succeed
+    // actually read int if vergen < 27 and convert to bool
     bool do_bool(bool* val, int vergen = 26) const
     {
         if (m_read)
@@ -302,6 +303,8 @@ public:
     }
 
     //< read/write bool, unsigned char, int, int64_t, float, double, ... in vector with len
+    // \param[in] vergen: only control bool & unsigned char
+    // \param[in] prec: only control real
     template<typename T>
     bool do_vector(T* arr, int len, int prec = 4, int vergen = 26) const
     {

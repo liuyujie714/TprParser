@@ -1,5 +1,6 @@
 #include "Utils.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -18,9 +19,14 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
             ffparam.push_back(param->harmonic.krB);
             return std::make_pair(1, ffparam);
         case F_G96BONDS:
-            ffparam.push_back(param->harmonic.rA);
+            /* The value is different from original itp, so we need inverse convertion
+            See: https://github.com/gromacs/gromacs/blob/5208be5adafc1023c94db6c0a360e9f3cd41d158/src/gromacs/gmxpreprocess/convparm.cpp#L163
+            newparam->harmonic.rA = gmx::square(old[0]);
+            newparam->harmonic.krA = old[1];
+            */
+            ffparam.push_back(std::sqrt(param->harmonic.rA));
             ffparam.push_back(param->harmonic.krA);
-            ffparam.push_back(param->harmonic.rB);
+            ffparam.push_back(std::sqrt(param->harmonic.rB));
             ffparam.push_back(param->harmonic.krB);
             return std::make_pair(2, ffparam);
         case F_MORSE:
@@ -48,13 +54,15 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
             ffparam.push_back(param->fene.kb);
             return std::make_pair(7, ffparam);
         case F_TABBONDS:
-            ffparam.push_back(param->tab.kA);
+            //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
+            ffparam.push_back(param->tab.kA);
             ffparam.push_back(param->tab.kB);
             return std::make_pair(8, ffparam);
         case F_TABBONDSNC:
-            ffparam.push_back(param->tab.kA);
+            //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
+            ffparam.push_back(param->tab.kA);
             ffparam.push_back(param->tab.kB);
             return std::make_pair(9, ffparam);
         case F_RESTRBONDS:
@@ -87,7 +95,7 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
     return std::make_pair(-1, ffparam);
 }
 
-
+static constexpr double            c_deg2Rad = 3.1415926535897932384626 / 180.0;
 std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* param)
 {
     std::vector<float> ffparam;
@@ -100,9 +108,15 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
             ffparam.push_back(param->harmonic.krB);
             return std::make_pair(1, ffparam);
         case F_G96ANGLES:
-            ffparam.push_back(param->harmonic.rA);
+            /* Need inverse convertion, same as F_G96BONDS
+            newparam->harmonic.rA  = std::cos(old[0] * gmx::c_deg2Rad);
+            newparam->harmonic.krA = old[1];
+            newparam->harmonic.rB  = std::cos(old[2] * gmx::c_deg2Rad);
+            newparam->harmonic.krB = old[3];
+            */
+            ffparam.push_back((float)(std::acos(param->harmonic.rA) / c_deg2Rad)); // degree
             ffparam.push_back(param->harmonic.krA);
-            ffparam.push_back(param->harmonic.rB);
+            ffparam.push_back((float)(std::acos(param->harmonic.rB) / c_deg2Rad));
             ffparam.push_back(param->harmonic.krB);
             return std::make_pair(2, ffparam);
         case F_CROSS_BOND_BONDS:
@@ -132,8 +146,9 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
                 ffparam.push_back(param->qangle.c[i]);
             return std::make_pair(6, ffparam);
         case F_TABANGLES:
-            ffparam.push_back(param->tab.kA);
+            //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
+            ffparam.push_back(param->tab.kA);
             ffparam.push_back(param->tab.kB);
             return std::make_pair(8, ffparam);
         case F_LINEAR_ANGLES: // the order is different from tpr
@@ -162,26 +177,22 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
         case F_PDIHS: // 周期性二面角多重
             ffparam.push_back(param->pdihs.phiA);
             ffparam.push_back(param->pdihs.cpA);
+            ffparam.push_back(static_cast<float>(param->pdihs.mult));
             ffparam.push_back(param->pdihs.phiB);
             ffparam.push_back(param->pdihs.cpB);
-            ffparam.push_back(static_cast<float>(param->pdihs.mult));
             // return 1;
             return std::make_pair(9, ffparam);
-        case F_RBDIHS:
+        case F_RBDIHS:   // functype=3, Ryckaert-Bellemans
+        case F_FOURDIHS: // functype=5, But it use Ryckaert-Bellemans in tpr for faster computation
             for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcA[i]);
             for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcB[i]);
             return std::make_pair(3, ffparam);
-        case F_FOURDIHS:
-            for (int i = 0; i < NR_RBDIHS; i++)
-                ffparam.push_back(param->rbdihs.rbcA[i]);
-            for (int i = 0; i < NR_RBDIHS; i++)
-                ffparam.push_back(param->rbdihs.rbcB[i]);
-            return std::make_pair(5, ffparam);
         case F_TABDIHS:
-            ffparam.push_back(param->tab.kA);
+            //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
+            ffparam.push_back(param->tab.kA);
             ffparam.push_back(param->tab.kB);
             return std::make_pair(8, ffparam);
         case F_RESTRDIHS:
@@ -215,9 +226,9 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
         case F_PIDIHS:
             ffparam.push_back(param->pdihs.phiA);
             ffparam.push_back(param->pdihs.cpA);
+            ffparam.push_back((float)param->pdihs.mult);
             ffparam.push_back(param->pdihs.phiB);
             ffparam.push_back(param->pdihs.cpB);
-            ffparam.push_back((float)param->pdihs.mult);
             return std::make_pair(4, ffparam);
         default: break;
     }
@@ -241,12 +252,25 @@ std::pair<int, std::vector<float>> get_vsite_type(int ftype, const t_iparams* pa
             return std::make_pair(2, ffparam);
         case F_VSITE3:    // functype= 1
         case F_VSITE3FD:  // functype= 2
-        case F_VSITE3FAD: // functype= 3, itp中原始参数theta & d 已经被转换了
             ffparam.push_back(param->vsite.a);
             ffparam.push_back(param->vsite.b);
             return std::make_pair(ftype - F_VSITE3 + 1, ffparam);
+        case F_VSITE3FAD: 
+        {
+            /* functype = 3, itp中原始参数theta& d 已经被转换了
+            newparam->vsite.a = old[1] * std::cos(gmx::c_deg2Rad * old[0]);
+            newparam->vsite.b = old[1] * std::sin(gmx::c_deg2Rad * old[0]);
+            */
+            double a = param->vsite.a;
+            double b = param->vsite.b;
+            double old1 = std::sqrt(a * a + b * b);
+            double old0 = std::atan2(b, a) / c_deg2Rad;
+            ffparam.push_back((float)old0);
+            ffparam.push_back((float)old1);
+            return std::make_pair(ftype - F_VSITE3 + 1, ffparam);
+        }
         case F_VSITE3OUT: // functype= 4
-        case F_VSITE4FD:  // functype= 1 ?
+        case F_VSITE4FD:  // functype= 1 
         case F_VSITE4FDN: // functype= 2
         {
             ffparam.push_back(param->vsite.a);
@@ -282,11 +306,19 @@ std::pair<int, std::vector<float>> get_nonbonded_type(int ftype, const t_iparams
             ffparam.push_back(param->lj14.c6B);
             ffparam.push_back(param->lj14.c12B);
             return std::make_pair(1, ffparam);
-        case F_BHAM: // buckingham, I set up functyepe=2
+        case F_LJC14_Q: // [ pairs ], functype 2
+            // five parameters: fudgeQQ qi qj v w. Of which v & w has been converted in tpr
+            ffparam.push_back(param->ljc14.fqq);
+            ffparam.push_back(param->ljc14.qi);
+            ffparam.push_back(param->ljc14.qj);
+            ffparam.push_back(param->ljc14.c6);
+            ffparam.push_back(param->ljc14.c12);
+            return std::make_pair(2, ffparam);
+        case F_BHAM: // buckingham, I set up functyepe=4
             ffparam.push_back(param->bham.a);
             ffparam.push_back(param->bham.b);
             ffparam.push_back(param->bham.c);
-            return std::make_pair(2, ffparam);
+            return std::make_pair(4, ffparam);
         default: break;
     }
     return std::make_pair(-1, ffparam);

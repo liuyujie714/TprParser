@@ -159,6 +159,15 @@ struct VirtualSites
 };
 
 
+struct CmapData
+{
+    int    grid_space; // the grid space
+    vecF2D data;       // the cmap data
+
+    //! the number of grids
+    int ngrid() const { return (int)data.size(); }
+};
+
 struct TprData
 {
     // POD clear zero
@@ -382,6 +391,8 @@ struct TprData
     std::vector<NonBonded> ljparams;
     // vsites parameters
     std::vector<VirtualSites> vsites;
+    // cmap parameters
+    CmapData cmap;
 
     // mdp属性位置, 所有变量都必须初始化为0
     struct

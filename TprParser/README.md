@@ -47,7 +47,8 @@ GROMACS tpr version should between `4.0` to `2026`, too old tpr to be read by th
 Write your python program like this:
 
 ```python
-from TprParser.TprReader import TprReader	# import this module
+# import this module
+from TprParser.TprReader import TprReader	
 ```
 
 

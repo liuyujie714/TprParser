@@ -207,40 +207,40 @@ TEST 	    	1
 
 [angles]
 ;  i     j    k     funct   angle  force.c.
-   1     2    3     1       30     1000      ; regular angle
-   2     3    4     2       30     1000      ; G96 angle
+   1     2    3     1       30     1000             ; regular angle
+   2     3    4     2       30     1000             ; G96 angle
 ;  i     j    k     funct   r1    r2   k
-   3     4    5     3       1     1    1     ; cross bond-bond
+   3     4    5     3       30    40  50            ; cross bond-bond
 ;  i     j    k     funct   r1    r2   r3  k
-   4     5    6     4       1     1    1   1 ; cross bond-angle
+   4     5    6     4       30    40   50  60       ; cross bond-angle
 ;  i     j    k     funct   tetha ktheta r13 kUB
-   5     6    7     5       1     1      1   1   ; Urey-Bradley
+   5     6    7     5       30    40     50  60     ; Urey-Bradley
 ;  i     j    k     funct   theta C0 C1 C2 C3 C4
-   6     7    8     6       1     1  1  1  1  1  ; quartic angle
+   6     7    8     6       30    40 50 60 70  80   ; quartic angle
 ;  i     j    k     funct   klinA aA klinB aB
-  11    12   13     9       1     1  1     1     ; linear angle
+  11    12   13     9       30    40   50  60       ; linear angle
 ;  i     j    k     funct   theta ktheta
-   7     8    9     10      1     1          ; restricted bending potential
+   7     8    9     10      30    40                ; restricted bending potential
 ;  i     j    k     funct   table.number force.c
-   8     9    10    8       0            1   ; tabulated angle
+   8     9    10    8       0            50         ; tabulated angle
 
 [dihedrals]
 ; i  j  k  l  funct
-  1  2  3  4  1     1 1 1             ; proper dihedrals (3 params)
-  2  3  4  5  1     2 2 2 2 2 2       ; proper dihedrals (6 params)
-  5  6  7  8  3     3 3 3 3 3 3       ; Ryckaert-Bellemans dihedral
-  7  8  9  10 5     4 4 4 4           ; Fourier dihedral
-  8  9  10 11 9     5 5 5             ; proper dihedral (multiple)
-  9  10 11 12 10    6 6 6 6           ; restricted dihedral
-  10 11 12 13 11    7 7 7 7 7 7       ; combined bending-torsion potential
-  11 12 13 14 8     0 1               ; tabulated dihedral
+  1  2  3  4  1     1 10 100                        ; proper dihedrals (3 params)
+  2  3  4  5  1     2 20 99  2000 20000 99          ; proper dihedrals (6 params)
+  5  6  7  8  3     3 30 300 3000 30000 30000       ; Ryckaert-Bellemans dihedral
+  7  8  9  10 5     4 40 400 4000                   ; Fourier dihedral
+  8  9  10 11 9     5 50 500                        ; proper dihedral (multiple)
+  9  10 11 12 10    6 60                            ; restricted dihedral
+  10 11 12 13 11    7 70 700 7000 70000 700000      ; combined bending-torsion potential
+  11 12 13 14 8     0 60                            ; tabulated dihedral
 
 [dihedrals]
 ; i  j  k  l  funct
-  3  4  5  6  2     1 1               ; improper dihedrals (2 params)
-  4  5  6  7  2     2 2 2 2           ; improper dihedrals (4 params)
-  6  7  8  9  4     3 3 3 3 3 3       ; periodic improper dihedral
-  5  8  7  4  4     4 4 4 4 4 4       ; periodic improper dihedral, different atom order
+  3  4  5  6  2     1 10                            ; improper dihedrals (2 params)
+  4  5  6  7  2     2 20 200 2000                   ; improper dihedrals (4 params)
+  6  7  8  9  4     3 30 300 3000 30000 30000       ; periodic improper dihedral
+  5  8  7  4  4     4 40 400 4000 40000 40000       ; periodic improper dihedral, different atom order
 
 [ cmap ]
 ;  ai    aj    ak    al    am funct
