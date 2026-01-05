@@ -116,7 +116,7 @@ jobs:
           pip install dist/*-cp38-cp38-manylinux*.whl
 
       - name: Test tpr
-        run:
+        run: |
           # test top
           pip install "gsd<2.0"
           pip install MDAnalysis 
@@ -137,7 +137,7 @@ jobs:
         with:
           skip-existing: true
   
-          
+
   # Calling the publish-action twice in the same job is not supported:
   # https://github.com/pypa/gh-action-pypi-publish/issues/352
   release-TestPyPi:
