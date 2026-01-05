@@ -122,6 +122,7 @@ jobs:
       - name: Test tpr
         run:
           # test top
+          pip install "gsd<2.0"
           pip install MDAnalysis 
           cd TprParser && python TprParser/TestTprReader.py
      
