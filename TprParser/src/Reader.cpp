@@ -2200,20 +2200,30 @@ bool TprReader::do_ir()
                 default: THROW_TPR_EXCEPTION("Unhandled old pull algorithm"); break;
             }
         }
-        if (bPull) { do_pull(ePullOld); }
+        if (bPull)
+        {
+            if (do_pull(ePullOld) != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_pull()"); }
+        }
     }
 
-    // 目前温度的读取只在下面部分不存在的时候，否则就不读取温度，温度属性字节序位置设置0
     // read AWH
-    bool bDoAwh = false;
-    if (data_->filever >= tpxv_AcceleratedWeightHistogram)
     {
-        if (!tpr_.do_bool(&bDoAwh, data_->vergen)) return TPR_FAILED;
-    }
-    if (bDoAwh)
-    {
-        return TPR_SUCCESS;
-        THROW_TPR_EXCEPTION("Unsupport read AWH code");
+        bool bDoAwh = false;
+        if (data_->filever >= tpxv_AcceleratedWeightHistogram)
+        {
+            if (!tpr_.do_bool(&bDoAwh, data_->vergen)) return TPR_FAILED;
+        }
+        msg("bDoAwh= %d\n", bDoAwh ? 1 : 0);
+        if (bDoAwh)
+        {
+            if (do_awh(data_->filever < tpxv_AwhGrowthFactor,
+                       data_->filever < tpxv_AwhTargetMetricScaling,
+                       data_->filever < tpxv_AwhHistogramTolerance)
+                != TPR_SUCCESS)
+            {
+                THROW_TPR_EXCEPTION("error for do_awh()");
+            }
+        }
     }
 
     // Enforced rotation
@@ -2223,7 +2233,11 @@ bool TprReader::do_ir()
         {
             if (!tpr_.do_bool(&bRot, data_->vergen)) return TPR_FAILED;
         }
-        if (bRot) { do_rot(); }
+        msg("bRot= %d\n", bRot ? 1 : 0);
+        if (bRot)
+        {
+            if (do_rot() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_rot()"); }
+        }
     }
 
     // IMD
@@ -2240,6 +2254,7 @@ bool TprReader::do_ir()
             std::vector<int> imd_ind(nat);
             if (!tpr_.do_vector(imd_ind.data(), nat, data_->prec, data_->vergen)) return TPR_FAILED;
         }
+        msg("bIMD= %d\n", bIMD ? 1 : 0);
     }
 
     // 控温部分
@@ -2392,16 +2407,14 @@ bool TprReader::do_ir()
         print_vec("ElecZ= ", ir->elec_field.data() + 8, 4);
     }
 
-    // 计算电生理学: 未完成
+    // 计算电生理学: test file: https://www.mpinat.mpg.de/grubmueller/compel
     if (data_->filever >= tpxv_ComputationalElectrophysiology)
     {
         if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to enum
         msg("swapcoords= %d\n", idum);              // No=0, X, Y, Z
-        if (idum != 0)
+        if (idum != static_cast<int>(SwapType::No))
         {
-            // do_swapcoords_tpx
-            return TPR_SUCCESS;
-            THROW_TPR_EXCEPTION("Unsupport Computational Electrophysiology");
+            if (!do_swapcoords_tpx()) { THROW_TPR_EXCEPTION("error for do_swapcoords_tpx()"); }
         }
     }
 
@@ -2465,7 +2478,7 @@ bool TprReader::do_ir()
         }
         catch (const std::exception& e)
         {
-            msg("Warning! Electric field paramaters can not be read: %s\n", e.what());
+            fprintf(stdout, "Warning! Electric field paramaters can not be read: %s\n", e.what());
             return TPR_SUCCESS;
         }
         print_vec("ElecX= ", ir->elec_field.data() + 0, 4);
@@ -2956,6 +2969,220 @@ bool TprReader::do_rot()
         msg("grp.eFittype= %d\n", static_cast<int>(grp.eFittype));
         msg("grp.PotAngle_nstep= %d\n", grp.PotAngle_nstep);
         msg("grp.PotAngle_step= %g\n", grp.PotAngle_step);
+    }
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::do_awh(bool tprWithoutGrowthFactor, bool tprWithoutTargetMetricScaling, bool tprWithoutHistogramTolerance)
+{
+    // AwhParams::AwhParams
+    int     idum, nbins;
+    bool    boolval;
+    int64_t bdum;
+    if (!tpr_.do_int(&nbins)) return TPR_FAILED;
+    msg("number of biases= %d\n", nbins);
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    msg("nstOut_= %d\n", idum);
+    if (!tpr_.do_int64(&bdum)) return TPR_FAILED;
+    msg("seed_= %lld\n", bdum);
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    msg("nstSampleCoord_= %d\n", idum);
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    msg("numSamplesUpdateFreeEnergy_= %d\n", idum);
+    // enum as int
+    if (!tpr_.do_int(&idum)) return TPR_FAILED;
+    msg("potentialEnum_= %d\n", idum);
+    if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+    msg("shareBiasMultisim_= %d\n", boolval ? 1 : 0);
+
+    // AwhBiasParams::AwhBiasParams
+    if (nbins > 0)
+    {
+        for (int i = 0; i < nbins; i++)
+        {
+            double ddum, growthFactor_;
+            bool   scaleTargetByMetric_;
+            double targetMetricScalingLimit_;
+            int    numDimensions;
+            double histogramTolerance_;
+
+            // enum as int
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            msg("eTarget_= %d\n", idum);
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("targetBetaScaling_= %g\n", ddum);
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("targetCutoff_= %g\n", ddum);
+            // enum as int
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            msg("eGrowth_= %d\n", idum);
+            if (tprWithoutGrowthFactor) { growthFactor_ = 3; }
+            else
+            {
+                if (!tpr_.do_double(&growthFactor_)) return TPR_FAILED;
+            }
+            msg("growthFactor_ = %g\n", growthFactor_);
+            if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to bool
+            msg("bUserData_ = %d\n", idum);
+
+            if (tprWithoutTargetMetricScaling)
+            {
+                scaleTargetByMetric_      = false;
+                targetMetricScalingLimit_ = 10;
+            }
+            else
+            {
+                if (!tpr_.do_bool(&scaleTargetByMetric_, data_->vergen)) return TPR_FAILED;
+                if (!tpr_.do_double(&targetMetricScalingLimit_)) return TPR_FAILED;
+            }
+            msg("scaleTargetByMetric_ = %d\n", scaleTargetByMetric_ ? 1 : 0);
+            msg("targetMetricScalingLimit_ = %g\n", targetMetricScalingLimit_);
+
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("errorInitial_= %g\n", ddum);
+            if (!tpr_.do_int(&numDimensions)) return TPR_FAILED;
+            msg("numDimensions = %d\n", numDimensions);
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            msg("shareGroup_ = %d\n", idum);
+            if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+            msg("equilibrateHistogram_ = %d\n", boolval ? 1 : 0);
+
+            if (tprWithoutHistogramTolerance) { histogramTolerance_ = 0.2; }
+            else
+            {
+                if (!tpr_.do_double(&histogramTolerance_)) return TPR_FAILED;
+            }
+            msg("histogramTolerance_ = %g\n", histogramTolerance_);
+            for (int k = 0; k < numDimensions; k++)
+            {
+                // AwhDimParams::AwhDimParams(ISerializer* serializer)
+                if (!tpr_.do_int(&idum)) return TPR_FAILED; // enum as int
+                msg("eCoordProvider_ = %d\n", idum);
+                if (!tpr_.do_int(&idum)) return TPR_FAILED;
+                msg("coordIndex_ = %d\n", idum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("origin_= %g\n", ddum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("end_= %g\n", ddum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("period_= %g\n", ddum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("forceConstant_= %g\n", ddum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("diffusion_= %g\n", ddum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("coordValueInit_= %g\n", ddum);
+                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+                msg("coverDiameter_= %g\n", ddum);
+            }
+        }
+    }
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::do_swapcoords_tpx()
+{
+    enum class Compartment : int
+    {
+        A,
+        B,
+        Count
+    };
+
+    /* Enums for better readability of the code */
+    enum
+    {
+        eCompA = 0,
+        eCompB
+    };
+    enum
+    {
+        eChannel0 = 0,
+        eChannel1
+    };
+
+    int   idum;
+    bool  boolval;
+    float fdum;
+    if (data_->filever >= tpxv_CompElPolyatomicIonsAndMultipleIonTypes)
+    {
+        int numGroups;
+        if (!tpr_.do_int(&numGroups)) return TPR_FAILED;
+        msg("numGroups= %d\n", numGroups);
+        // do_swapgroup
+        for (int i = 0; i < numGroups; i++)
+        {
+            // Name of the group or molecule
+            char temp[MAX_LEN];
+            if (!tpr_.do_string(temp, data_->vergen)) return TPR_FAILED;
+            msg("group/mol name= %s\n", temp);
+            // Number of atoms in the group
+            if (!tpr_.do_int(&idum)) return TPR_FAILED;
+            msg("numAtoms= %d\n", idum);
+            // The group's atom indices
+            std::vector<int> atomIndices(idum);
+            if (!tpr_.do_vector(atomIndices.data(), idum, data_->prec)) return TPR_FAILED;
+            // Requested counts for compartments A and B
+            std::vector<int> nmolReq(static_cast<int>(Compartment::Count));
+            if (!tpr_.do_vector(nmolReq.data(), static_cast<int>(Compartment::Count), data_->prec))
+                return TPR_FAILED;
+        }
+
+        if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+    }
+    else
+    {
+        // Support reading older CompEl .tpr files
+        int ngroupind, nsol, nsplit0, nsplit1;
+        if (!tpr_.do_int(&ngroupind)) return TPR_FAILED;
+        if (!tpr_.do_int(&nsol)) return TPR_FAILED;
+        if (!tpr_.do_int(&nsplit0)) return TPR_FAILED;
+        if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_int(&nsplit1)) return TPR_FAILED;
+        if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        // Keep compatibility with older .tpr files by reading in the groups in the classic order
+        std::vector<int> groupIndices(ngroupind);
+        std::vector<int> tempsol(nsol);
+        std::vector<int> templsplot0(nsplit0);
+        std::vector<int> templsplot1(nsplit1);
+        if (!tpr_.do_vector(groupIndices.data(), (int)groupIndices.size(), data_->prec))
+            return TPR_FAILED;
+        if (!tpr_.do_vector(tempsol.data(), (int)tempsol.size(), data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_vector(templsplot0.data(), (int)templsplot0.size(), data_->prec))
+            return TPR_FAILED;
+        if (!tpr_.do_vector(templsplot1.data(), (int)templsplot1.size(), data_->prec))
+            return TPR_FAILED;
+        for (int j = eCompA; j <= eCompB; j++)
+        {
+            if (!tpr_.do_int(&idum)) return TPR_FAILED; // group 3 = anions
+            if (!tpr_.do_int(&idum)) return TPR_FAILED; // group 4 = cations
+        }
+    }
+    if (data_->filever >= tpxv_CompElWithSwapLayerOffset)
+    {
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
+        if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
     }
 
     return TPR_SUCCESS;

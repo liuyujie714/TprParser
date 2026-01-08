@@ -89,6 +89,14 @@ tprlist = {
     'extra-interactions-2024.tpr' : [18, 4],
     'extra-interactions-2025.tpr' : [18, 4],
     'extra-interactions-2026.tpr' : [18, 4],
+    # 计算电生理学
+    'swapcoords_gmx_2018.tpr'     : [32681, 4],
+    'swapcoords_gmx_2019.tpr'     : [32681, 4],
+    'swapcoords_gmx_2019.6_double.tpr' : [32681, 8],
+    'swapcoords_gmx_2021.tpr'     : [32681, 4],
+    'swapcoords_gmx_2024.tpr'     : [32681, 4],
+    'swapcoords_gmx_2025.tpr'     : [32681, 4],
+    'swapcoords_gmx_2026-rc.tpr'  : [32681, 4],
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:11]]
 
@@ -292,10 +300,6 @@ def test_mda_top(handle:TprReader, fname:str):
             # type=1 and 9 is same
             if top_dihedral[4] == 1:
                 top_dihedral[4] = 9
-            # type=3 is RB, it maybe convert from Fourier (type=5), so skip it
-            if tpr_dihedral[4]==3:
-                found = True
-                break
             if np.allclose(tpr_dihedral[:size], top_dihedral[:size]):
                 found = True
         if not found:
@@ -332,10 +336,7 @@ def do_reader():
         test_tot_atoms(reader, tprlist[name][0], fname)
 
         # test tpr precision
-        if 'double' in fname:
-            test_precision(reader, fname, 8)
-        else:
-            test_precision(reader, fname, 4)
+        test_precision(reader, fname, tprlist[name][1])
 
         # test coords/velocity
         test_get_xvf(reader, 'x')

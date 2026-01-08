@@ -59,10 +59,7 @@ public:
     //< dump non-bonded parameters, includes LJ and paris
     bool dump_nonbonded();
 
-    /*< do_ir, have not yet completely completed
-     * Unfinished:
-     *	- AWH, ComputationalElectrophysiology, etc.
-     */
+    //< do all mdp parameters
     bool do_ir();
 
 public:
@@ -164,6 +161,12 @@ private:
 
     //< do_rot
     bool do_rot();
+
+    //< do_awh
+    bool do_awh(bool tprWithoutGrowthFactor, bool tprWithoutTargetMetricScaling, bool tprWithoutHistogramTolerance);
+
+    //< do_swapcoords_tpx
+    bool do_swapcoords_tpx();
 
 private:
     FileSerializer           tpr_;

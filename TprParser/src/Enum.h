@@ -21,6 +21,14 @@ enum class PbcType : int
     Default = Xyz
 };
 
+enum class SwapType : int
+{
+    No = 0,
+    X,
+    Y,
+    Z
+};
+
 //! Cutoff scheme
 enum class CutoffScheme : int
 {

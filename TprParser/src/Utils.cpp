@@ -182,13 +182,36 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
             ffparam.push_back(param->pdihs.cpB);
             // return 1;
             return std::make_pair(9, ffparam);
-        case F_RBDIHS:   // functype=3, Ryckaert-Bellemans
-        case F_FOURDIHS: // functype=5, But it use Ryckaert-Bellemans in tpr for faster computation
+        case F_RBDIHS: // functype=3, Ryckaert-Bellemans
             for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcA[i]);
             for (int i = 0; i < NR_RBDIHS; i++)
                 ffparam.push_back(param->rbdihs.rbcB[i]);
             return std::make_pair(3, ffparam);
+        case F_FOURDIHS:
+        {
+            // functype=5, But it use Ryckaert-Bellemans in tpr for faster computation,
+            // so Use the OPLS -> Ryckaert-Bellemans formula backwards to get
+            // the OPLS potential constants back
+            // https://github.com/gromacs/gromacs/blob/5208be5adafc1023c94db6c0a360e9f3cd41d158/src/gromacs/topology/idef.cpp#L320
+            const float* rbcA = param->rbdihs.rbcA;
+            const float* rbcB = param->rbdihs.rbcB;
+            double       VA[NR_FOURDIHS], VB[NR_FOURDIHS];
+            VA[3] = -0.25 * rbcA[4];
+            VA[2] = -0.5 * rbcA[3];
+            VA[1] = 4.0 * VA[3] - rbcA[2];
+            VA[0] = 3.0 * VA[2] - 2.0 * rbcA[1];
+            VB[3] = -0.25 * rbcB[4];
+            VB[2] = -0.5 * rbcB[3];
+            VB[1] = 4.0 * VB[3] - rbcB[2];
+            VB[0] = 3.0 * VB[2] - 2.0 * rbcB[1];
+
+            for (int i = 0; i < NR_FOURDIHS; i++)
+                ffparam.push_back((float)VA[i]);
+            for (int i = 0; i < NR_FOURDIHS; i++)
+                ffparam.push_back((float)VB[i]);
+            return std::make_pair(5, ffparam);
+        }
         case F_TABDIHS:
             //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
