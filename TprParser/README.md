@@ -123,12 +123,42 @@ vsites = reader.get_vsites()
 
 ## Modify atom property
 
+### Modify atomic coords/velocity/box
 ```python
 newcoords = np.array([[1,2,3], [4,5,6], [...]], dtype=np.float32) # shape= N*3
 # The step will create new.tpr that used newcoords
 reader.set_xvf('x', newcoords)
+# set velocity or box, same as above
+reader.set_xvf('v', newvelocity)
 ```
 
+### Modify atomic charges/masses
+Note: `TprParser` must be >= `0.1.63`
+
+Atomic charges and masses are stored on a per molecule type in `.tpr` file compared to coordinates. So you must set it for each molecule type.
+
+For example, if your simulation system topolgy is:
+```bash
+[ molecules ]
+; Compound        #mols
+Protein_chain_A     1
+SOL                1000
+Protein_chain_A     1
+```
+And each molecule type `Protein_chain_A` has `x` atoms, `SOL` has `y` atoms, you can set new charges and masses:
+```python
+pro_charges = [1.0,2.0,3.0, ...]  # length= x
+sol_charges = [2.0,3.0,4.0]       # length= y, such as y==3 for TIP3P
+# sum the number of molecules, the order of molecule is important
+# the length(newcharges)==total number of atoms in system
+newcharges = pro_charges*1 + sol_charges*1000 + pro_charges*1
+reader.set_mq('q', newcharges)
+reader.set_mq('m', newmasses) # same as above
+```
+>Tips: You can `gmx check` to compare old and new tpr differences and make sure the changes are correct:
+```bash
+gmx check -s1 old.tpr -s2 new.tpr
+```
 
 
 ## Modify system pressure

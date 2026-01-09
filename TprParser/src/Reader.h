@@ -11,6 +11,7 @@
 #include "TprException.h"
 
 #define INSERT_POS(prop) data_->property.prop = static_cast<long>(tpr_.ftell_())
+#define INSERT_POS_VEC(prop) data_->property.prop.push_back(static_cast<long>(tpr_.ftell_()))
 
 class TprReader
 {
@@ -120,10 +121,13 @@ public:
 
 private:
     //< assistant func to write tpr given new coords, velocity or force
-    bool write_xvf(std::vector<float>& vec, long pos, long prec) const;
+    bool write_xvf(std::vector<float>& vec, long pos, int prec) const;
+
+    //< assistant func to write tpr given new atomic charges and masses
+    bool write_mq(std::vector<float>& vec, std::vector<long>& pos, int prec) const;
 
     //< assistant func to write electric field to tpr
-    bool write_ef(std::vector<float>& vec, long pos, long prec) const;
+    bool write_ef(std::vector<float>& vec, long pos, int prec) const;
 
     //< read forcefield parameters
     bool do_readff();

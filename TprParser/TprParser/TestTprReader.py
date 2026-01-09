@@ -4,8 +4,8 @@
 from TprParser.TprReader import TprReader, SimSettings
 import MDAnalysis as mda
 from copy import deepcopy
-import sys
 import numpy as np
+import sys
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -134,6 +134,11 @@ def test_get_mq(handle, ftype):
         ret = handle.get_mq(ftype)
     except:
         sys.exit(f'Can not execute get_mq("{ftype}") function')
+
+def test_set_mq(handle, ftype:str):
+    ret = handle.set_mq(ftype)
+    if ret is not True:
+        sys.exit(f'Can not execute set_mq("{ftype}") function')
 
 def test_get_name(handle, ftype):
     try:
@@ -402,15 +407,16 @@ def do_writer():
         print(f'do_writer {name}', flush=True)
         fname = 'test/' + name
 
-        # get precision of tpr
-        reader = TprReader(fname)
-        prec = reader.get_prec()
-        del reader
-        
+        expected_q = -666
+        expected_m = 9999
         with SimSettings(fname, fout) as writer:
             # change 
             writer.set_dt(0.002)
             writer.set_nsteps(100)
+            # change atomic charge & mass
+            writer.set_mq('q', [expected_q]*tprlist[name][0])
+            writer.set_mq('m', [expected_m]*tprlist[name][0])
+
             # unsupport set_mdp_integer for gmx < 4.6
             if '4.0' not in name:
                 for key, val in mdp_integer_data.items():
@@ -420,64 +426,67 @@ def do_writer():
                     #writer.set_mdp_integer('cutoff_scheme', 0) # verlet
                     writer.set_mdp_integer('cutoff_scheme', Group) # group
 
-            if prec==4:
-                writer.set_pressure('CRescale', 'Isotropic', 3.0, 
-                                    [
-                                        100,0, 0,
-                                        0, 100,0,
-                                        0, 0, 100
-                                    ],
-                                    [
-                                        1,0,0,
-                                        0,1,0,
-                                        0,0,1,
-                                    ]
-                                    )
-                # add deform
-                writer.set_pressure('Berendsen', 'Anisotropic', 1.0, 
-                                    [
-                                        100,0, 0,
-                                        0, 100,0,
-                                        0, 0, 100
-                                    ],
-                                    [
-                                        1,0,0,
-                                        0,1,0,
-                                        0,0,1,
-                                    ],
-                                    [
-                                        0, 0, 0,
-                                        0, 0, 0,
-                                        0.01, 0, 0
-                                    ]
-                                    )
-                newX = np.random.uniform(-999, 999, tprlist[name][0]*3).reshape(-1, 3)
-                newV = np.random.uniform(-999, 999, tprlist[name][0]*3).reshape(-1, 3)
-                writer.set_xvf('x', newX)
-                writer.set_xvf('v', newV)
+            writer.set_pressure('CRescale', 'Isotropic', 3.0, 
+                                [
+                                    100,0, 0,
+                                    0, 100,0,
+                                    0, 0, 100
+                                ],
+                                [
+                                    1,0,0,
+                                    0,1,0,
+                                    0,0,1,
+                                ]
+                                )
+            # add deform
+            writer.set_pressure('Berendsen', 'Anisotropic', 1.0, 
+                                [
+                                    100,0, 0,
+                                    0, 100,0,
+                                    0, 0, 100
+                                ],
+                                [
+                                    1,0,0,
+                                    0,1,0,
+                                    0,0,1,
+                                ],
+                                [
+                                    0, 0, 0,
+                                    0, 0, 0,
+                                    0.01, 0, 0
+                                ]
+                                )
+            newX = np.random.uniform(-999, 999, tprlist[name][0]*3).reshape(-1, 3)
+            newV = np.random.uniform(-999, 999, tprlist[name][0]*3).reshape(-1, 3)
+            writer.set_xvf('x', newX)
+            writer.set_xvf('v', newV)
 
-                # test modify electric field
-                if 'elecxyz' in fname:
-                    # E0, omega, t0, sigma for each dim
-                    ef = [
-                        10, 0, 0,   0,
-                        10, 0, 1.5, 0,
-                        10, 0, 0,   2.0
-                    ]
-                    ef = np.array(ef, dtype=np.float32)
-                    writer.set_xvf('ef', ef)
+            # test modify electric field
+            if 'elecxyz' in fname:
+                # E0, omega, t0, sigma for each dim
+                ef = [
+                    10, 0, 0,   0,
+                    10, 0, 1.5, 0,
+                    10, 0, 0,   2.0
+                ]
+                ef = np.array(ef, dtype=np.float32)
+                writer.set_xvf('ef', ef)
             
         # assert modify parameters
         reader = TprReader(fout)
         x = reader.get_xvf('x')
         v = reader.get_xvf('v')
+        q = reader.get_mq('q')
+        m = reader.get_mq('m')
 
-        if prec==4:
-            assert np.allclose(newX, x, atol=1E-3)
-            assert np.allclose(newV, v, atol=1E-3)
-            # assert electric-field
-            if 'elecxyz' in fname:
-                assert np.all(ef==reader.get_xvf('ef').flatten())
+        assert np.allclose(newX, x, atol=1E-3)
+        assert np.allclose(newV, v, atol=1E-3)
+        # assert electric-field
+        if 'elecxyz' in fname:
+            assert np.all(ef==reader.get_xvf('ef').flatten())
+        # test charge & mass
+        assert np.allclose(q, expected_q, atol=1E-3), f'q should be {expected_q}'
+        assert np.allclose(m, expected_m, atol=1E-3), f'm should be {expected_m}'
             
         if '4.0' not in name:
             for key, val in mdp_integer_data.items():

@@ -80,10 +80,10 @@ static PyObject* set_nsteps(PyObject* self, PyObject* args)
     int64_t   nsteps;
     if (!PyArg_ParseTuple(args, "OL", &capsule, &nsteps)) { return NULL; }
 
-    int ret;
+    bool ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_nsteps, ret, nsteps);
 
-    Py_RETURN_TRUE;
+    return PyBool_FromLong(ret);
 }
 
 static PyObject* set_dt(PyObject* self, PyObject* args)
@@ -92,10 +92,10 @@ static PyObject* set_dt(PyObject* self, PyObject* args)
     double    dt      = 0.0;
     if (!PyArg_ParseTuple(args, "Od", &capsule, &dt)) { return NULL; }
 
-    int ret;
+    bool ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_dt, ret, dt);
 
-    Py_RETURN_TRUE;
+    return PyBool_FromLong(ret);
 }
 
 //< get vector from given object, return NULL if failed
@@ -191,10 +191,10 @@ static PyObject* set_pressure(PyObject* self, PyObject* args, PyObject* kwargs)
     std::vector<float> vec_deform;
     if (!get_vector_float(deform, vec_deform)) return NULL;
 
-    int ret;
+    bool ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_pressure, ret, epc, epct, tau_p, vec_press, vec_compress, vec_deform);
 
-    Py_RETURN_TRUE;
+    return PyBool_FromLong(ret);
 }
 
 static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwargs)
@@ -218,10 +218,10 @@ static PyObject* set_temperature(PyObject* self, PyObject* args, PyObject* kwarg
     std::vector<float> vec_t;
     if (!get_vector_float(ref_t, vec_t)) return NULL;
 
-    int ret;
+    bool ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_temperature, ret, etc, vec_tau, vec_t);
 
-    Py_RETURN_TRUE;
+    return PyBool_FromLong(ret);
 }
 
 // set integer props in mdp
@@ -233,10 +233,10 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
 
     if (!PyArg_ParseTuple(args, "Osi", &capsule, &prop, &val)) { return NULL; }
 
-    int ret;
+    bool ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_mdp_integer, ret, prop, val);
 
-    Py_RETURN_TRUE;
+    return PyBool_FromLong(ret);
 }
 
 // get integer props in mdp
@@ -523,10 +523,10 @@ static PyObject* set_xvf(PyObject* self, PyObject* args, PyObject* kwargs)
     std::vector<float> vec;
     if (!get_vector_float(vec_obj, vec)) return NULL;
 
-    int ret;
+    bool ret;
     TRY_THROW_EXCEPTION_FROM_OBJ(set_xvf, ret, prop, vec);
 
-    Py_RETURN_TRUE;
+    return PyBool_FromLong(ret);
 }
 
 static PyObject* get_vsites(PyObject* self, PyObject* args)

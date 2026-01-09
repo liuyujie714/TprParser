@@ -55,6 +55,19 @@ class TprReader:
         return True if succeed
         """
         return TprParser_.set_dt(self.tprCapsule, dt)
+    
+    def set_mq(self, type:VecType2, vec:np.array):
+        """ @brief set atomic mass/charge for each atom in tpr
+
+        Parameters
+        ----------
+        type: must be 'M', 'Q', represents atomic mass/charge to set
+
+        Returns
+        -------
+        return True if succeed
+        """
+        return TprParser_.set_xvf(self.tprCapsule, type, np.array(vec, dtype=np.float32).flatten())
 
     def set_xvf(self, type:VecType, vec:np.array):
         """ @brief set up atomic coordinates/velocity/force/box/electric-field of tpr
@@ -376,6 +389,12 @@ class SimSettings():
     def set_mdp_integer(self, keyword: str, val: int):
         reader = TprReader(self.tempname)
         reader.set_mdp_integer(keyword, val)
+        reader = None
+        self.__movefile()
+
+    def set_mq(self, keyword: str, vec):
+        reader = TprReader(self.tempname)
+        reader.set_mq(keyword, vec)
         reader = None
         self.__movefile()
 

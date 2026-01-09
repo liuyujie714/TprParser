@@ -1309,7 +1309,7 @@ bool TprReader::do_atoms()
         data_->ilist.nr[i].resize(n);
     }
 
-    // read each mol
+    // read each mol types
     for (int i = 0; i < n; i++)
     {
         // 分子名称长度
@@ -1333,7 +1333,9 @@ bool TprReader::do_atoms()
         for (int j = 0; j < data_->atomsinmol[i]; j++)
         {
             // 读原子质量，电荷
+            INSERT_POS_VEC(mass);
             if (!tpr_.do_real(&data_->masses[i][j], data_->prec)) return TPR_FAILED;
+            INSERT_POS_VEC(chg);
             if (!tpr_.do_real(&data_->charges[i][j], data_->prec)) return TPR_FAILED;
             if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; // mB
             if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED; // qB
@@ -2997,85 +2999,82 @@ bool TprReader::do_awh(bool tprWithoutGrowthFactor, bool tprWithoutTargetMetricS
     msg("shareBiasMultisim_= %d\n", boolval ? 1 : 0);
 
     // AwhBiasParams::AwhBiasParams
-    if (nbins > 0)
+    for (int i = 0; i < nbins; i++)
     {
-        for (int i = 0; i < nbins; i++)
+        double ddum, growthFactor_;
+        bool   scaleTargetByMetric_;
+        double targetMetricScalingLimit_;
+        int    numDimensions;
+        double histogramTolerance_;
+
+        // enum as int
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        msg("eTarget_= %d\n", idum);
+        if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+        msg("targetBetaScaling_= %g\n", ddum);
+        if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+        msg("targetCutoff_= %g\n", ddum);
+        // enum as int
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        msg("eGrowth_= %d\n", idum);
+        if (tprWithoutGrowthFactor) { growthFactor_ = 3; }
+        else
         {
-            double ddum, growthFactor_;
-            bool   scaleTargetByMetric_;
-            double targetMetricScalingLimit_;
-            int    numDimensions;
-            double histogramTolerance_;
+            if (!tpr_.do_double(&growthFactor_)) return TPR_FAILED;
+        }
+        msg("growthFactor_ = %g\n", growthFactor_);
+        if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to bool
+        msg("bUserData_ = %d\n", idum);
 
-            // enum as int
+        if (tprWithoutTargetMetricScaling)
+        {
+            scaleTargetByMetric_      = false;
+            targetMetricScalingLimit_ = 10;
+        }
+        else
+        {
+            if (!tpr_.do_bool(&scaleTargetByMetric_, data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_double(&targetMetricScalingLimit_)) return TPR_FAILED;
+        }
+        msg("scaleTargetByMetric_ = %d\n", scaleTargetByMetric_ ? 1 : 0);
+        msg("targetMetricScalingLimit_ = %g\n", targetMetricScalingLimit_);
+
+        if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+        msg("errorInitial_= %g\n", ddum);
+        if (!tpr_.do_int(&numDimensions)) return TPR_FAILED;
+        msg("numDimensions = %d\n", numDimensions);
+        if (!tpr_.do_int(&idum)) return TPR_FAILED;
+        msg("shareGroup_ = %d\n", idum);
+        if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
+        msg("equilibrateHistogram_ = %d\n", boolval ? 1 : 0);
+
+        if (tprWithoutHistogramTolerance) { histogramTolerance_ = 0.2; }
+        else
+        {
+            if (!tpr_.do_double(&histogramTolerance_)) return TPR_FAILED;
+        }
+        msg("histogramTolerance_ = %g\n", histogramTolerance_);
+        for (int k = 0; k < numDimensions; k++)
+        {
+            // AwhDimParams::AwhDimParams(ISerializer* serializer)
+            if (!tpr_.do_int(&idum)) return TPR_FAILED; // enum as int
+            msg("eCoordProvider_ = %d\n", idum);
             if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            msg("eTarget_= %d\n", idum);
+            msg("coordIndex_ = %d\n", idum);
             if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-            msg("targetBetaScaling_= %g\n", ddum);
+            msg("origin_= %g\n", ddum);
             if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-            msg("targetCutoff_= %g\n", ddum);
-            // enum as int
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            msg("eGrowth_= %d\n", idum);
-            if (tprWithoutGrowthFactor) { growthFactor_ = 3; }
-            else
-            {
-                if (!tpr_.do_double(&growthFactor_)) return TPR_FAILED;
-            }
-            msg("growthFactor_ = %g\n", growthFactor_);
-            if (!tpr_.do_int(&idum)) return TPR_FAILED; // int to bool
-            msg("bUserData_ = %d\n", idum);
-
-            if (tprWithoutTargetMetricScaling)
-            {
-                scaleTargetByMetric_      = false;
-                targetMetricScalingLimit_ = 10;
-            }
-            else
-            {
-                if (!tpr_.do_bool(&scaleTargetByMetric_, data_->vergen)) return TPR_FAILED;
-                if (!tpr_.do_double(&targetMetricScalingLimit_)) return TPR_FAILED;
-            }
-            msg("scaleTargetByMetric_ = %d\n", scaleTargetByMetric_ ? 1 : 0);
-            msg("targetMetricScalingLimit_ = %g\n", targetMetricScalingLimit_);
-
+            msg("end_= %g\n", ddum);
             if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-            msg("errorInitial_= %g\n", ddum);
-            if (!tpr_.do_int(&numDimensions)) return TPR_FAILED;
-            msg("numDimensions = %d\n", numDimensions);
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            msg("shareGroup_ = %d\n", idum);
-            if (!tpr_.do_bool(&boolval, data_->vergen)) return TPR_FAILED;
-            msg("equilibrateHistogram_ = %d\n", boolval ? 1 : 0);
-
-            if (tprWithoutHistogramTolerance) { histogramTolerance_ = 0.2; }
-            else
-            {
-                if (!tpr_.do_double(&histogramTolerance_)) return TPR_FAILED;
-            }
-            msg("histogramTolerance_ = %g\n", histogramTolerance_);
-            for (int k = 0; k < numDimensions; k++)
-            {
-                // AwhDimParams::AwhDimParams(ISerializer* serializer)
-                if (!tpr_.do_int(&idum)) return TPR_FAILED; // enum as int
-                msg("eCoordProvider_ = %d\n", idum);
-                if (!tpr_.do_int(&idum)) return TPR_FAILED;
-                msg("coordIndex_ = %d\n", idum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("origin_= %g\n", ddum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("end_= %g\n", ddum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("period_= %g\n", ddum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("forceConstant_= %g\n", ddum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("diffusion_= %g\n", ddum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("coordValueInit_= %g\n", ddum);
-                if (!tpr_.do_double(&ddum)) return TPR_FAILED;
-                msg("coverDiameter_= %g\n", ddum);
-            }
+            msg("period_= %g\n", ddum);
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("forceConstant_= %g\n", ddum);
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("diffusion_= %g\n", ddum);
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("coordValueInit_= %g\n", ddum);
+            if (!tpr_.do_double(&ddum)) return TPR_FAILED;
+            msg("coverDiameter_= %g\n", ddum);
         }
     }
 
@@ -3402,12 +3401,6 @@ bool TprReader::set_pressure(const char*         method,
                              std::vector<float>& compress,
                              std::vector<float>& deform)
 {
-    // check data type float must be same as data_->prec
-    if (sizeof(float) != data_->prec)
-    {
-        THROW_TPR_EXCEPTION("set_pressure only support single precision tpr");
-    }
-
     // check pressure coupling keywords
     PressureCoupling     epc;
     PressureCouplingType epct;
@@ -3466,8 +3459,8 @@ bool TprReader::set_pressure(const char*         method,
 
 
         // write box_rel after and epc before
-        constexpr size_t box_relsize = DIM * DIM * sizeof(float);
-        long len = data_->property.press.epc - data_->property.press.box_rel - box_relsize;
+        const size_t box_relsize = DIM * DIM * data_->prec;
+        size_t       len = data_->property.press.epc - data_->property.press.box_rel - box_relsize;
         if (newtpr.fwrite_(&buffer[data_->property.press.box_rel + box_relsize], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in set_pressure before");
@@ -3499,8 +3492,8 @@ bool TprReader::set_pressure(const char*         method,
             return TPR_FAILED;
 
         // write compress after and deform before
-        constexpr size_t size = sizeof(float) * DIM * DIM;
-        len = data_->property.press.deform - data_->property.press.compress - size;
+        const size_t size = data_->prec * DIM * DIM;
+        len               = data_->property.press.deform - data_->property.press.compress - size;
         if (newtpr.fwrite_(&buffer[data_->property.press.compress + size], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in set_pressure after and deform before");
@@ -3525,12 +3518,6 @@ bool TprReader::set_pressure(const char*         method,
 
 bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, std::vector<float>& ref_t)
 {
-    // check data type float must be same as data_->prec
-    if (sizeof(float) != data_->prec)
-    {
-        THROW_TPR_EXCEPTION("set_temperature only support single precision tpr");
-    }
-
     // check temperature coupling keywords
     TemperatureCoupling etc;
     if ((etc = check_string<TemperatureCoupling>(method, c_TemperatureCoupling)) == TemperatureCoupling::Count)
@@ -3607,7 +3594,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
             return TPR_FAILED;
 
         // write tau_t after
-        const int size = (int)sizeof(float) * data_->ir.ngtc;
+        const int size = data_->prec * data_->ir.ngtc;
         len            = fsize - data_->property.temperature.tau_t - size;
         if (newtpr.fwrite_(&buffer[data_->property.temperature.tau_t + size], len * sizeof(char), 1) != 1)
         {
@@ -3964,7 +3951,7 @@ const std::vector<float>& TprReader::get_ef() const
     return data_->ir.elec_field;
 }
 
-bool TprReader::write_xvf(std::vector<float>& vec, long pos, long prec) const
+bool TprReader::write_xvf(std::vector<float>& vec, long pos, int prec) const
 {
     long        fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
@@ -3983,7 +3970,7 @@ bool TprReader::write_xvf(std::vector<float>& vec, long pos, long prec) const
         if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_FAILED;
 
         // write vector after
-        size_t size = vec.size() * sizeof(float);
+        size_t size = vec.size() * data_->prec;
         long   len  = fsize - pos - (long)size;
         if (newtpr.fwrite_(&buffer[pos + size], len * sizeof(char), 1) != 1)
         {
@@ -3995,7 +3982,64 @@ bool TprReader::write_xvf(std::vector<float>& vec, long pos, long prec) const
     return TPR_FAILED;
 }
 
-bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
+bool TprReader::write_mq(std::vector<float>& vec, std::vector<long>& pos, int prec) const
+{
+    long        fsize  = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+
+    if (!(fsize && !pos.empty())) return TPR_FAILED;
+
+    // map back input vec to each molltype data
+    unsigned int idx = 0;
+    vecF2D       molltype_vec(data_->nmoltypes);
+    for (int i = 0; i < data_->nmoltypes; i++)
+    {
+        molltype_vec[i].resize(data_->atomsinmol[i]);
+        idx += data_->atomsinmol[i];
+    }
+
+    // check data is valid
+    if ((int)pos.size() != idx)
+    {
+        THROW_TPR_EXCEPTION("Position vector size is not equal to moltype size");
+    }
+
+    idx = 0; // zero count
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int m = data_->molbtype[i];
+        for (int j = 0; j < data_->molbnmol[i]; j++)
+        {
+            for (int k = 0; k < data_->molbnatoms[i]; k++)
+            {
+                molltype_vec[m][k] = vec[idx];
+                idx++;
+            }
+        }
+    }
+
+    FileSerializer newtpr(fout_, "wb");
+    // first copy all data
+    if (newtpr.fwrite_(buffer, fsize * sizeof(char), 1) != 1)
+    {
+        THROW_TPR_EXCEPTION("fwrite_ error in write_mq");
+    }
+    // change some data, such as mass/charge
+    idx = 0;
+    for (int i = 0; i < data_->nmoltypes; i++)
+    {
+        for (int j = 0; j < data_->atomsinmol[i]; j++)
+        {
+            newtpr.fseek_(pos[idx], SEEK_SET);
+            if (!newtpr.do_real(&molltype_vec[i][j], data_->prec)) return TPR_FAILED;
+            idx++;
+        }
+    }
+
+    return TPR_SUCCESS;
+}
+
+bool TprReader::write_ef(std::vector<float>& vec, long pos, int prec) const
 {
     long        fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
@@ -4026,7 +4070,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
             int nt = data_->ir.elec_old_gmx[i].nt;
             if (!newtpr.do_int(&n)) return TPR_FAILED;
             if (!newtpr.do_int(&nt)) return TPR_FAILED;
-            nskip += (n + nt) * (2 * sizeof(float) + sizeof(int));
+            nskip += (n + nt) * (2 * data_->prec + sizeof(int));
 
             // write E0, t0, omega, sigma in DIM of tpr, n or nt may be zero
             if (!newtpr.do_vector(tempvec.data() + i * 4 + 0, n, prec)) return TPR_FAILED;
@@ -4108,12 +4152,6 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, long prec) const
 
 bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
 {
-    // check precision of tpr
-    if (data_->prec != sizeof(float))
-    {
-        THROW_TPR_EXCEPTION("Unsupport double precision of tpr in set_xvf");
-    }
-
     // check input type, must X, or V or F or box
     VecProps evec;
     if ((evec = check_string<VecProps>(type, c_mdp_vector)) == VecProps::Count)
@@ -4122,10 +4160,22 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
                             + arr_to_string(c_mdp_vector));
     }
 
-    // check vector size
-    if (evec != VecProps::box && evec != VecProps::ef && (int)vec.size() != data_->natoms * DIM)
+    // check x/v/f vector size
+    if (evec == VecProps::x || evec == VecProps::v || evec == VecProps::f)
     {
-        THROW_TPR_EXCEPTION("Input vector size is not equal to natoms * 3");
+        if ((int)vec.size() != data_->natoms * DIM)
+        {
+            THROW_TPR_EXCEPTION("Input vector size is not equal to natoms * 3");
+        }
+    }
+
+    // check q/m vector size
+    if (evec == VecProps::m || evec == VecProps::q)
+    {
+        if ((int)vec.size() != data_->natoms)
+        {
+            THROW_TPR_EXCEPTION("Input vector size is not equal to natoms");
+        }
     }
 
     // check box size
@@ -4173,6 +4223,16 @@ bool TprReader::set_xvf(const char* type, std::vector<float>& vec)
         case VecProps::ef:
         {
             if (write_ef(vec, data_->property.ef, data_->prec)) return TPR_SUCCESS;
+            break;
+        }
+        case VecProps::m:
+        {
+            if (write_mq(vec, data_->property.mass, data_->prec)) return TPR_SUCCESS;
+            break;
+        }
+        case VecProps::q:
+        {
+            if (write_mq(vec, data_->property.chg, data_->prec)) return TPR_SUCCESS;
             break;
         }
         default: THROW_TPR_EXCEPTION(std::string("Unknown set keyword: ") + type); break;

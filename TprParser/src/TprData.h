@@ -191,15 +191,22 @@ struct TprData
     bool               bInter;    //< if has inter-molecular bonds
     std::vector<float> box = {};  //< box size
     std::vector<char>  symtab;    //< symb name, truncate to SAVELEN characters
-    int                nmoltypes, nmolblock;
-    int                atnr; // the number of LJ type
+    /* such as below nmoltypes=2, nmolblock=3
+    Protein_chain_A     1
+    SOL                500
+    SOL                500
+    Protein_chain_A     1
+    */
+    int nmoltypes; //< the number of unique molecule types
+    int nmolblock; //< the number of molecule blocks
+    int atnr;      // the number of LJ type
 
-    std::vector<int> atomsinmol;
-    std::vector<int> resinmol; // atoms_->nres
+    std::vector<int> atomsinmol; //< the number of atoms in this molecule type
+    std::vector<int> resinmol;   // atoms_->nres
     std::vector<int> molnames;
-    std::vector<int> molbtype;
-    std::vector<int> molbnmol;
-    std::vector<int> molbnatoms; //! 每个单分子有多少个原子构成, = atomsinmol
+    std::vector<int> molbtype;   //< this block (index) belongs to which molecule type
+    std::vector<int> molbnmol;   //< the number of molecules in this block
+    std::vector<int> molbnatoms; //! the number of atoms for this block, = atomsinmol
     vecF2D           charges;
     vecF2D           masses;
     vecI2D           resids;
@@ -406,6 +413,8 @@ struct TprData
         long ef     = 0;        //< the electric field started position in tpr
         long verletbuf_tol = 0; // < tolerance of verlet buffer started position in tpr, for Verlet scheme
 
+        std::vector<long> mass; //< the position of atomic mass for each atom for each molltype
+        std::vector<long> chg;  //< the position of atomic charge for each atom for each molltype
 
         // 压力设置参数位置
         struct
