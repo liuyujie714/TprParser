@@ -172,6 +172,9 @@ private:
     //< do_swapcoords_tpx
     bool do_swapcoords_tpx();
 
+    bool do_block(std::vector<int>& vec);
+    bool do_blocka(std::vector<int>& vec, std::vector<int>& vec2);
+
 private:
     FileSerializer           tpr_;
     std::unique_ptr<TprData> data_;

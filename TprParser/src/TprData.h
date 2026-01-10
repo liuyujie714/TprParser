@@ -249,6 +249,7 @@ struct TprData
         int    nstxout_compressed; // number of xtc coordinates steps
         double init_t = 0.0;       // init time, ps
         double dt     = 0.0;       // time steps, ps
+        int    eI     = eiMD;      // integration method
 
         float x_compression_precision; /// precision of xtc coordinates
         float verletbuf_tol;           // tolerance of verlet buffer

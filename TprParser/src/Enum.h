@@ -253,4 +253,47 @@ enum class RotationGroupFitting : int
     Default = Rmsd
 };
 
+// for old tpr, such as gmx < 4.0, ref: https://github.com/gromacs/gromacs/commit/71e36ecc6806c373f452fa70ca24f43d15f15621
+enum
+{
+    eelCUT,
+    eelRF,
+    eelGRF_NOTUSED,
+    eelPME,
+    eelEWALD,
+    eelP3M_AD,
+    eelPOISSON,
+    eelSWITCH,
+    eelSHIFT,
+    eelUSER,
+    eelGB_NOTUSED,
+    eelRF_NEC_UNSUPPORTED,
+    eelENCADSHIFT_NOTUSED,
+    eelPMEUSER,
+    eelPMESWITCH,
+    eelPMEUSERSWITCH,
+    eelRF_ZERO,
+    eelNR
+};
+#define EEL_RF(e) \
+    ((e) == eelRF || (e) == eelGRF_NOTUSED || (e) == eelRF_NEC_UNSUPPORTED || (e) == eelRF_ZERO)
+
+enum
+{
+    eiMD,
+    eiSteep,
+    eiCG,
+    eiBD,
+    eiSD2_REMOVED,
+    eiNM,
+    eiLBFGS,
+    eiTPI,
+    eiTPIC,
+    eiSD1,
+    eiVV,
+    eiVVAK,
+    eiMimic,
+    eiNR
+};
+
 #endif // !ENUM_H

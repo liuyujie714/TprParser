@@ -27,6 +27,7 @@ tprlist = {
     'one_water_tip3p_excls.tpr' : [3, 4], 
     'one_water_tip4p_excls.tpr' : [4, 4], 
     'two_water_tip4p_excls.tpr' : [8, 4], 
+    'gmx_3.3.1_water.tpr'       : [864, 4], 
     'CO2_vsites.tpr'            : [5000, 4], 
 
     '1EBZ_4.5.5.tpr' :                [3218, 4], 
@@ -98,7 +99,7 @@ tprlist = {
     'swapcoords_gmx_2025.tpr'     : [32681, 4],
     'swapcoords_gmx_2026-rc.tpr'  : [32681, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:11]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:12]]
 
 
 rand_int = lambda : np.random.randint(0, 100000)
@@ -378,7 +379,7 @@ def do_reader():
         # elec/cg/some low version tpr all atom number == -1 or 0
         if ('elec' not in fname) and ('cg' not in fname) and \
             ('benchMEM' not in fname) and ('nobox' not in fname) and \
-            ('extra' not in fname):
+            ('extra' not in fname) and ('gmx_3' not in fname):
             test_get_ivector(reader, "atomicnum", fname)
 
         # test exclusions
@@ -404,6 +405,9 @@ def do_writer():
     fout = 'output.tpr'
     Verlet, Group = range(0, 2)
     for index, name in enumerate(tprlist.keys()):
+        # skip very old tpr
+        if 'gmx_3' in name:
+            continue
         print(f'do_writer {name}', flush=True)
         fname = 'test/' + name
 

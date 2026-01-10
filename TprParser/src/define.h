@@ -233,7 +233,7 @@ static constexpr int tpx_generation = static_cast<int>(TpxGeneration::Count) - 1
 /* This number should be the most recent backwards incompatible version
  * I.e., if this number is 9, we cannot read tpx version 9 with this code.
  */
-static constexpr int tpx_incompatible_version = 57; // GMX4.0 has version 58
+static constexpr int tpx_incompatible_version = 30; // GMX3.2 has version 31
 
 /* Struct used to maintain tpx compatibility when function types are added */
 typedef struct
@@ -244,19 +244,37 @@ typedef struct
 
 // tpx compatibility version with added function types
 static constexpr t_ftupd ftupd[] = {
+    {34, F_FENEBONDS},
+    {43, F_TABBONDS},
+    {43, F_TABBONDSNC},
     {70, F_RESTRBONDS},
     {tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES},
     {76, F_LINEAR_ANGLES},
+    {34, F_QUARTIC_ANGLES},
+    {43, F_TABANGLES},
     {tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRDIHS},
     {tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_CBTDIHS},
+    {43, F_TABDIHS},
     {65, F_CMAP},
     {60, F_GB12_NOLONGERUSED},
     {61, F_GB13_NOLONGERUSED},
     {61, F_GB14_NOLONGERUSED},
     {72, F_GBPOL_NOLONGERUSED},
     {72, F_NPSOLVATION_NOLONGERUSED},
+    {41, F_LJC14_Q},
+    {41, F_LJC_PAIRS_NB},
+    {32, F_BHAM_LR_NOLONGERUSED},
+    {32, F_RF_EXCL},
+    {32, F_COUL_RECIP},
     {93, F_LJ_RECIP},
+    {46, F_DPD},
+    {36, F_THOLE_POL},
+    {54, F_DVDL_CONSTR},
     {76, F_ANHARM_POL},
+    {49, F_VSITE4FDN},
+    {50, F_VSITEN},
+    {46, F_COM_PULL},
+    {46, F_ECONSERVED},
     {90, F_FBPOSRES},
     {tpxv_VSite1, F_VSITE1},
     {tpxv_VSite2FD, F_VSITE2FD},
@@ -280,6 +298,7 @@ constexpr int MAXFORCEPARAM = 12;
 constexpr int NR_RBDIHS     = 6;
 constexpr int NR_CBTDIHS    = 6;
 constexpr int NR_FOURDIHS   = 4;
+constexpr int MAXNODES      = 256;
 
 typedef union t_iparams
 {
