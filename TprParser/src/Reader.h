@@ -146,6 +146,7 @@ private:
 
     //< read groups
     bool do_groups();
+    bool do_grps(int ngrp, vecI2D& gid);
 
     //< do_ilists
     bool do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&interactionlist)[F_NRE]);

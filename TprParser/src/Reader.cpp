@@ -543,6 +543,10 @@ bool TprReader::dump_bonds()
                 {
                     // the id of type
                     int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
+                    // atom idx
+                    int a = nspace * m + 1;
+                    int b = nspace * m + 2;
+                    int c = nspace * m + 3;
 
                     // ffparameters, NOTE: itype==-1 for F_CONNBONDS
                     std::pair<int, std::vector<float>> temp2 = {5, {}}; // functype=5
@@ -550,14 +554,24 @@ bool TprReader::dump_bonds()
 
                     if (ftype == F_SETTLE)
                     {
-                        // doh, dHH, indx 0 1 2
-                        data_->bonds.emplace_back(1 + aoffset, 2 + aoffset, param.first, param.second);
-                        data_->bonds.emplace_back(1 + aoffset, 3 + aoffset, param.first, param.second);
+                        if (data_->filever >= 57)
+                        {
+                            // doh, dHH, indx 0 1 2
+                            data_->bonds.emplace_back(1 + aoffset, 2 + aoffset, param.first, param.second);
+                            data_->bonds.emplace_back(1 + aoffset, 3 + aoffset, param.first, param.second);
+                        }
+                        else
+                        {
+                            // for gmx < 4.0, use global atom index directly because data_->nmolblock always equal to 1
+                            int ai = 1 + data_->ilist.interactionlist[ftype][mtype][a];
+                            int aj = 1 + data_->ilist.interactionlist[ftype][mtype][b];
+                            int ak = 1 + data_->ilist.interactionlist[ftype][mtype][c];
+                            data_->bonds.emplace_back(ai, aj, param.first, param.second);
+                            data_->bonds.emplace_back(ai, ak, param.first, param.second);
+                        }
                     }
                     else
                     {
-                        int a = nspace * m + 1;
-                        int b = nspace * m + 2;
                         data_->bonds.emplace_back(
                             1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
                             1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
@@ -794,9 +808,9 @@ bool TprReader::dump_vsites()
                     }
                     auto param = get_vsite_type(ftype, &iparams_[itype]);
                     // debug print
-                    msg("vsite func: %d\n", param.first);
-                    print_vec("ivsite:     ", iatoms.data(), nvisiteAtoms[k]);
-                    print_vec("vsite ff parameters ", param.second.data(), (int)param.second.size());
+                    // msg("vsite func: %d\n", param.first);
+                    // print_vec("ivsite:     ", iatoms.data(), nvisiteAtoms[k]);
+                    // print_vec("vsite ff parameters ", param.second.data(), (int)param.second.size());
 
                     data_->vsites.emplace_back(vsiteNames[ftype - F_VSITE1],
                                                iatoms,      // involved atoms index (1-based)
@@ -1354,6 +1368,7 @@ bool TprReader::do_atoms()
         {
             // ngrpname
             if (!tpr_.do_int(&ngrpname)) return TPR_FAILED;
+            msg("ngrpname= %d\n", ngrpname);
         }
 
         // allocate for 2D vector
@@ -1441,17 +1456,8 @@ bool TprReader::do_atoms()
             if (!tpr_.do_vector(grpnames.data(), ngrpname, data_->prec)) return TPR_FAILED;
 
             // do_grps
-            int              idum, nr;
-            vecI2D           gid(egcNR); // 每个类型中的原子组编号
-            std::vector<int> gpos;       // 每个原子组字符串的起始位置
-            for (int i = 0; i < egcNR; i++)
-            {
-                // i=0时，温度耦合组数目 grp[T-Coupling  ]
-                if (!tpr_.do_int(&nr)) return TPR_FAILED;
-
-                gid[i].resize(nr); // allocated memory for this type
-                if (!tpr_.do_vector(gid[i].data(), nr, data_->prec)) return TPR_FAILED;
-            }
+            vecI2D gid; // 每个类型中的原子组编号
+            if (!do_grps(egcNR, gid)) return TPR_FAILED;
         }
 
         if (data_->filever >= 57)
@@ -1461,9 +1467,8 @@ bool TprReader::do_atoms()
             if (!do_ilists(i, data_->ilist.nr, data_->ilist.interactionlist)) return TPR_FAILED;
 
             // charge groups parts
-            if (!tpr_.do_int(&idum)) return TPR_FAILED;
-            std::vector<int> temp(idum + 1); // need +1
-            if (!tpr_.do_vector(temp.data(), idum + 1, data_->prec)) return TPR_FAILED;
+            std::vector<int> cgs;
+            if (!do_block(cgs)) return TPR_FAILED;
         }
 
         //! doListOfLists, [ exclusions ] in itp
@@ -3495,16 +3500,10 @@ bool TprReader::do_groups()
 {
     // do_grps
     int              idum, nr;
-    vecI2D           gid(egcNR); // 每个类型中的原子组编号
-    std::vector<int> gpos;       // 每个原子组字符串的起始位置
-    for (int i = 0; i < egcNR; i++)
-    {
-        // i=0时，温度耦合组数目 grp[T-Coupling  ]
-        if (!tpr_.do_int(&nr)) return TPR_FAILED;
+    vecI2D           gid;  // 每个类型中的原子组编号
+    std::vector<int> gpos; // 每个原子组字符串的起始位置
 
-        gid[i].resize(nr); // allocated memory for this type
-        if (!tpr_.do_vector(gid[i].data(), nr, data_->prec)) return TPR_FAILED;
-    }
+    if (!do_grps(egcNR, gid)) return TPR_FAILED;
 
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("number of group names= %d\n", idum);
@@ -3540,6 +3539,30 @@ bool TprReader::do_groups()
 #else
         }
 #endif // _DEBUG
+    }
+
+    return TPR_SUCCESS;
+}
+
+
+bool TprReader::do_grps(int ngrp, vecI2D& gid)
+{
+    int idum, nr, myngrp;
+
+    if (data_->filever < 39) { myngrp = 9; }
+    else { myngrp = ngrp; }
+
+    gid.resize(ngrp);      // 每个类型中的原子组编号
+    std::vector<int> gpos; // 每个原子组字符串的起始位置
+    for (int i = 0; i < egcNR; i++)
+    {
+        // i=0时，温度耦合组数目 grp[T-Coupling  ]
+        if (i < myngrp)
+        {
+            if (!tpr_.do_int(&nr)) return TPR_FAILED;
+            gid[i].resize(nr); // allocated memory for this type
+            if (!tpr_.do_vector(gid[i].data(), nr, data_->prec)) return TPR_FAILED;
+        }
     }
 
     return TPR_SUCCESS;
@@ -3582,6 +3605,7 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
                 return TPR_FAILED;
 
             // very old tpr: add_settle_atoms
+            // NOTE: for gmx < 4.0 (filever==58), it store all atoms for settle
             if (data_->filever < 78 && i == F_SETTLE && nr[i][ntype] > 0)
             {
                 // Settle used to only store the first atom: add the other two
@@ -3599,7 +3623,7 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
 
             if constexpr (0)
             {
-                msg("%d ", nr[i][ntype]);
+                msg(">>>%d: ", nr[i][ntype]);
                 for (int j = 0; j < nr[i][ntype]; j++)
                 {
                     printf("%d ", interactionlist[i][ntype][j]);
