@@ -134,6 +134,19 @@ class TprReader:
         """
         return TprParser_.set_mdp_integer(self.tprCapsule, keyword, val)
     
+    def set_mdp_float(self, keyword:str, val:float):
+        """ @brief set up float keyword of tpr
+
+        Parameters
+        ----------
+        keyword: the mdp keyword, dt, rlist, rvdw, rcoulomb, rvdw_switch, rcoulomb_switch, tau_p, verletbuf_tol, x_compression_precision, verletBufferPressureTolerance, epsilon_r, epsilon_rf, fourier_spacing, em_stepsize, em_tol, shake_tol, cos_accel, userreal1, userreal2, userreal3, userreal4, ...
+
+        Returns
+        -------
+        return True if succeed
+        """
+        return TprParser_.set_mdp_float(self.tprCapsule, keyword, val)
+    
     def get_prec(self):
         """ @brief get the precision of tpr
 
@@ -186,13 +199,6 @@ class TprReader:
         >>> ['virtual_sitesn', 15, 4, 4, 0.25]
         Here last `4` is the number of atoms (`from`) for the vsite
 
-        Another, for `virtual_sites3` with functype 3, we can not get theta & d becauese the parameters have been converted in `grompp`
-        >>> [ virtual_sites3 ]
-        >>> ; Site  from               funct   theta      d
-        >>> 9       4     5     6      3       120        0.5
-        will be converted to:
-        >>> ['virtual_sites3', 9, 4, 5, 6, 3, -0.25, 0.4330126941204071]
-
         Exapmple:
         --------
         >>> vsites = reader.get_vsites()
@@ -210,13 +216,26 @@ class TprReader:
         Parameters
         ----------
         keyword: the mdp keyword, nstlog, nstxout, nstvout, nstfout, nstenergy, nstxout_compressed,
-        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm, cutoff_scheme
+        nsttcouple, nstpcouple, nstcalcenergy, nstlist, nstcomm, fourier_nx, fourier_ny, fourier_nz, cutoff_scheme, ...
 
         Returns
         -------
         return an int value for keyword
         """
         return TprParser_.get_mdp_integer(self.tprCapsule, keyword)
+    
+    def get_mdp_float(self, keyword:str):
+        """ @brief get float keyword of tpr
+
+        Parameters
+        ----------
+        keyword: the mdp keyword, dt, rlist, rvdw, rcoulomb, rvdw_switch, rcoulomb_switch, tau_p, verletbuf_tol, x_compression_precision, verletBufferPressureTolerance, epsilon_r, epsilon_rf, fourier_spacing, em_stepsize, em_tol, shake_tol, cos_accel, userreal1, userreal2, userreal3, userreal4, ...
+
+        Returns
+        -------
+        return an int value for keyword
+        """
+        return TprParser_.get_mdp_float(self.tprCapsule, keyword)
         
     def get_xvf(self, type:VecType) -> np.array:
         """ @brief get atomic coordinates/velocity/force/box/electric-field from tpr if exist. 
@@ -389,6 +408,12 @@ class SimSettings():
     def set_mdp_integer(self, keyword: str, val: int):
         reader = TprReader(self.tempname)
         reader.set_mdp_integer(keyword, val)
+        reader = None
+        self.__movefile()
+
+    def set_mdp_float(self, keyword: str, val: float):
+        reader = TprReader(self.tempname)
+        reader.set_mdp_float(keyword, val)
         reader = None
         self.__movefile()
 

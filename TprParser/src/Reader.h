@@ -87,6 +87,9 @@ public:
     //< set integer mdp parameters
     bool set_mdp_integer(const char* prop, int val);
 
+    //< set float mdp parameters
+    bool set_mdp_float(const char* prop, float val);
+
     //< 1. get coords/velocity/force/mass/charge
     //< 2. get box info in vector 9
     //< 3. get electric field in vector DIM * 4 = 12
@@ -109,6 +112,9 @@ public:
 
     //< get integer mdp parameters
     int get_mdp_integer(const char* prop) const;
+
+    //< get float mdp parameters
+    float get_mdp_float(const char* prop) const;
 
     //< get global exclusions list (0-based) for each atom
     const auto& get_exclusions() const { return data_->atoms.excls; }

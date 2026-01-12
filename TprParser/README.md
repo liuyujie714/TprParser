@@ -1,6 +1,6 @@
 # Description
 
-`TprParser` is a convenient Python module for reading and setting simulation parameters of gromacs `tpr` file. It does **NOT** rely on the GROMACS library and `only` requires C++ and pure Python environment.
+`TprParser` is a convenient Python module for reading and setting simulation parameters of gromacs `tpr` file. It does **NOT** rely on the GROMACS library and `only` pure Python environment.
 
 This module mainly aimed to modify **atom property** of `tpr` and create a new tpr file (named `new.tpr`) after use any one `set_` method. 
 
@@ -13,6 +13,8 @@ Many properties can be set up by this module, such as total simulation time `nst
 # Compatibility
 
 GROMACS tpr version should between `3.2` to `2026`, too old tpr to be read by this module.
+
+System Support: Linux & Windows.
 
 
 
@@ -121,6 +123,20 @@ vsites = reader.get_vsites()
 
 
 
+# Get mdp parameters
+
+```python
+# integer value
+nstxout = reader.get_mdp_integer('nstxout')
+nsttcouple = reader.get_mdp_integer('nsttcouple')
+
+# float value, TprParser must be >= 0.1.64
+rvdw = reader.get_mdp_float('rvdw')
+taup = reader.get_mdp_float('tau_p')
+```
+
+
+
 ## Modify atom property
 
 ### Modify atomic coords/velocity/box
@@ -155,11 +171,10 @@ newcharges = pro_charges*1 + sol_charges*1000 + pro_charges*1
 reader.set_mq('q', newcharges)
 reader.set_mq('m', newmasses) # same as above
 ```
->Tips: You can `gmx check` to compare old and new tpr differences and make sure the changes are correct:
+>Tips: You can use `gmx check` to compare old and new tpr differences and make sure the changes are correct:
 ```bash
 gmx check -s1 old.tpr -s2 new.tpr
 ```
-
 
 ## Modify system pressure
 
@@ -232,6 +247,7 @@ from TprParser.TprReader import SimSettings
 with SimSettings('input.tpr', 'output.tpr') as writer:
     writer.set_dt(0.001)
     writer.set_mdp_integer('nstxout', 100)
+    writer.set_mdp_float('rvdw', 1.4)
     writer.set_nsteps(2000000)
 ```
 

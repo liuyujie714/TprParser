@@ -10,6 +10,10 @@
 #endif
 #include <string>
 
+#define STATIC_ASSERT_ENUM_STR(enum_type, arrstr)                                           \
+    static_assert(static_cast<int>(enum_type::Count) == sizeof(arrstr) / sizeof(arrstr[0]), \
+                  #enum_type " size is not matched")
+
 enum class PbcType : int
 {
     Xyz     = 0, //!< Periodic boundaries in all dimensions.
@@ -51,6 +55,7 @@ enum class PressureCoupling : int
 };
 static const char* c_PressureCoupling[] =
     {"No", "Berendsen", "ParrinelloRahman", "Isotropic", "Mttk", "CRescale"};
+STATIC_ASSERT_ENUM_STR(PressureCoupling, c_PressureCoupling);
 
 //< pressure coupling type
 enum class PressureCouplingType : int
@@ -61,6 +66,7 @@ enum class PressureCouplingType : int
     Count
 };
 static const char* c_PressureCouplingType[] = {"Isotropic", "SemiIsotropic", "Anisotropic"};
+STATIC_ASSERT_ENUM_STR(PressureCouplingType, c_PressureCouplingType);
 
 //< temperature coupling methods
 enum class TemperatureCoupling : int
@@ -76,7 +82,7 @@ enum class TemperatureCoupling : int
 };
 static const char* c_TemperatureCoupling[] =
     {"No", "Berendsen", "NoseHoover", "Yes", "Andersen", "AndersenMassive", "VRescale"};
-
+STATIC_ASSERT_ENUM_STR(TemperatureCoupling, c_TemperatureCoupling);
 
 // Integer mdp
 enum class ParamsInteger : int
@@ -92,6 +98,9 @@ enum class ParamsInteger : int
     nstcalcenergy,
     nstlist,
     nstcomm,
+    fourier_nx,
+    fourier_ny,
+    fourier_nz,
     cutoff_scheme,
     Count,
 };
@@ -106,8 +115,61 @@ static const char* c_mdp_integer[] = {"nstlog",
                                       "nstcalcenergy",
                                       "nstlist",
                                       "nstcomm",
+                                      "fourier_nx",
+                                      "fourier_ny",
+                                      "fourier_nz",
                                       "cutoff_scheme"};
+STATIC_ASSERT_ENUM_STR(ParamsInteger, c_mdp_integer);
 
+// float mdp
+enum class ParamsFloat : int
+{
+    dt,
+    rlist,
+    rvdw,
+    rcoulomb,
+    rvdw_switch,
+    rcoulomb_switch,
+    tau_p,
+    verletbuf_tol,
+    x_compression_precision,
+    verletBufferPressureTolerance,
+    epsilon_r,
+    epsilon_rf,
+    fourier_spacing,
+    em_stepsize,
+    em_tol,
+    shake_tol,
+    cos_accel,
+    userreal1,
+    userreal2,
+    userreal3,
+    userreal4,
+
+    Count,
+};
+static const char* c_mdp_float[] = {"dt",
+                                    "rlist",
+                                    "rvdw",
+                                    "rcoulomb",
+                                    "rvdw_switch",
+                                    "rcoulomb_switch",
+                                    "tau_p",
+                                    "verletbuf_tol",
+                                    "x_compression_precision",
+                                    "verletBufferPressureTolerance",
+                                    "epsilon_r",
+                                    "epsilon_rf",
+                                    "fourier_spacing",
+                                    "em_stepsize",
+                                    "em_tol",
+                                    "shake_tol",
+                                    "cos_accel",
+                                    "userreal1",
+                                    "userreal2",
+                                    "userreal3",
+                                    "userreal4"};
+STATIC_ASSERT_ENUM_STR(ParamsFloat, c_mdp_float);
 
 // vector of tpr, X or V or F
 enum class VecProps : int
@@ -122,6 +184,7 @@ enum class VecProps : int
     Count
 };
 static const char* c_mdp_vector[] = {"x", "v", "f", "m", "q", "box", "ef"};
+STATIC_ASSERT_ENUM_STR(VecProps, c_mdp_vector);
 
 // int vector of tpr, such resid
 enum class IVectorProps : int
@@ -132,6 +195,7 @@ enum class IVectorProps : int
     Count
 };
 static const char* c_int_vector[] = {"resid", "atnum", "atomicnum"};
+STATIC_ASSERT_ENUM_STR(IVectorProps, c_int_vector);
 
 // vector of tpr, resname / atomname / atomtype name
 enum class StringType : int
@@ -142,6 +206,7 @@ enum class StringType : int
     Count
 };
 static const char* c_name_vector[] = {"res", "atom", "type"};
+STATIC_ASSERT_ENUM_STR(StringType, c_name_vector);
 
 
 // type of bonded
@@ -154,6 +219,7 @@ enum class BondedType : int
     Count
 };
 static const char* c_bonded_type[] = {"bonds", "angles", "dihedrals", "impropers"};
+STATIC_ASSERT_ENUM_STR(BondedType, c_bonded_type);
 
 //< Non bonded type
 enum class NonBondedType : int
@@ -165,7 +231,7 @@ enum class NonBondedType : int
     Count
 };
 static const char* c_nonbonded_type[] = {"lj", "type", "pairs", "bh"};
-
+STATIC_ASSERT_ENUM_STR(NonBondedType, c_nonbonded_type);
 
 //! convert array to string with ', should be ' prefix
 template<int N>

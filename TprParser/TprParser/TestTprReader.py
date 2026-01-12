@@ -107,6 +107,7 @@ NoDihedrals = [k for k in list(tprlist.keys())[0:12]]
 
 
 rand_int = lambda : np.random.randint(0, 100000)
+rand_float = lambda : np.random.randint(0, 100000) * 0.5
 # for test mdp set and get
 mdp_integer_data = {
     'nstlog' : rand_int(),
@@ -120,7 +121,36 @@ mdp_integer_data = {
     'nstxout_compressed': rand_int(),
     'nstlist': rand_int(),
     'nstcomm': rand_int(),
+    'fourier_nx': rand_int(),
+    'fourier_ny': rand_int(),
+    'fourier_nz': rand_int(),
 }
+
+# for test mdp set and get
+mdp_float_data = {
+    'dt' : rand_float(),
+    'rlist': rand_float(),
+    'rvdw': rand_float(),
+    'rcoulomb': rand_float(),
+    'rvdw_switch': rand_float(),
+    'rcoulomb_switch': rand_float(),
+    'tau_p': rand_float(),
+    'x_compression_precision': rand_float(),
+    #'verletbuf_tol': rand_float(),
+    #'verletBufferPressureTolerance': rand_float(),
+    'epsilon_r': rand_float(),
+    #'epsilon_rf': rand_float(),
+    # 'fourier_spacing': rand_float(),
+    'em_stepsize': rand_float(),
+    'em_tol': rand_float(),
+    'shake_tol': rand_float(),
+    'cos_accel': rand_float(),
+    'userreal1': rand_float(),
+    'userreal2': rand_float(),
+    'userreal3': rand_float(),
+    'userreal4': rand_float(),
+}
+tau_p = mdp_float_data["tau_p"]
 
 def test_get_xvf(handle, ftype):
     try:
@@ -425,6 +455,10 @@ def do_writer():
             writer.set_mq('q', [expected_q]*tprlist[name][0])
             writer.set_mq('m', [expected_m]*tprlist[name][0])
 
+            # change float value in mdp
+            for key, val in mdp_float_data.items():
+                writer.set_mdp_float(key, val)
+
             # unsupport set_mdp_integer for gmx < 4.6
             if '4.0' not in name:
                 for key, val in mdp_integer_data.items():
@@ -447,7 +481,7 @@ def do_writer():
                                 ]
                                 )
             # add deform
-            writer.set_pressure('Berendsen', 'Anisotropic', 1.0, 
+            writer.set_pressure('Berendsen', 'Anisotropic', tau_p, 
                                 [
                                     100,0, 0,
                                     0, 100,0,
@@ -501,7 +535,12 @@ def do_writer():
                 assert reader.get_mdp_integer(key) == val, f'get_mdp_integer {key} should be {val}'
             if '4.5' not in name:
                 assert reader.get_mdp_integer('cutoff_scheme')==Group, f'get_mdp_integer cutoff_scheme should be {Group}'
-        
+
+        # test changed float value
+        for key, val in mdp_float_data.items():
+            getval = reader.get_mdp_float(key)
+            assert getval == val, f'get_mdp_float {key} should be {val} but I get {getval}'
+    
         del reader
 
 if __name__ == '__main__':

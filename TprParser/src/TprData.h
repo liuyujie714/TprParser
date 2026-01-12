@@ -450,6 +450,41 @@ struct TprData
             bool empty() const { return !(ref_t && tau_t && etc && ngtc && g_ngtc); }
         } temperature;
 
+        // 单个浮点数属性mdp设置位置
+        struct
+        {
+            //! 定义变量顺序和类型必须和枚举顺序完全一致
+            long dt                            = 0; // started
+            long rlist                         = 0;
+            long rvdw                          = 0;
+            long rcoulomb                      = 0;
+            long rvdw_switch                   = 0;
+            long rcoulomb_switch               = 0;
+            long tau_p                         = 0;
+            long verletbuf_tol                 = 0; // must filever >= 81
+            long x_compression_precision       = 0;
+            long verletBufferPressureTolerance = 0; // must filever >= tpxv_VerletBufferPressureTol
+            long epsilon_r                     = 0;
+            long epsilon_rf                    = 0; // must filever >= 37
+            long fourier_spacing               = 0; // must filever >= 81
+            long em_stepsize                   = 0;
+            long em_tol                        = 0;
+            long shake_tol                     = 0;
+            long cos_accel                     = 0;
+            long userreal1                     = 0;
+            long userreal2                     = 0;
+            long userreal3                     = 0;
+            long userreal4                     = 0;
+
+            //< return True if can not read any one position
+            bool empty() const
+            {
+                return !(dt && rlist && rvdw && rcoulomb && rvdw_switch && rcoulomb_switch && tau_p
+                         && x_compression_precision && epsilon_r && em_stepsize && em_tol && shake_tol
+                         && cos_accel && userreal1 && userreal2 && userreal3 && userreal4);
+            }
+        } Float;
+
         // 单个整数属性mdp设置位置
         struct
         {
@@ -468,8 +503,11 @@ struct TprData
             // must be data_->filever >= 67
             long nstcalcenergy = 0;
 
-            long nstlist = 0;
-            long nstcomm = 0;
+            long nstlist    = 0;
+            long nstcomm    = 0;
+            long fourier_nx = 0;
+            long fourier_ny = 0;
+            long fourier_nz = 0;
 
             // must be data_->filever >= 81
             long cutoff_scheme = 0;
@@ -478,7 +516,8 @@ struct TprData
             bool empty() const
             {
                 return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed
-                         && nsttcouple && nstpcouple && nstcalcenergy && nstlist && nstcomm);
+                         && nsttcouple && nstpcouple && nstcalcenergy && nstlist && nstcomm
+                         && fourier_nx && fourier_ny && fourier_nz);
             }
         } integer;
     } property;

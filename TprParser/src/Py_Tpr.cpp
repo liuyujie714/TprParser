@@ -239,6 +239,21 @@ static PyObject* set_mdp_integer(PyObject* self, PyObject* args)
     return PyBool_FromLong(ret);
 }
 
+// set float props in mdp
+static PyObject* set_mdp_float(PyObject* self, PyObject* args)
+{
+    PyObject*   capsule = NULL;
+    const char* prop    = NULL;
+    float       val     = 0;
+
+    if (!PyArg_ParseTuple(args, "Osf", &capsule, &prop, &val)) { return NULL; }
+
+    bool ret;
+    TRY_THROW_EXCEPTION_FROM_OBJ(set_mdp_float, ret, prop, val);
+
+    return PyBool_FromLong(ret);
+}
+
 // get integer props in mdp
 static PyObject* get_mdp_integer(PyObject* self, PyObject* args)
 {
@@ -251,6 +266,20 @@ static PyObject* get_mdp_integer(PyObject* self, PyObject* args)
     TRY_THROW_EXCEPTION_FROM_OBJ(get_mdp_integer, ret, prop);
 
     return Py_BuildValue("i", ret);
+}
+
+// get float props in mdp
+static PyObject* get_mdp_float(PyObject* self, PyObject* args)
+{
+    PyObject*   capsule = NULL;
+    const char* prop    = NULL;
+
+    if (!PyArg_ParseTuple(args, "Os", &capsule, &prop)) { return NULL; }
+
+    float ret = -999.f;
+    TRY_THROW_EXCEPTION_FROM_OBJ(get_mdp_float, ret, prop);
+
+    return Py_BuildValue("f", ret);
 }
 
 static PyObject* get_xvf(PyObject* self, PyObject* args)
@@ -673,6 +702,7 @@ static PyMethodDef methods[] = {
     {"set_nsteps", set_nsteps, METH_VARARGS, "Set up nsteps"},
     {"set_dt", set_dt, METH_VARARGS, "Set up dt"},
     {"set_mdp_integer", set_mdp_integer, METH_VARARGS, "Set up int keyword"},
+    {"set_mdp_float", set_mdp_float, METH_VARARGS, "Set up float keyword"},
     {"set_xvf",
      (PyCFunction)set_xvf,
      METH_VARARGS | METH_KEYWORDS,
@@ -688,6 +718,7 @@ static PyMethodDef methods[] = {
 
     {"get_prec", get_prec, METH_VARARGS, "Get precision of tpr, float(4) or double(8)"},
     {"get_mdp_integer", get_mdp_integer, METH_VARARGS, "Get int value of keyword"},
+    {"get_mdp_float", get_mdp_float, METH_VARARGS, "Get float value of keyword"},
     {"get_name", get_name, METH_VARARGS, "Get resname/atomname/atomtype from tpr"},
     {"get_xvf",
      get_xvf,

@@ -88,6 +88,25 @@ static print_vec(const char* name, T *arr, int len = DIM * DIM)
 }
 // clang-format on
 
+
+static void print_grps_debug(const vecI2D& gid, const std::vector<int>& gpos, const std::vector<char>& symtab)
+{
+#ifdef _DEBUG
+    // 输出每种类型组数目和组名称
+    for (int i = 0; i < egcNR; i++)
+    {
+        msg("grp[%-12s] nr= %zu, name= [", c_groups[i], gid[i].size());
+        for (const auto& id : gid[i])
+        {
+            const char* gpname = &symtab[SAVELEN * gpos[id]];
+
+            fprintf(stdout, " %s", gpname);
+        }
+        fprintf(stdout, "]\n");
+    }
+#endif // _DEBUG
+}
+
 bool TprReader::do_body()
 {
     // read file foramt version of tpr
@@ -1452,12 +1471,14 @@ bool TprReader::do_atoms()
 
         if (data_->filever < 57)
         {
+            // 每个原子组字符串的起始位置
             std::vector<int> grpnames(ngrpname);
             if (!tpr_.do_vector(grpnames.data(), ngrpname, data_->prec)) return TPR_FAILED;
 
             // do_grps
             vecI2D gid; // 每个类型中的原子组编号
             if (!do_grps(egcNR, gid)) return TPR_FAILED;
+            print_grps_debug(gid, grpnames, data_->symtab);
         }
 
         if (data_->filever >= 57)
@@ -1671,7 +1692,6 @@ bool TprReader::do_atomtypes()
 
 bool TprReader::do_cmap()
 {
-    float rdum;
     int   ngrid;
 
     auto& cmap = data_->cmap;
@@ -1905,7 +1925,8 @@ bool TprReader::do_ir()
     {
         if (!tpr_.do_double(&ir->init_t)) return TPR_FAILED;
 
-        INSERT_POS(dt); // get dt position
+        INSERT_POS(dt);       // get dt position
+        INSERT_POS(Float.dt); // get dt position
         if (!tpr_.do_double(&ir->dt)) return TPR_FAILED;
     }
     else
@@ -1913,19 +1934,22 @@ bool TprReader::do_ir()
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->init_t = static_cast<double>(rdum);
 
-        INSERT_POS(dt); // get dt position
+        INSERT_POS(dt);       // get dt position
+        INSERT_POS(Float.dt); // get dt position
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->dt = static_cast<double>(rdum);
     }
     msg("init_t= %g\n", ir->init_t);
     msg("delta_t= %g (ps)\n", ir->dt);
 
+    INSERT_POS(Float.x_compression_precision);
     if (!tpr_.do_real(&ir->x_compression_precision, data_->prec)) return TPR_FAILED;
     msg("xtc prec= %g\n", ir->x_compression_precision);
 
-    INSERT_POS(verletbuf_tol);
     if (data_->filever >= 81)
     {
+        INSERT_POS(verletbuf_tol);
+        INSERT_POS(Float.verletbuf_tol);
         if (!tpr_.do_real(&ir->verletbuf_tol, data_->prec)) return TPR_FAILED;
     }
     else { ir->verletbuf_tol = 0.0f; }
@@ -1933,11 +1957,13 @@ bool TprReader::do_ir()
 
     if (data_->filever >= tpxv_VerletBufferPressureTol)
     {
+        INSERT_POS(Float.verletBufferPressureTolerance);
         if (!tpr_.do_real(&ir->verletBufferPressureTolerance, data_->prec)) return TPR_FAILED;
     }
     else { ir->verletBufferPressureTolerance = -1; }
     msg("verletBufferPressureTolerancer= %g\n", ir->verletBufferPressureTolerance);
 
+    INSERT_POS(Float.rlist);
     if (!tpr_.do_real(&ir->rlist, data_->prec)) return TPR_FAILED;
     msg("rlist= %g\n", ir->rlist);
 
@@ -1971,8 +1997,10 @@ bool TprReader::do_ir()
     else { ir->coulomb_modifier = ir->cutoff_scheme == 0 ? 1 : 2; }
     msg("coulomb_modifier= %d\n", ir->coulomb_modifier);
 
+    INSERT_POS(Float.rcoulomb_switch);
     if (!tpr_.do_real(&ir->rcoulomb_switch, data_->prec)) return TPR_FAILED;
     msg("rcoulomb_switch= %g\n", ir->rcoulomb_switch);
+    INSERT_POS(Float.rcoulomb);
     if (!tpr_.do_real(&ir->rcoulomb, data_->prec)) return TPR_FAILED;
     msg("rcoulomb= %g\n", ir->rcoulomb);
     if (!tpr_.do_int(&ir->vdwtype)) return TPR_FAILED;
@@ -1984,18 +2012,21 @@ bool TprReader::do_ir()
     else { ir->vdw_modifier = ir->cutoff_scheme == 0 ? 1 : 2; }
     msg("vdw_modifier= %d\n", ir->vdw_modifier);
 
-
+    INSERT_POS(Float.rvdw_switch);
     if (!tpr_.do_real(&ir->rvdw_switch, data_->prec)) return TPR_FAILED;
     msg("rvdw_switch= %g\n", ir->rvdw_switch);
+    INSERT_POS(Float.rvdw);
     if (!tpr_.do_real(&ir->rvdw, data_->prec)) return TPR_FAILED;
     msg("rvdw= %g\n", ir->rvdw);
     if (!tpr_.do_int(&ir->eDispCorr)) return TPR_FAILED;
     msg("eDispCorr= %d\n", ir->eDispCorr);
+    INSERT_POS(Float.epsilon_r);
     if (!tpr_.do_real(&ir->epsilon_r, data_->prec)) return TPR_FAILED;
     msg("epsilon_r= %g\n", ir->epsilon_r);
 
     if (data_->filever >= 37)
     {
+        INSERT_POS(Float.epsilon_rf);
         if (!tpr_.do_real(&ir->epsilon_rf, data_->prec)) return TPR_FAILED;
     }
     else
@@ -2040,11 +2071,15 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 81)
     {
+        INSERT_POS(Float.fourier_spacing);
         if (!tpr_.do_real(&ir->fourier_spacing, data_->prec)) return TPR_FAILED;
     }
     else { ir->fourier_spacing = 0.0; }
+    INSERT_POS(integer.fourier_nx);
     if (!tpr_.do_int(&ir->nkx)) return TPR_FAILED;
+    INSERT_POS(integer.fourier_ny);
     if (!tpr_.do_int(&ir->nky)) return TPR_FAILED;
+    INSERT_POS(integer.fourier_nz);
     if (!tpr_.do_int(&ir->nkz)) return TPR_FAILED;
     if (!tpr_.do_int(&ir->pme_order)) return TPR_FAILED;
     if (!tpr_.do_real(&ir->ewald_rtol, data_->prec)) return TPR_FAILED;
@@ -2107,6 +2142,7 @@ bool TprReader::do_ir()
     msg("nstpcouple= %d\n", ir->nstpcouple);
 
     INSERT_POS(press.tau_p);
+    INSERT_POS(Float.tau_p);
     if (!tpr_.do_real(&ir->tau_p, data_->prec)) return TPR_FAILED;
     msg("tau_p= %g\n", ir->tau_p);
 
@@ -2157,6 +2193,7 @@ bool TprReader::do_ir()
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
+    INSERT_POS(Float.shake_tol);
     if (!tpr_.do_real(&ir->shake_tol, data_->prec)) return TPR_FAILED;
     msg("shake_tol= %g\n", ir->shake_tol);
 
@@ -2295,8 +2332,10 @@ bool TprReader::do_ir()
 
 
     // em_stepsize, em_tol
+    INSERT_POS(Float.em_stepsize);
     if (!tpr_.do_real(&ir->em_stepsize, data_->prec)) return TPR_FAILED;
     msg("em_stepsize= %g\n", ir->em_stepsize);
+    INSERT_POS(Float.em_tol);
     if (!tpr_.do_real(&ir->em_tol, data_->prec)) return TPR_FAILED;
     msg("em_tol= %g\n", ir->em_tol);
     // bShakeSOR
@@ -2342,6 +2381,7 @@ bool TprReader::do_ir()
     }
 
     // 余弦加速
+    INSERT_POS(Float.cos_accel);
     if (!tpr_.do_real(&ir->cos_accel, data_->prec)) return TPR_FAILED;
     msg("cos_accel= %g\n", ir->cos_accel);
 
@@ -2350,9 +2390,13 @@ bool TprReader::do_ir()
     if (!tpr_.do_int(&ir->userint2)) return TPR_FAILED;
     if (!tpr_.do_int(&ir->userint3)) return TPR_FAILED;
     if (!tpr_.do_int(&ir->userint4)) return TPR_FAILED;
+    INSERT_POS(Float.userreal1);
     if (!tpr_.do_real(&ir->userreal1, data_->prec)) return TPR_FAILED;
+    INSERT_POS(Float.userreal2);
     if (!tpr_.do_real(&ir->userreal2, data_->prec)) return TPR_FAILED;
+    INSERT_POS(Float.userreal3);
     if (!tpr_.do_real(&ir->userreal3, data_->prec)) return TPR_FAILED;
+    INSERT_POS(Float.userreal4);
     if (!tpr_.do_real(&ir->userreal4, data_->prec)) return TPR_FAILED;
     msg("userint= %d %d %d %d\n", ir->userint1, ir->userint2, ir->userint3, ir->userint4);
     msg("userreal= %g %g %g %g\n", ir->userreal1, ir->userreal2, ir->userreal3, ir->userreal4);
@@ -2740,7 +2784,7 @@ bool TprReader::do_ir()
     }
 
     // TODO: internal parameters for mdrun modules
-
+    msg("END? %lld/%lld\n", tpr_.ftell_(), tpr_.get_fsize());
 
     return TPR_SUCCESS;
 }
@@ -3499,7 +3543,7 @@ bool TprReader::do_blocka(std::vector<int>& vec, std::vector<int>& vec2)
 bool TprReader::do_groups()
 {
     // do_grps
-    int              idum, nr;
+    int              idum;
     vecI2D           gid;  // 每个类型中的原子组编号
     std::vector<int> gpos; // 每个原子组字符串的起始位置
 
@@ -3524,22 +3568,7 @@ bool TprReader::do_groups()
             tpr_.do_vector(temp.data(), idum, data_->prec, data_->vergen);
         }
     }
-
-    // 输出每种类型组数目和组名称
-    for (int i = 0; i < egcNR; i++)
-    {
-        msg("grp[%-12s] nr= %zu, name= [", c_groups[i], gid[i].size());
-        for (const auto& id : gid[i])
-        {
-            const char* gpname = &data_->symtab[SAVELEN * gpos[id]];
-#ifdef _DEBUG
-            fprintf(stdout, " %s", gpname);
-        }
-        fprintf(stdout, "]\n");
-#else
-        }
-#endif // _DEBUG
-    }
+    print_grps_debug(gid, gpos, data_->symtab);
 
     return TPR_SUCCESS;
 }
@@ -3547,7 +3576,7 @@ bool TprReader::do_groups()
 
 bool TprReader::do_grps(int ngrp, vecI2D& gid)
 {
-    int idum, nr, myngrp;
+    int nr, myngrp;
 
     if (data_->filever < 39) { myngrp = 9; }
     else { myngrp = ngrp; }
@@ -4039,6 +4068,62 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
     return TPR_FAILED;
 }
 
+bool TprReader::set_mdp_float(const char* prop, float val)
+{
+    ParamsFloat epi;
+    if ((epi = check_string<ParamsFloat>(prop, c_mdp_float)) == ParamsFloat::Count)
+    {
+        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop + arr_to_string(c_mdp_float));
+    }
+
+    // check version, some old tpr can not support
+    if (data_->filever < 81 && (!mystricmp("verletbuf_tol", prop) || !mystricmp("fourier_spacing", prop)))
+    {
+        THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
+    }
+
+    if (data_->filever < tpxv_VerletBufferPressureTol && !mystricmp("verletBufferPressureTolerance", prop))
+    {
+        THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
+    }
+
+    if (data_->filever < 37 && !mystricmp("epsilon_rf", prop))
+    {
+        THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
+    }
+
+    long        fsize  = 0;
+    const char* buffer = tpr_.get_file_buffer(&fsize);
+    if (fsize && !data_->property.Float.empty())
+    {
+        // set_mdp_integer parameters
+        FileSerializer newtpr(fout_, "wb");
+
+        // copy all data
+        if (newtpr.fwrite_(buffer, fsize * sizeof(char), 1) != 1)
+        {
+            THROW_TPR_EXCEPTION("fwrite_ error in copy all data");
+        }
+
+        // get keyword pos
+        int         eIdx   = static_cast<int>(epi);
+        const long* pos    = &data_->property.Float.dt; // a pointer to struct start pos
+        long        keypos = *(pos + eIdx);
+
+        // go to keypos
+        newtpr.fseek_(keypos, SEEK_SET);
+        // dt use double for data_->filever >= 59
+        int prec = data_->prec;
+        if (data_->filever >= 59 && !mystricmp("dt", prop)) { prec = sizeof(double); }
+        // write new epi in a float
+        if (!newtpr.do_real(&val, prec)) return TPR_FAILED;
+
+        return TPR_SUCCESS;
+    }
+
+    return TPR_FAILED;
+}
+
 const std::vector<float>& TprReader::get_xvf(const char* type) const
 {
     // check input type, must X, or V or F or M or Q or box or electric field
@@ -4287,10 +4372,50 @@ int TprReader::get_mdp_integer(const char* prop) const
         case ParamsInteger::nstcalcenergy: return data_->ir.nstcalcenergy;
         case ParamsInteger::nstlist: return data_->ir.nstlist;
         case ParamsInteger::nstcomm: return data_->ir.nstcomm;
+        case ParamsInteger::fourier_nx: return data_->ir.nkx;
+        case ParamsInteger::fourier_ny: return data_->ir.nky;
+        case ParamsInteger::fourier_nz: return data_->ir.nkz;
         case ParamsInteger::cutoff_scheme: return data_->ir.cutoff_scheme;
         default: break;
     }
     return -1;
+}
+
+float TprReader::get_mdp_float(const char* prop) const
+{
+    ParamsFloat epi;
+    if ((epi = check_string<ParamsFloat>(prop, c_mdp_float)) == ParamsFloat::Count)
+    {
+        THROW_TPR_EXCEPTION(std::string("Unknown mdp property: ") + prop + arr_to_string(c_mdp_float));
+    }
+    switch (epi)
+    {
+        case ParamsFloat::dt: return (float)data_->ir.dt;
+        case ParamsFloat::rlist: return data_->ir.rlist;
+        case ParamsFloat::rvdw: return data_->ir.rvdw;
+        case ParamsFloat::rcoulomb: return data_->ir.rcoulomb;
+        case ParamsFloat::rvdw_switch: return data_->ir.rvdw_switch;
+        case ParamsFloat::rcoulomb_switch: return data_->ir.rcoulomb_switch;
+        case ParamsFloat::tau_p: return data_->ir.tau_p;
+        case ParamsFloat::verletbuf_tol: return data_->ir.verletbuf_tol;
+        case ParamsFloat::x_compression_precision: return data_->ir.x_compression_precision;
+        case ParamsFloat::verletBufferPressureTolerance:
+            return data_->ir.verletBufferPressureTolerance;
+        case ParamsFloat::epsilon_r: return data_->ir.epsilon_r;
+        case ParamsFloat::epsilon_rf: return data_->ir.epsilon_rf;
+        case ParamsFloat::fourier_spacing: return data_->ir.fourier_spacing;
+        case ParamsFloat::em_stepsize: return data_->ir.em_stepsize;
+        case ParamsFloat::em_tol: return data_->ir.em_tol;
+        case ParamsFloat::shake_tol: return data_->ir.shake_tol;
+        case ParamsFloat::cos_accel: return data_->ir.cos_accel;
+        case ParamsFloat::userreal1: return data_->ir.userreal1;
+        case ParamsFloat::userreal2: return data_->ir.userreal2;
+        case ParamsFloat::userreal3: return data_->ir.userreal3;
+        case ParamsFloat::userreal4: return data_->ir.userreal4;
+        default: break;
+    }
+
+    return -999.f;
 }
 
 const std::vector<float>& TprReader::get_ef() const
