@@ -101,6 +101,10 @@ enum class ParamsInteger : int
     fourier_nx,
     fourier_ny,
     fourier_nz,
+    userint1,
+    userint2,
+    userint3,
+    userint4,
     cutoff_scheme,
     Count,
 };
@@ -118,6 +122,10 @@ static const char* c_mdp_integer[] = {"nstlog",
                                       "fourier_nx",
                                       "fourier_ny",
                                       "fourier_nz",
+                                      "userint1",
+                                      "userint2",
+                                      "userint3",
+                                      "userint4",
                                       "cutoff_scheme"};
 STATIC_ASSERT_ENUM_STR(ParamsInteger, c_mdp_integer);
 

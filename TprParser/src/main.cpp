@@ -112,6 +112,8 @@ int main(int argc, char* argv[])
 
         {
             TprReader reader(argv[1]);
+            msg("%-30s= %10d\n", "tpr version", reader.get_filever());
+            msg("%-30s= %10d\n", "gen version", reader.get_genver());
             for (int i = 0; i < asize(c_mdp_integer); i++)
             {
                 msg("%-30s= %10d\n", c_mdp_integer[i], reader.get_mdp_integer(c_mdp_integer[i]));

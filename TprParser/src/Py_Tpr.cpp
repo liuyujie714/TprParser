@@ -357,13 +357,30 @@ static PyObject* get_ivector(PyObject* self, PyObject* args)
 static PyObject* get_prec(PyObject* self, PyObject* args)
 {
     PyObject* capsule = NULL;
-
     if (!PyArg_ParseTuple(args, "O", &capsule)) { return NULL; }
-
     int prec = 4;
     TRY_THROW_EXCEPTION_FROM_OBJ(get_precision, prec);
-
     return Py_BuildValue("i", prec);
+}
+
+// get tpr file version
+static PyObject* get_filever(PyObject* self, PyObject* args)
+{
+    PyObject* capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O", &capsule)) { return NULL; }
+    int filever = -1;
+    TRY_THROW_EXCEPTION_FROM_OBJ(get_filever, filever);
+    return Py_BuildValue("i", filever);
+}
+
+// get gen code version
+static PyObject* get_genver(PyObject* self, PyObject* args)
+{
+    PyObject* capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O", &capsule)) { return NULL; }
+    int genver = -1;
+    TRY_THROW_EXCEPTION_FROM_OBJ(get_genver, genver);
+    return Py_BuildValue("i", genver);
 }
 
 // get resname or atomname
@@ -717,6 +734,8 @@ static PyMethodDef methods[] = {
      "Set up temperature coupling parts"},
 
     {"get_prec", get_prec, METH_VARARGS, "Get precision of tpr, float(4) or double(8)"},
+    {"get_filever", get_filever, METH_VARARGS, "Get tpr file version"},
+    {"get_genver", get_genver, METH_VARARGS, "Get generation version"},
     {"get_mdp_integer", get_mdp_integer, METH_VARARGS, "Get int value of keyword"},
     {"get_mdp_float", get_mdp_float, METH_VARARGS, "Get float value of keyword"},
     {"get_name", get_name, METH_VARARGS, "Get resname/atomname/atomtype from tpr"},

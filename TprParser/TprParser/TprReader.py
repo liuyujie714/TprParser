@@ -155,6 +155,14 @@ class TprReader:
         return 4 is float, 8 is dobule
         """
         return TprParser_.get_prec(self.tprCapsule)
+
+    def get_filever(self):
+        """ @brief get tpr file version number """
+        return TprParser_.get_filever(self.tprCapsule)
+    
+    def get_genver(self):
+        """ @brief get generation version """
+        return TprParser_.get_genver(self.tprCapsule)
     
     def get_exclusions(self):
         """ @brief get global atom exclusions index (0-based) for each atom

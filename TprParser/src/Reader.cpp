@@ -1692,7 +1692,7 @@ bool TprReader::do_atomtypes()
 
 bool TprReader::do_cmap()
 {
-    int   ngrid;
+    int ngrid;
 
     auto& cmap = data_->cmap;
     if (!tpr_.do_int(&ngrid)) return TPR_FAILED;
@@ -1811,7 +1811,7 @@ bool TprReader::do_ir()
     // nstcalcenergy
     if (data_->filever >= 67)
     {
-        INSERT_POS(integer.nstcalcenergy);
+        INSERT_MAP_POS(int_params, nstcalcenergy);
         if (!tpr_.do_int(&ir->nstcalcenergy)) return TPR_FAILED;
     }
     else { ir->nstcalcenergy = 1; }
@@ -1843,7 +1843,7 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 81)
     {
-        INSERT_POS(integer.cutoff_scheme);
+        INSERT_MAP_POS(int_params, cutoff_scheme);
         // cutoff_scheme
         if (!tpr_.do_int(&ir->cutoff_scheme)) return TPR_FAILED;
     }
@@ -1855,7 +1855,7 @@ bool TprReader::do_ir()
 
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
     msg("ns_type= %d\n", idum);
-    INSERT_POS(integer.nstlist);
+    INSERT_MAP_POS(int_params, nstlist);
     if (!tpr_.do_int(&ir->nstlist)) return TPR_FAILED;
     msg("nstlist= %d\n", ir->nstlist);
     if (!tpr_.do_int(&idum)) return TPR_FAILED;
@@ -1873,7 +1873,7 @@ bool TprReader::do_ir()
     else { rdum = 0.05f; }
     msg("rtpi= %f\n", rdum); // test particle radius
 
-    INSERT_POS(integer.nstcomm);
+    INSERT_MAP_POS(int_params, nstcomm);
     if (!tpr_.do_int(&ir->nstcomm)) return TPR_FAILED;
     msg("nstcomm= %d\n", ir->nstcomm);
 
@@ -1897,27 +1897,27 @@ bool TprReader::do_ir()
     if (!tpr_.do_int(&ir->nbfgscorr)) return TPR_FAILED;
     msg("nbfgscorr= %d\n", ir->nbfgscorr);
 
-    INSERT_POS(integer.nstlog);
+    INSERT_MAP_POS(int_params, nstlog);
     if (!tpr_.do_int(&ir->nstlog)) return TPR_FAILED;
     msg("nstlog= %d\n", ir->nstlog);
 
-    INSERT_POS(integer.nstxout);
+    INSERT_MAP_POS(int_params, nstxout);
     if (!tpr_.do_int(&ir->nstxout)) return TPR_FAILED;
     msg("nstxout= %d\n", ir->nstxout);
 
-    INSERT_POS(integer.nstvout);
+    INSERT_MAP_POS(int_params, nstvout);
     if (!tpr_.do_int(&ir->nstvout)) return TPR_FAILED;
     msg("nstvout= %d\n", ir->nstvout);
 
-    INSERT_POS(integer.nstfout);
+    INSERT_MAP_POS(int_params, nstfout);
     if (!tpr_.do_int(&ir->nstfout)) return TPR_FAILED;
     msg("nstfout= %d\n", ir->nstfout);
 
-    INSERT_POS(integer.nstenergy);
+    INSERT_MAP_POS(int_params, nstenergy);
     if (!tpr_.do_int(&ir->nstenergy)) return TPR_FAILED;
     msg("nstenergy= %d\n", ir->nstenergy);
 
-    INSERT_POS(integer.nstxout_compressed);
+    INSERT_MAP_POS(int_params, nstxout_compressed);
     if (!tpr_.do_int(&ir->nstxout_compressed)) return TPR_FAILED;
     msg("nstxout_compressed= %d\n", ir->nstxout_compressed);
 
@@ -1925,8 +1925,8 @@ bool TprReader::do_ir()
     {
         if (!tpr_.do_double(&ir->init_t)) return TPR_FAILED;
 
-        INSERT_POS(dt);       // get dt position
-        INSERT_POS(Float.dt); // get dt position
+        INSERT_POS(dt);                   // get dt position
+        INSERT_MAP_POS(float_params, dt); // get dt position
         if (!tpr_.do_double(&ir->dt)) return TPR_FAILED;
     }
     else
@@ -1934,22 +1934,22 @@ bool TprReader::do_ir()
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->init_t = static_cast<double>(rdum);
 
-        INSERT_POS(dt);       // get dt position
-        INSERT_POS(Float.dt); // get dt position
+        INSERT_POS(dt);                   // get dt position
+        INSERT_MAP_POS(float_params, dt); // get dt position
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
         ir->dt = static_cast<double>(rdum);
     }
     msg("init_t= %g\n", ir->init_t);
     msg("delta_t= %g (ps)\n", ir->dt);
 
-    INSERT_POS(Float.x_compression_precision);
+    INSERT_MAP_POS(float_params, x_compression_precision);
     if (!tpr_.do_real(&ir->x_compression_precision, data_->prec)) return TPR_FAILED;
     msg("xtc prec= %g\n", ir->x_compression_precision);
 
     if (data_->filever >= 81)
     {
         INSERT_POS(verletbuf_tol);
-        INSERT_POS(Float.verletbuf_tol);
+        INSERT_MAP_POS(float_params, verletbuf_tol);
         if (!tpr_.do_real(&ir->verletbuf_tol, data_->prec)) return TPR_FAILED;
     }
     else { ir->verletbuf_tol = 0.0f; }
@@ -1957,13 +1957,13 @@ bool TprReader::do_ir()
 
     if (data_->filever >= tpxv_VerletBufferPressureTol)
     {
-        INSERT_POS(Float.verletBufferPressureTolerance);
+        INSERT_MAP_POS(float_params, verletBufferPressureTolerance);
         if (!tpr_.do_real(&ir->verletBufferPressureTolerance, data_->prec)) return TPR_FAILED;
     }
     else { ir->verletBufferPressureTolerance = -1; }
     msg("verletBufferPressureTolerancer= %g\n", ir->verletBufferPressureTolerance);
 
-    INSERT_POS(Float.rlist);
+    INSERT_MAP_POS(float_params, rlist);
     if (!tpr_.do_real(&ir->rlist, data_->prec)) return TPR_FAILED;
     msg("rlist= %g\n", ir->rlist);
 
@@ -1997,10 +1997,10 @@ bool TprReader::do_ir()
     else { ir->coulomb_modifier = ir->cutoff_scheme == 0 ? 1 : 2; }
     msg("coulomb_modifier= %d\n", ir->coulomb_modifier);
 
-    INSERT_POS(Float.rcoulomb_switch);
+    INSERT_MAP_POS(float_params, rcoulomb_switch);
     if (!tpr_.do_real(&ir->rcoulomb_switch, data_->prec)) return TPR_FAILED;
     msg("rcoulomb_switch= %g\n", ir->rcoulomb_switch);
-    INSERT_POS(Float.rcoulomb);
+    INSERT_MAP_POS(float_params, rcoulomb);
     if (!tpr_.do_real(&ir->rcoulomb, data_->prec)) return TPR_FAILED;
     msg("rcoulomb= %g\n", ir->rcoulomb);
     if (!tpr_.do_int(&ir->vdwtype)) return TPR_FAILED;
@@ -2012,21 +2012,21 @@ bool TprReader::do_ir()
     else { ir->vdw_modifier = ir->cutoff_scheme == 0 ? 1 : 2; }
     msg("vdw_modifier= %d\n", ir->vdw_modifier);
 
-    INSERT_POS(Float.rvdw_switch);
+    INSERT_MAP_POS(float_params, rvdw_switch);
     if (!tpr_.do_real(&ir->rvdw_switch, data_->prec)) return TPR_FAILED;
     msg("rvdw_switch= %g\n", ir->rvdw_switch);
-    INSERT_POS(Float.rvdw);
+    INSERT_MAP_POS(float_params, rvdw);
     if (!tpr_.do_real(&ir->rvdw, data_->prec)) return TPR_FAILED;
     msg("rvdw= %g\n", ir->rvdw);
     if (!tpr_.do_int(&ir->eDispCorr)) return TPR_FAILED;
     msg("eDispCorr= %d\n", ir->eDispCorr);
-    INSERT_POS(Float.epsilon_r);
+    INSERT_MAP_POS(float_params, epsilon_r);
     if (!tpr_.do_real(&ir->epsilon_r, data_->prec)) return TPR_FAILED;
     msg("epsilon_r= %g\n", ir->epsilon_r);
 
     if (data_->filever >= 37)
     {
-        INSERT_POS(Float.epsilon_rf);
+        INSERT_MAP_POS(float_params, epsilon_rf);
         if (!tpr_.do_real(&ir->epsilon_rf, data_->prec)) return TPR_FAILED;
     }
     else
@@ -2071,15 +2071,15 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 81)
     {
-        INSERT_POS(Float.fourier_spacing);
+        INSERT_MAP_POS(float_params, fourier_spacing);
         if (!tpr_.do_real(&ir->fourier_spacing, data_->prec)) return TPR_FAILED;
     }
     else { ir->fourier_spacing = 0.0; }
-    INSERT_POS(integer.fourier_nx);
+    INSERT_MAP_POS(int_params, fourier_nx);
     if (!tpr_.do_int(&ir->nkx)) return TPR_FAILED;
-    INSERT_POS(integer.fourier_ny);
+    INSERT_MAP_POS(int_params, fourier_ny);
     if (!tpr_.do_int(&ir->nky)) return TPR_FAILED;
-    INSERT_POS(integer.fourier_nz);
+    INSERT_MAP_POS(int_params, fourier_nz);
     if (!tpr_.do_int(&ir->nkz)) return TPR_FAILED;
     if (!tpr_.do_int(&ir->pme_order)) return TPR_FAILED;
     if (!tpr_.do_real(&ir->ewald_rtol, data_->prec)) return TPR_FAILED;
@@ -2120,7 +2120,7 @@ bool TprReader::do_ir()
     }
     if (data_->filever >= 71)
     {
-        INSERT_POS(integer.nsttcouple);
+        INSERT_MAP_POS(int_params, nsttcouple);
         if (!tpr_.do_int(&ir->nsttcouple)) return TPR_FAILED;
     }
     else { ir->nsttcouple = ir->nstcalcenergy; }
@@ -2135,14 +2135,14 @@ bool TprReader::do_ir()
 
     if (data_->filever >= 71)
     {
-        INSERT_POS(integer.nstpcouple);
+        INSERT_MAP_POS(int_params, nstpcouple);
         if (!tpr_.do_int(&ir->nstpcouple)) return TPR_FAILED;
     }
     else { ir->nstpcouple = ir->nstcalcenergy; }
     msg("nstpcouple= %d\n", ir->nstpcouple);
 
     INSERT_POS(press.tau_p);
-    INSERT_POS(Float.tau_p);
+    INSERT_MAP_POS(float_params, tau_p);
     if (!tpr_.do_real(&ir->tau_p, data_->prec)) return TPR_FAILED;
     msg("tau_p= %g\n", ir->tau_p);
 
@@ -2193,7 +2193,7 @@ bool TprReader::do_ir()
         if (!tpr_.do_real(&rdum, data_->prec)) return TPR_FAILED;
     }
 
-    INSERT_POS(Float.shake_tol);
+    INSERT_MAP_POS(float_params, shake_tol);
     if (!tpr_.do_real(&ir->shake_tol, data_->prec)) return TPR_FAILED;
     msg("shake_tol= %g\n", ir->shake_tol);
 
@@ -2332,10 +2332,10 @@ bool TprReader::do_ir()
 
 
     // em_stepsize, em_tol
-    INSERT_POS(Float.em_stepsize);
+    INSERT_MAP_POS(float_params, em_stepsize);
     if (!tpr_.do_real(&ir->em_stepsize, data_->prec)) return TPR_FAILED;
     msg("em_stepsize= %g\n", ir->em_stepsize);
-    INSERT_POS(Float.em_tol);
+    INSERT_MAP_POS(float_params, em_tol);
     if (!tpr_.do_real(&ir->em_tol, data_->prec)) return TPR_FAILED;
     msg("em_tol= %g\n", ir->em_tol);
     // bShakeSOR
@@ -2381,22 +2381,26 @@ bool TprReader::do_ir()
     }
 
     // 余弦加速
-    INSERT_POS(Float.cos_accel);
+    INSERT_MAP_POS(float_params, cos_accel);
     if (!tpr_.do_real(&ir->cos_accel, data_->prec)) return TPR_FAILED;
     msg("cos_accel= %g\n", ir->cos_accel);
 
     // 用户可选int和real
+    INSERT_MAP_POS(int_params, userint1);
     if (!tpr_.do_int(&ir->userint1)) return TPR_FAILED;
+    INSERT_MAP_POS(int_params, userint2);
     if (!tpr_.do_int(&ir->userint2)) return TPR_FAILED;
+    INSERT_MAP_POS(int_params, userint3);
     if (!tpr_.do_int(&ir->userint3)) return TPR_FAILED;
+    INSERT_MAP_POS(int_params, userint4);
     if (!tpr_.do_int(&ir->userint4)) return TPR_FAILED;
-    INSERT_POS(Float.userreal1);
+    INSERT_MAP_POS(float_params, userreal1);
     if (!tpr_.do_real(&ir->userreal1, data_->prec)) return TPR_FAILED;
-    INSERT_POS(Float.userreal2);
+    INSERT_MAP_POS(float_params, userreal2);
     if (!tpr_.do_real(&ir->userreal2, data_->prec)) return TPR_FAILED;
-    INSERT_POS(Float.userreal3);
+    INSERT_MAP_POS(float_params, userreal3);
     if (!tpr_.do_real(&ir->userreal3, data_->prec)) return TPR_FAILED;
-    INSERT_POS(Float.userreal4);
+    INSERT_MAP_POS(float_params, userreal4);
     if (!tpr_.do_real(&ir->userreal4, data_->prec)) return TPR_FAILED;
     msg("userint= %d %d %d %d\n", ir->userint1, ir->userint2, ir->userint3, ir->userint4);
     msg("userreal= %g %g %g %g\n", ir->userreal1, ir->userreal2, ir->userreal3, ir->userreal4);
@@ -3668,7 +3672,7 @@ bool TprReader::do_ilists(int ntype, std::vector<int> (&nr)[F_NRE], vecI2D (&int
 
 bool TprReader::set_nsteps(int64_t nsteps)
 {
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     // 原始位置不为0
     if (fsize && data_->property.nsteps)
@@ -3709,7 +3713,7 @@ bool TprReader::set_nsteps(int64_t nsteps)
 
 bool TprReader::set_dt(double dt)
 {
-    long        fsize    = 0;
+    int64_t     fsize    = 0;
     int         realsize = 8;
     const char* buffer   = tpr_.get_file_buffer(&fsize);
     // 原始位置不为0
@@ -3738,7 +3742,7 @@ bool TprReader::set_dt(double dt)
         }
 
         // write dt after
-        long len = fsize - data_->property.dt - realsize;
+        int64_t len = fsize - data_->property.dt - realsize;
         if (newtpr.fwrite_(&buffer[data_->property.dt + realsize], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in set_dt after");
@@ -3813,7 +3817,7 @@ bool TprReader::set_pressure(const char*         method,
         THROW_TPR_EXCEPTION("Only support tpr file version >= 51 to write");
     }
 
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     if (fsize && !data_->property.press.empty())
     {
@@ -3919,7 +3923,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
                             + std::to_string(data_->ir.ngtc));
     }
 
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     if (fsize && !data_->property.temperature.empty())
     {
@@ -3938,7 +3942,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
 
         // write etc after and ngtc before
         constexpr int sizeInt = (int)sizeof(int); // etc size
-        long len = data_->property.temperature.ngtc - data_->property.temperature.etc - sizeInt;
+        int64_t len = data_->property.temperature.ngtc - data_->property.temperature.etc - sizeInt;
         if (newtpr.fwrite_(&buffer[data_->property.temperature.etc + sizeInt], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in etc after and ir->ngtc before");
@@ -3960,9 +3964,9 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
 
         // write nhchainlength after and ref_t before
         // if has nhchainlength position
-        long started = data_->filever >= 69 ? data_->property.temperature.nhchainlength
-                                            : data_->property.temperature.ngtc;
-        len          = data_->property.temperature.ref_t - started - sizeInt;
+        int64_t started = data_->filever >= 69 ? data_->property.temperature.nhchainlength
+                                               : data_->property.temperature.ngtc;
+        len             = data_->property.temperature.ref_t - started - sizeInt;
         if (newtpr.fwrite_(&buffer[started + sizeInt], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in nhchainlength after and ref_t before");
@@ -4019,17 +4023,15 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         isVerlet = (val == static_cast<int>(CutoffScheme::Verlet));
     }
 
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
-    if (fsize && !data_->property.integer.empty())
+    if (fsize && data_->property.int_params.count(epi))
     {
         // set_mdp_integer parameters
         FileSerializer newtpr(fout_, "wb");
 
         // write epi before
-        int         eIdx   = static_cast<int>(epi);
-        const long* pos    = &data_->property.integer.nstlog; // a pointer to struct start pos
-        long        keypos = *(pos + eIdx);
+        int64_t keypos = data_->property.int_params[epi];
         if (newtpr.fwrite_(buffer, keypos * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in keyword before");
@@ -4042,8 +4044,8 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         if (isVerlet)
         {
             // write context between cuttoff-scheme to verletbuf_tol
-            long current = (long)newtpr.ftell_();
-            long len     = data_->property.verletbuf_tol - current;
+            int64_t current = newtpr.ftell_();
+            int64_t len     = data_->property.verletbuf_tol - current;
             if (newtpr.fwrite_(&buffer[current], len * sizeof(char), 1) != 1)
             {
                 THROW_TPR_EXCEPTION("fwrite_ error between cuttoff-scheme to verletbuf_tol");
@@ -4055,8 +4057,8 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
         }
 
         // write keyword after
-        long current = (long)newtpr.ftell_();
-        long len     = fsize - current;
+        int64_t current = newtpr.ftell_();
+        int64_t len     = fsize - current;
         if (newtpr.fwrite_(&buffer[current], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in keyword after");
@@ -4092,9 +4094,9 @@ bool TprReader::set_mdp_float(const char* prop, float val)
         THROW_TPR_EXCEPTION(std::string("Too old tpr file version: ") + std::to_string(data_->filever));
     }
 
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
-    if (fsize && !data_->property.Float.empty())
+    if (fsize && data_->property.float_params.count(epi))
     {
         // set_mdp_integer parameters
         FileSerializer newtpr(fout_, "wb");
@@ -4106,9 +4108,7 @@ bool TprReader::set_mdp_float(const char* prop, float val)
         }
 
         // get keyword pos
-        int         eIdx   = static_cast<int>(epi);
-        const long* pos    = &data_->property.Float.dt; // a pointer to struct start pos
-        long        keypos = *(pos + eIdx);
+        int64_t keypos = data_->property.float_params[epi];
 
         // go to keypos
         newtpr.fseek_(keypos, SEEK_SET);
@@ -4375,10 +4375,14 @@ int TprReader::get_mdp_integer(const char* prop) const
         case ParamsInteger::fourier_nx: return data_->ir.nkx;
         case ParamsInteger::fourier_ny: return data_->ir.nky;
         case ParamsInteger::fourier_nz: return data_->ir.nkz;
+        case ParamsInteger::userint1: return data_->ir.userint1;
+        case ParamsInteger::userint2: return data_->ir.userint2;
+        case ParamsInteger::userint3: return data_->ir.userint3;
+        case ParamsInteger::userint4: return data_->ir.userint4;
         case ParamsInteger::cutoff_scheme: return data_->ir.cutoff_scheme;
         default: break;
     }
-    return -1;
+    return -999;
 }
 
 float TprReader::get_mdp_float(const char* prop) const
@@ -4430,9 +4434,9 @@ const std::vector<float>& TprReader::get_ef() const
     return data_->ir.elec_field;
 }
 
-bool TprReader::write_xvf(std::vector<float>& vec, long pos, int prec) const
+bool TprReader::write_xvf(std::vector<float>& vec, int64_t pos, int prec) const
 {
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
     // 原始位置不为0
     if (fsize && pos)
@@ -4449,8 +4453,8 @@ bool TprReader::write_xvf(std::vector<float>& vec, long pos, int prec) const
         if (!newtpr.do_vector(vec.data(), (int)vec.size(), prec)) return TPR_FAILED;
 
         // write vector after
-        size_t size = vec.size() * data_->prec;
-        long   len  = fsize - pos - (long)size;
+        size_t  size = vec.size() * data_->prec;
+        int64_t len  = fsize - pos - size;
         if (newtpr.fwrite_(&buffer[pos + size], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in write_xvf after");
@@ -4461,9 +4465,9 @@ bool TprReader::write_xvf(std::vector<float>& vec, long pos, int prec) const
     return TPR_FAILED;
 }
 
-bool TprReader::write_mq(std::vector<float>& vec, std::vector<long>& pos, int prec) const
+bool TprReader::write_mq(std::vector<float>& vec, std::vector<int64_t>& pos, int prec) const
 {
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
 
     if (!(fsize && !pos.empty())) return TPR_FAILED;
@@ -4518,9 +4522,9 @@ bool TprReader::write_mq(std::vector<float>& vec, std::vector<long>& pos, int pr
     return TPR_SUCCESS;
 }
 
-bool TprReader::write_ef(std::vector<float>& vec, long pos, int prec) const
+bool TprReader::write_ef(std::vector<float>& vec, int64_t pos, int prec) const
 {
-    long        fsize  = 0;
+    int64_t     fsize  = 0;
     const char* buffer = tpr_.get_file_buffer(&fsize);
 
     if (!(fsize && pos)) return TPR_FAILED;
@@ -4541,7 +4545,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, int prec) const
         {
             std::swap(tempvec[i * 4 + 1], tempvec[i * 4 + 2]);
         }
-        long nskip = 0; // how many bytes to write for electric field
+        int64_t nskip = 0; // how many bytes to write for electric field
         for (int i = 0; i < DIM; i++)
         {
             // write n, nt
@@ -4559,7 +4563,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, int prec) const
         }
 
         // write ef after
-        long len = fsize - pos - nskip;
+        int64_t len = fsize - pos - nskip;
         if (newtpr.fwrite_(&buffer[pos + nskip], len * sizeof(char), 1) != 1)
         {
             THROW_TPR_EXCEPTION("fwrite_ error in write_ef after");
@@ -4614,7 +4618,7 @@ bool TprReader::write_ef(std::vector<float>& vec, long pos, int prec) const
         }
 
         // write ef after
-        long currpos = static_cast<long>(newtpr.ftell_()); // 理论上应该当前位置就处于文件结尾了
+        int64_t currpos = newtpr.ftell_(); // 理论上应该当前位置就处于文件结尾了
         if (currpos < fsize)
         {
             if (newtpr.fwrite_(&buffer[currpos], (fsize - currpos) * sizeof(char), 1) != 1)

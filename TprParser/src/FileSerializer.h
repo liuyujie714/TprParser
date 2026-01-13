@@ -72,9 +72,9 @@ public:
     }
 
     //< get a pointer to file char *buffer
-    const char* get_file_buffer(long* fsize) const
+    const char* get_file_buffer(int64_t* fsize) const
     {
-        *fsize = (long)m_fsize;
+        *fsize = m_fsize;
         return m_buffer;
     }
 

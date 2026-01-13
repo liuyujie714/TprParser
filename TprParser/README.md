@@ -12,10 +12,29 @@ Many properties can be set up by this module, such as total simulation time `nst
 
 # Compatibility
 
-GROMACS tpr version should between `3.2` to `2026`, too old tpr to be read by this module.
+System Support: Linux & Windows
 
-System Support: Linux & Windows.
+GROMACS tpr version should between `3.2` to `2026`, too old tpr to be read/write by this module.
 
+| TPX format | TPX generation | Gromacs release                               | read/write |
+| :--------: | :------------: | :-------------------------------------------- | :--------: |
+| 31         | 4              | 3.2                                           | read-only  |
+| 40         | 7              | 3.3.1, 3.3.3                                  | read-only  |
+| 58         | 17             | 4.0, 4.0.2, 4.0.3, 4.0.4, 4.0.5, 4.0.6, 4.0.7 | read-only  |
+| 73         | 23             | 4.5.0, 4.5.1, 4.5.2, 4.5.3, 4.5.4, 4.5.5      | read-write |
+| 83         | 24             | 4.6, 4.6.1                                    | read-write |
+| 100        | 26             | 5.0, 5.0.1, 5.0.2, 5.0.3, 5.0.4, 5.0.5        | read-write |
+| 103        | 26             | 5.1                                           | read-write |
+| 110        | 26             | 2016                                          | read-write |
+| 112        | 26             | 2018                                          | read-write |
+| 116        | 26             | 2019                                          | read-write |
+| 119        | 27             | 2020                                          | read-write |
+| 122        | 28             | 2021                                          | read-write |
+| 127        | 28             | 2022                                          | read-write |
+| 129        | 28             | 2023                                          | read-write |
+| 133        | 28             | 2024                                          | read-write |
+| 137        | 28             | 2025                                          | read-write |
+| 138        | 29             | 2026                                          | read-write |
 
 
 # Installation

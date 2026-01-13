@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple> // std::tie
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -175,8 +176,9 @@ struct TprData
 
     ~TprData() {}
 
-    int                prec;      //< the precision of tpr, 4 or 8
-    int                filever;   //< the version of file format, fver
+    int prec; //< the precision of tpr, 4 or 8
+    //< the version of file format, fver
+    int                filever;
     int                vergen;    //< the verions of generation code, fgen
     int                natoms;    //< the total natoms
     int                ngtc;      //< The number of temperature coupling groups.
@@ -405,28 +407,29 @@ struct TprData
     // mdp属性位置, 所有变量都必须初始化为0
     struct
     {
-        long nsteps = 0;        //< the started nsteps position in tpr
-        long dt     = 0;        //< the started dt position in tpr
-        long x      = 0;        //< the started atom coordinates position in tpr
-        long v      = 0;        //< the started atom velocity position in tpr
-        long f      = 0;        //< the started atom force position in tpr
-        long box    = 0;        //< the box position in tpr
-        long ef     = 0;        //< the electric field started position in tpr
-        long verletbuf_tol = 0; // < tolerance of verlet buffer started position in tpr, for Verlet scheme
+        int64_t nsteps = 0; //< the started nsteps position in tpr
+        int64_t dt     = 0; //< the started dt position in tpr
+        int64_t x      = 0; //< the started atom coordinates position in tpr
+        int64_t v      = 0; //< the started atom velocity position in tpr
+        int64_t f      = 0; //< the started atom force position in tpr
+        int64_t box    = 0; //< the box position in tpr
+        int64_t ef     = 0; //< the electric field started position in tpr
+        int64_t verletbuf_tol =
+            0; // < tolerance of verlet buffer started position in tpr, for Verlet scheme
 
-        std::vector<long> mass; //< the position of atomic mass for each atom for each molltype
-        std::vector<long> chg;  //< the position of atomic charge for each atom for each molltype
+        std::vector<int64_t> mass; //< the position of atomic mass for each atom for each molltype
+        std::vector<int64_t> chg;  //< the position of atomic charge for each atom for each molltype
 
         // 压力设置参数位置
         struct
         {
-            long box_rel = 0; //< the started vector position for preserve box shape, is DIM*DIM vector
-            long epc      = 0; //< the started pressure coupling method position
-            long epct     = 0; //< the started pressure coupling type position
-            long tau_p    = 0; //< the started tau_p position
-            long ref_p    = 0; //< the started ref pressure value position, is DIM*DIM vector
-            long compress = 0; //< the started compressibility value position, is DIM*DIM vector
-            long deform   = 0; //< the started deform value positon, is DIM*DIM vector
+            int64_t box_rel = 0; //< the started vector position for preserve box shape, is DIM*DIM vector
+            int64_t epc      = 0; //< the started pressure coupling method position
+            int64_t epct     = 0; //< the started pressure coupling type position
+            int64_t tau_p    = 0; //< the started tau_p position
+            int64_t ref_p    = 0; //< the started ref pressure value position, is DIM*DIM vector
+            int64_t compress = 0; //< the started compressibility value position, is DIM*DIM vector
+            int64_t deform   = 0; //< the started deform value positon, is DIM*DIM vector
 
             //< return False if get all parameters
             bool empty() const
@@ -438,88 +441,22 @@ struct TprData
         // 温度设置参数位置
         struct
         {
-            long g_ngtc =
+            int64_t g_ngtc =
                 0; //< the started number of temperature coupling group position in tpr header, g_ngtc==ir->ngtc
-            long etc = 0; //< the started temperature coupling type position, enum to int, 0=No, 1=Berendsen,2=NoseHoover,6=VRescale
-            long ngtc = 0;          //< the started number of temperature coupling group position
-            long nhchainlength = 0; //< the Nose-Hoover chain length if use Nose-Hoover temperature coupling
-            long ref_t = 0;         //< the started ref temperature position, is ir->ngtc vector
-            long tau_t = 0; //< the started temperature coupling constant position, is ir->ngtc vector
+            int64_t etc =
+                0; //< the started temperature coupling type position, enum to int, 0=No, 1=Berendsen,2=NoseHoover,6=VRescale
+            int64_t ngtc = 0; //< the started number of temperature coupling group position
+            int64_t nhchainlength =
+                0; //< the Nose-Hoover chain length if use Nose-Hoover temperature coupling
+            int64_t ref_t = 0; //< the started ref temperature position, is ir->ngtc vector
+            int64_t tau_t = 0; //< the started temperature coupling constant position, is ir->ngtc vector
 
             //< return True if can not read temperature position due to pull code, AWH have not yet finish in tpr reader (TODO)
             bool empty() const { return !(ref_t && tau_t && etc && ngtc && g_ngtc); }
         } temperature;
 
-        // 单个浮点数属性mdp设置位置
-        struct
-        {
-            //! 定义变量顺序和类型必须和枚举顺序完全一致
-            long dt                            = 0; // started
-            long rlist                         = 0;
-            long rvdw                          = 0;
-            long rcoulomb                      = 0;
-            long rvdw_switch                   = 0;
-            long rcoulomb_switch               = 0;
-            long tau_p                         = 0;
-            long verletbuf_tol                 = 0; // must filever >= 81
-            long x_compression_precision       = 0;
-            long verletBufferPressureTolerance = 0; // must filever >= tpxv_VerletBufferPressureTol
-            long epsilon_r                     = 0;
-            long epsilon_rf                    = 0; // must filever >= 37
-            long fourier_spacing               = 0; // must filever >= 81
-            long em_stepsize                   = 0;
-            long em_tol                        = 0;
-            long shake_tol                     = 0;
-            long cos_accel                     = 0;
-            long userreal1                     = 0;
-            long userreal2                     = 0;
-            long userreal3                     = 0;
-            long userreal4                     = 0;
-
-            //< return True if can not read any one position
-            bool empty() const
-            {
-                return !(dt && rlist && rvdw && rcoulomb && rvdw_switch && rcoulomb_switch && tau_p
-                         && x_compression_precision && epsilon_r && em_stepsize && em_tol && shake_tol
-                         && cos_accel && userreal1 && userreal2 && userreal3 && userreal4);
-            }
-        } Float;
-
-        // 单个整数属性mdp设置位置
-        struct
-        {
-            //! 定义变量顺序和类型必须和枚举顺序完全一致
-            long nstlog             = 0; // started
-            long nstxout            = 0;
-            long nstvout            = 0;
-            long nstfout            = 0;
-            long nstenergy          = 0;
-            long nstxout_compressed = 0;
-
-            // must be data_->filever >= 71
-            long nsttcouple = 0;
-            long nstpcouple = 0;
-
-            // must be data_->filever >= 67
-            long nstcalcenergy = 0;
-
-            long nstlist    = 0;
-            long nstcomm    = 0;
-            long fourier_nx = 0;
-            long fourier_ny = 0;
-            long fourier_nz = 0;
-
-            // must be data_->filever >= 81
-            long cutoff_scheme = 0;
-
-            //< return True if can not read any one position
-            bool empty() const
-            {
-                return !(nstlog && nstxout && nstvout && nstfout && nstenergy && nstxout_compressed
-                         && nsttcouple && nstpcouple && nstcalcenergy && nstlist && nstcomm
-                         && fourier_nx && fourier_ny && fourier_nz);
-            }
-        } integer;
+        std::unordered_map<ParamsFloat, int64_t>   float_params; // 单个浮点数属性mdp设置位置
+        std::unordered_map<ParamsInteger, int64_t> int_params;   // 单个整数属性mdp设置位置
     } property;
 };
 

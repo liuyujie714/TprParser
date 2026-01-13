@@ -13,10 +13,10 @@ warnings.filterwarnings("ignore")
 # All test tpr file: [natoms, prec]
 tprlist = {
     # No dihedrals
-    'md.tpr' :              [2520, 4], 
-    'md_cg.tpr' :           [8, 4], 
-    'semiP_water.tpr' :     [4608, 4],
-    'CO2_LineAngle.tpr' :   [3000, 4],
+    'md_gmx_2019.6.tpr'          : [2520, 4], 
+    'md_cg_gmx_2019.6.tpr'       : [8, 4], 
+    'semiP_water_gmx_2019.6.tpr' : [4608, 4],
+    'CO2_LineAngle_gmx_2022.2.tpr': [3000, 4],
     # gmx2025-beta
     'npt2025-beta_water.tpr':[2652,4],
     # gmx 2026-beta
@@ -24,11 +24,13 @@ tprlist = {
     # enforced rotation
     'enforced_rotation_water.tpr' : [7306, 4],
     # test [ exclusion ] 
-    'one_water_tip3p_excls.tpr' : [3, 4], 
-    'one_water_tip4p_excls.tpr' : [4, 4], 
-    'two_water_tip4p_excls.tpr' : [8, 4], 
+    'one_water_tip3p_excls_gmx_2019.6.tpr'   : [3, 4], 
+    'one_water_tip3p_noexcls_gmx_2019.6.tpr' : [3, 4], 
+    'one_water_tip4p_excls_gmx_2019.6.tpr'   : [4, 4], 
+    'one_water_tip4p_noexcls_gmx_2019.6.tpr' : [4, 4], 
+    'two_water_tip4p_excls_gmx_2019.6.tpr'   : [8, 4], 
     'gmx_3.3.1_water.tpr'       : [864, 4], 
-    'CO2_vsites.tpr'            : [5000, 4], 
+    'CO2_vsites_gmx_2019.6.tpr' : [5000, 4], 
 
     'lzm_gmx_3.2.tpr' :         [23207, 4], 
     'lzm_gmx_3.3.3.tpr' :       [23207, 4], 
@@ -67,24 +69,24 @@ tprlist = {
     "2lyz_gmx_2023.tpr"       : [2263, 4],
     'ab42_gmx_4.6.tpr'   :      [44052, 4], 
     'ab42_gmx_4.6.1.tpr' :      [44052, 4], 
-    'annealing.tpr' :           [347443, 4], 
-    'benchMEM.tpr' :            [81743, 4], 
+    'annealing_gmx_2019.6.tpr' :[347443, 4], 
+    'benchMEM_gmx_4.6.3.tpr' :  [81743, 4], 
     'double_2023_cg.tpr' :      [16844, 8], 
-    'em.tpr' :                  [252, 4], 
+    'em_gmx_2019.6.tpr' :       [252, 4], 
     'Inter-2019.6.tpr' :        [157488, 4], 
-    'inter-md.tpr' :            [13749, 4], 
-    'large_2021_aa_posres.tpr' : [34466, 4], 
-    'md2024.tpr' :          [58385, 4], 
-    'pull.tpr' :            [94560, 4],
-    'nobox.tpr' :           [13, 4],
-    'cg_big.tpr':           [290482, 4],
+    'inter-md_gmx_2019.6.tpr' : [13749, 4], 
+    'large_2021.4_aa_posres.tpr':[34466, 4], 
+    'md2024-beta.tpr' :         [58385, 4], 
+    'pull_gmx_5.1.2.tpr' :      [94560, 4],
+    'nobox_gmx_2019.6.tpr' :    [13, 4],
+    'cg_big_gmx_2018.8.tpr':    [290482, 4],
     # electric-field
-    'elec5.1.2.tpr':        [45, 4], # along x
-    'elec2019.tpr':         [45, 4], # along z
-    'elecxyz.tpr':          [45, 4], # along xyz
-    'elecxyz_2024.tpr':     [45, 4], # along xyz
+    'elec5.1.2.tpr':            [45, 4], # along x
+    'elec_gmx2019.6.tpr':       [45, 4], # along z
+    'elecxyz_gmx2019.6.tpr':    [45, 4], # along xyz
+    'elecxyz_2024.2.tpr':       [45, 4], # along xyz
     # FEP
-    'benchBFC_FEP.tpr' :    [43952,4],
+    'benchBFC_FEP_gmx_2016.6.tpr'     : [43952,4],
     # BHAM & No lj parameters, for test all extra interactions
     'mda_extra-interactions-2018.tpr' : [17, 4],
     # nyself, from dummy_2025&6.top
@@ -103,7 +105,7 @@ tprlist = {
     'swapcoords_gmx_2025.tpr'     : [32681, 4],
     'swapcoords_gmx_2026-rc.tpr'  : [32681, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:12]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:14]]
 
 
 rand_int = lambda : np.random.randint(0, 100000)
@@ -124,6 +126,10 @@ mdp_integer_data = {
     'fourier_nx': rand_int(),
     'fourier_ny': rand_int(),
     'fourier_nz': rand_int(),
+    'userint1': rand_int(),
+    'userint2': rand_int(),
+    'userint3': rand_int(),
+    'userint4': rand_int(),
 }
 
 # for test mdp set and get
@@ -196,14 +202,18 @@ def test_precision(handle:TprReader, fname, prec=4):
 def test_exclusions(handle:TprReader, fname):
     excls_map = {
         'tip3p' : [[0, 1, 2], [0, 1, 2], [0, 1, 2]],
+        'tip3p-noexcls' : [[0], [1], [2]],
         'tip4p' : [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]],
+        'tip4p-noexcls' : [[0], [1], [2], [3]],
         'two_tip4p' : [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7]],
     }
     if 'tip3p' in fname:
-        assert excls_map['tip3p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
+        key = 'tip3p-noexcls' if 'noexcls' in fname else 'tip3p'
+        assert excls_map[key] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
     elif 'tip4p' in fname:
-        if 'one' in fname:    
-            assert excls_map['tip4p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
+        if 'one' in fname: 
+            key = 'tip4p-noexcls' if 'noexcls' in fname else 'tip4p'
+            assert excls_map[key] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
         elif 'two' in fname:
             assert excls_map['two_tip4p'] == handle.get_exclusions(), "The exclusions is not euqal for file: {fname}"
 
@@ -377,6 +387,8 @@ def do_reader():
 
         # test tpr precision
         test_precision(reader, fname, tprlist[name][1])
+        assert 31 <= reader.get_filever() <= 138, "The tpx file version out of reange for file: {fname}"
+        assert 4 <= reader.get_genver() <= 29, "The tpx generation version out of reange for file: {fname}"
 
         # test coords/velocity
         test_get_xvf(reader, 'x')
