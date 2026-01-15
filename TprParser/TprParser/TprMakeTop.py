@@ -79,6 +79,20 @@ def _get_dihedrals(rd:TprReader, type:str = 'dihedrals'):
         pass
     return dihedrals
 
+def _get_cmaps(rd:TprReader, type:str = 'cmaps'):
+    """ @brief get cmaps from tpr handle
+
+    Return
+    ------
+    return None if No cmaps exits
+    """
+    cmaps = None
+    try:
+        cmaps = rd.get_bonded(type)
+    except:
+        pass
+    return cmaps
+
 def _get_vsites(rd:TprReader):
     """ @brief get virtual sites from tpr handle
 
@@ -230,6 +244,20 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
             for param in dihedrals[i][5:]:
                     context.append(' %8g' %param)
             context.append('\n')
+
+    context.append('\n[ cmap ]\n;   ai    aj    ak    al    am   func      cmapA    cmapB\n')
+    cmaps = _get_cmaps(rd, 'cmaps')
+    if cmaps is not None:
+        for i in range(cmaps.shape[0]):
+            context.append(';%5d %5d %5d %5d %5d %5d' %(
+                cmaps[i][0], cmaps[i][1], cmaps[i][2], cmaps[i][3], 
+                cmaps[i][4], cmaps[i][5]
+            ))
+            context.append(' ; ')
+            for param in cmaps[i][6:]:
+                    context.append(' %8d' %param)
+            context.append('\n')
+    context.append('\n')
 
     # virtual sites
     vsites = _get_vsites(rd)

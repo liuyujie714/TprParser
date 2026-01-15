@@ -60,16 +60,23 @@ struct Bonded
         }
     }
 
+    // cmap atom index, DO NOT sorted
+    Bonded(int ta, int tb, int tc, int td, int te, int functype, const std::vector<float>& ffparam)
+        : a(ta), b(tb), c(tc), d(td), e(te), ifunc(functype), ff{ffparam}
+    {
+    }
+
     // return a, b, c, d according to index 0-3
     int& operator[](size_t idx)
     {
-        assert(idx >= 0 && idx < 4);
+        assert(idx >= 0 && idx < 5);
         switch (idx)
         {
             case 0: return a;
             case 1: return b;
             case 2: return c;
             case 3: return d;
+            case 4: return e;
         }
         unreachable();
     }
@@ -83,6 +90,7 @@ struct Bonded
             case 1: return b;
             case 2: return c;
             case 3: return d;
+            case 4: return e;
         }
         unreachable();
     }
@@ -98,6 +106,7 @@ struct Bonded
     int                b     = 0; // atom2
     int                c     = 0; // atom3
     int                d     = 0; // atom4
+    int                e     = 0; // atom5, for cmap
     int                ifunc = 0; // the function type id, 1,2,,,
     std::vector<float> ff{};      // ff parameters
 };
@@ -165,7 +174,7 @@ struct CmapData
     int    grid_space; // the grid space
     vecF2D data;       // the cmap data
 
-    //! the number of grids
+    //! the number of cmap types
     int ngrid() const { return (int)data.size(); }
 };
 
@@ -362,7 +371,7 @@ struct TprData
 
         std::vector<int> nr[F_NRE]; //! 相互作用数组元素个数
     } ilist,                        ///< 分子相互作用列表
-        inter_molecular_ilist;      ///< 全局指定的分子间相互作用
+        inter_ilist;                ///< 全局指定的分子间相互作用
 
     // 原子属性
     struct
@@ -391,6 +400,8 @@ struct TprData
     std::vector<Bonded> dihedrals;
     // improper dihedrals (1-based)
     std::vector<Bonded> impropers;
+    // cmap dihedral (1-based)
+    std::vector<Bonded> cmaps;
     // pairs/LJ_14
     std::vector<NonBonded> pairs;
     // only the atomtype LJ parameters
@@ -451,7 +462,7 @@ struct TprData
             int64_t ref_t = 0; //< the started ref temperature position, is ir->ngtc vector
             int64_t tau_t = 0; //< the started temperature coupling constant position, is ir->ngtc vector
 
-            //< return True if can not read temperature position due to pull code, AWH have not yet finish in tpr reader (TODO)
+            //< return True if can not read temperature position
             bool empty() const { return !(ref_t && tau_t && etc && ngtc && g_ngtc); }
         } temperature;
 

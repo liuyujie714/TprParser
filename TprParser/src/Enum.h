@@ -224,9 +224,10 @@ enum class BondedType : int
     angles,
     dihedrals,
     impropers,
+    cmaps,
     Count
 };
-static const char* c_bonded_type[] = {"bonds", "angles", "dihedrals", "impropers"};
+static const char* c_bonded_type[] = {"bonds", "angles", "dihedrals", "impropers", "cmaps"};
 STATIC_ASSERT_ENUM_STR(BondedType, c_bonded_type);
 
 //< Non bonded type

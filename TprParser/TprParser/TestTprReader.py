@@ -104,6 +104,8 @@ tprlist = {
     'swapcoords_gmx_2024.tpr'     : [32681, 4],
     'swapcoords_gmx_2025.tpr'     : [32681, 4],
     'swapcoords_gmx_2026-rc.tpr'  : [32681, 4],
+    # with cmap items
+    'cmap_gmx_2023.5.tpr'          : [1007, 4]
 }
 NoDihedrals = [k for k in list(tprlist.keys())[0:14]]
 
@@ -434,6 +436,10 @@ def do_reader():
         
         # test virtual sites
         test_get_vsites(reader, fname)
+
+        # test cmap
+        if 'cmap' in name:
+            cmaps = reader.get_bonded('cmaps')
 
         # compare tpr and top
         if name.startswith('extra-interactions'):

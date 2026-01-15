@@ -489,7 +489,7 @@ static inline PyObject* get_ffparams(int nat, const std::vector<T>& vec)
     return list;
 }
 
-//< get bonds/angles/dihedrals/impropers (1-based index) pair of tpr
+//< get bonds/angles/dihedrals/impropers/cmaps (1-based index) pair of tpr
 static PyObject* get_bonded(PyObject* self, PyObject* args)
 {
     PyObject*   capsule = NULL;
@@ -505,17 +505,17 @@ static PyObject* get_bonded(PyObject* self, PyObject* args)
     int nat = 2;
     switch (std::toupper(type[0]))
     {
-            // bonds
-        case 'B':
+        case 'B': // bonds
             nat = 2;
             break;
-            // angles
-        case 'A':
+        case 'A': // angles
             nat = 3;
             break;
-            // dihedrals/impropers
-        case 'D':
+        case 'D': // dihedrals/impropers
         case 'I': nat = 4; break;
+        case 'C':
+            nat = 5; // cmaps
+            break;
         default: break;
     }
 

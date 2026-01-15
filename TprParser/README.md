@@ -275,7 +275,7 @@ with SimSettings('input.tpr', 'output.tpr') as writer:
 
 ## Make a gromacs top
 
-Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Restraint` is missing!
+Note: `TprParser` must be >= `0.1.51`. The top is not a full topology, such as `Restraints` is missing!
 
 ```python
 from TprParser.TprMakeTop import make_top_from_tpr

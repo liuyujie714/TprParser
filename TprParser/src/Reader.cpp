@@ -65,29 +65,6 @@ bool TprReader::do_header()
     return TPR_SUCCESS;
 }
 
-// clang-format off
-template<typename T>
-typename std::enable_if_t<std::is_fundamental_v<T>, void>
-static print_vec(const char* name, T *arr, int len = DIM * DIM)
-{
-#ifdef _DEBUG
-    msg(name);
-    for (int i = 0; i < len; i++)
-    {
-        if constexpr (std::is_same_v<T, int>) 
-        { 
-            fprintf(stdout, "%d ", arr[i]); 
-        }
-        else 
-        { 
-            fprintf(stdout, "%f ", arr[i]); 
-        }
-    }
-    fprintf(stdout, "\n");
-#endif // _DEBUG
-}
-// clang-format on
-
 
 static void print_grps_debug(const vecI2D& gid, const std::vector<int>& gpos, const std::vector<char>& symtab)
 {
@@ -219,7 +196,7 @@ bool TprReader::do_body()
         INSERT_POS(box);
         data_->box.resize(DIM * DIM);
         tpr_.do_vector(data_->box.data(), 9, data_->prec);
-        print_vec("box= ", data_->box.data());
+        print_vec_debug("box= ", data_->box.data());
 
         // Relative box vectors characteristic of the box shape, used to to preserve that box shape
         if (data_->filever >= 51)
@@ -227,13 +204,13 @@ bool TprReader::do_body()
             INSERT_POS(press.box_rel);
             float box_rel[9] = {0};
             tpr_.do_vector(box_rel, 9, data_->prec);
-            print_vec("box_rel= ", box_rel);
+            print_vec_debug("box_rel= ", box_rel);
         }
 
         // Box velocities for Parrinello-Rahman P-coupling
         float boxv[9] = {0};
         tpr_.do_vector(boxv, 9, data_->prec);
-        print_vec("boxv= ", boxv);
+        print_vec_debug("boxv= ", boxv);
 
         if (data_->filever < 56)
         {
@@ -611,17 +588,16 @@ bool TprReader::dump_bonds()
         for (int k = 0; k < nBonds - 1; k++)
         {
             int nameInter = interactions[k];
-            for (int m = 0; m < data_->inter_molecular_ilist.nr[nameInter][0] / 3; m++)
+            for (int m = 0; m < data_->inter_ilist.nr[nameInter][0] / 3; m++)
             {
-                int  itype = data_->inter_molecular_ilist.interactionlist[nameInter][0][3 * m];
+                int  itype = data_->inter_ilist.interactionlist[nameInter][0][3 * m];
                 int  a     = 3 * m + 1;
                 int  b     = 3 * m + 2;
                 auto param = get_bond_type(nameInter, &iparams_[itype]);
-                data_->bonds.emplace_back(
-                    1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][a],
-                    1 + data_->inter_molecular_ilist.interactionlist[nameInter][0][b],
-                    param.first,
-                    param.second);
+                data_->bonds.emplace_back(1 + data_->inter_ilist.interactionlist[nameInter][0][a],
+                                          1 + data_->inter_ilist.interactionlist[nameInter][0][b],
+                                          param.first,
+                                          param.second);
             }
         }
     }
@@ -828,8 +804,8 @@ bool TprReader::dump_vsites()
                     auto param = get_vsite_type(ftype, &iparams_[itype]);
                     // debug print
                     // msg("vsite func: %d\n", param.first);
-                    // print_vec("ivsite:     ", iatoms.data(), nvisiteAtoms[k]);
-                    // print_vec("vsite ff parameters ", param.second.data(), (int)param.second.size());
+                    // print_vec_debug("ivsite:     ", iatoms.data(), nvisiteAtoms[k]);
+                    // print_vec_debug("vsite ff parameters ", param.second.data(), (int)param.second.size());
 
                     data_->vsites.emplace_back(vsiteNames[ftype - F_VSITE1],
                                                iatoms,      // involved atoms index (1-based)
@@ -846,7 +822,43 @@ bool TprReader::dump_vsites()
 
 bool TprReader::dump_cmap()
 {
-    // TODO:
+    int aoffset = 0;
+    for (int i = 0; i < data_->nmolblock; i++)
+    {
+        int mtype = data_->molbtype[i];
+        for (int j = 0; j < data_->molbnmol[i]; j++)
+        {
+            auto      data   = data_->ilist.nr[F_CMAP];
+            const int nspace = 6; // itype|atom1-atom5
+            for (int m = 0; m < data_->ilist.nr[F_CMAP][mtype] / nspace; m++)
+            {
+                // the id of type
+                const auto& ilist = data_->ilist.interactionlist[F_CMAP][mtype];
+                int         itype = ilist[nspace * m];
+                const auto& cmap  = iparams_[itype].cmap;
+                const int   ifunc = 1; // cmap use func=1
+                // CMAP Dih atom idx (each moltype)
+                int a = ilist[nspace * m + 1];
+                int b = ilist[nspace * m + 2];
+                int c = ilist[nspace * m + 3];
+                int d = ilist[nspace * m + 4];
+                int e = ilist[nspace * m + 5];
+                // msg("cmap: %d %d %d %d %d, itype= %d\n", a, b, c, d, e, itype);
+                // Which CMAP type is this for A & B state
+                std::vector<float> ff = {(float)cmap.cmapA, (float)cmap.cmapB};
+                data_->cmaps.emplace_back(
+                    1 + a + aoffset, 1 + b + aoffset, 1 + c + aoffset, 1 + d + aoffset, 1 + e + aoffset, ifunc, ff);
+            }
+
+            aoffset += data_->atomsinmol[mtype];
+        }
+    }
+
+    int ngrid = data_->cmap.ngrid();
+    for (int i = 0; i < ngrid; i++)
+    {
+        // print_vec_debug(("CMAP: " + std::to_string(i)).c_str(), data_->cmap.data[i]);
+    }
     return TPR_SUCCESS;
 }
 
@@ -1524,8 +1536,8 @@ bool TprReader::do_atoms()
             auto& excl = data_->excls[i][j];
             excl.range = {start, end - 1};
             excl.index.insert(excl.index.end(), elements.begin() + start, elements.begin() + end);
-            // print_vec("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
-            // print_vec("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
+            // print_vec_debug("excls[i][j].range= ", excl.range.data(), (int)excl.range.size());
+            // print_vec_debug("excls[i][j].index= ", excl.index.data(), (int)excl.index.size());
         }
     }
 
@@ -1594,10 +1606,10 @@ bool TprReader::do_atoms()
             // allocated
             for (int i = 0; i < F_NRE; i++)
             {
-                data_->inter_molecular_ilist.interactionlist[i].resize(1);
-                data_->inter_molecular_ilist.nr[i].resize(1);
+                data_->inter_ilist.interactionlist[i].resize(1);
+                data_->inter_ilist.nr[i].resize(1);
             }
-            do_ilists(0, data_->inter_molecular_ilist.nr, data_->inter_molecular_ilist.interactionlist);
+            do_ilists(0, data_->inter_ilist.nr, data_->inter_ilist.interactionlist);
         }
     }
 
@@ -2149,10 +2161,10 @@ bool TprReader::do_ir()
     // pressure
     INSERT_POS(press.ref_p);
     if (!tpr_.do_vector(ir->ref_p, 9, data_->prec)) return TPR_FAILED;
-    print_vec("ref_p= ", ir->ref_p);
+    print_vec_debug("ref_p= ", ir->ref_p);
     INSERT_POS(press.compress);
     if (!tpr_.do_vector(ir->compress, 9, data_->prec)) return TPR_FAILED;
-    print_vec("compress= ", ir->compress);
+    print_vec_debug("compress= ", ir->compress);
 
     // old tpr, such as gmx < 4.0
     if (data_->filever < 47)
@@ -2176,9 +2188,9 @@ bool TprReader::do_ir()
         for (int i = 0; i < numPosresComGroups; ++i)
         {
             if (!tpr_.do_vector(ir->posres_com[i].data(), DIM, data_->prec)) return TPR_FAILED;
-            print_vec("posres_com= ", ir->posres_com[i].data(), DIM);
+            print_vec_debug("posres_com= ", ir->posres_com[i].data(), DIM);
             if (!tpr_.do_vector(ir->posres_comB[i].data(), DIM, data_->prec)) return TPR_FAILED;
-            print_vec("posres_comB= ", ir->posres_comB[i].data(), DIM);
+            print_vec_debug("posres_comB= ", ir->posres_comB[i].data(), DIM);
         }
     }
 
@@ -2377,7 +2389,7 @@ bool TprReader::do_ir()
     {
         INSERT_POS(press.deform); // for change deform =
         if (!tpr_.do_vector(ir->deform, DIM * DIM, data_->prec)) return TPR_FAILED;
-        print_vec("deform= ", ir->deform);
+        print_vec_debug("deform= ", ir->deform);
     }
 
     // 余弦加速
@@ -2700,9 +2712,9 @@ bool TprReader::do_ir()
                 ir->elec_field[i * 4 + 3] = phit[0];
             }
         }
-        print_vec("ElecX= ", ir->elec_field.data() + 0, 4);
-        print_vec("ElecY= ", ir->elec_field.data() + 4, 4);
-        print_vec("ElecZ= ", ir->elec_field.data() + 8, 4);
+        print_vec_debug("ElecX= ", ir->elec_field.data() + 0, 4);
+        print_vec_debug("ElecY= ", ir->elec_field.data() + 4, 4);
+        print_vec_debug("ElecZ= ", ir->elec_field.data() + 8, 4);
     }
 
     // 计算电生理学: test file: https://www.mpinat.mpg.de/grubmueller/compel
@@ -2782,9 +2794,9 @@ bool TprReader::do_ir()
             fprintf(stdout, "Warning! Electric field paramaters can not be read: %s\n", e.what());
             return TPR_SUCCESS;
         }
-        print_vec("ElecX= ", ir->elec_field.data() + 0, 4);
-        print_vec("ElecY= ", ir->elec_field.data() + 4, 4);
-        print_vec("ElecZ= ", ir->elec_field.data() + 8, 4);
+        print_vec_debug("ElecX= ", ir->elec_field.data() + 0, 4);
+        print_vec_debug("ElecY= ", ir->elec_field.data() + 4, 4);
+        print_vec_debug("ElecZ= ", ir->elec_field.data() + 8, 4);
     }
 
     // TODO: internal parameters for mdrun modules
@@ -2944,7 +2956,7 @@ bool TprReader::do_pull(PullingAlgorithm ePullOld)
         if (!tpr_.do_int(reinterpret_cast<int*>(&eGeomOld))) return TPR_FAILED;
         msg("eGeomOld= %d\n", static_cast<int>(eGeomOld));
         if (!tpr_.do_vector(dimOld, DIM, data_->prec)) return TPR_FAILED;
-        print_vec("dimOld= ", dimOld, DIM);
+        print_vec_debug("dimOld= ", dimOld, DIM);
         // The inner cylinder radius
         if (!tpr_.do_real(&fdum, data_->prec)) return TPR_FAILED;
         msg("cylinder radius= %g\n", fdum);
@@ -3059,7 +3071,7 @@ bool TprReader::do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd)
     msg("pull numAtoms= %d\n", numAtoms);
     pgrp->ind.resize(numAtoms);
     if (!tpr_.do_vector(pgrp->ind.data(), numAtoms, data_->prec, data_->vergen)) return TPR_FAILED;
-    print_vec("pgrp->ind= ", pgrp->ind.data(), numAtoms);
+    print_vec_debug("pgrp->ind= ", pgrp->ind.data(), numAtoms);
 
     int numWeights = static_cast<int>(pgrp->weight.size());
     if (!tpr_.do_int(&numWeights)) return TPR_FAILED;
@@ -3067,13 +3079,13 @@ bool TprReader::do_pullgrp_tpx_pre95(t_pull_group* pgrp, t_pull_coord* pcrd)
     pgrp->weight.resize(numWeights);
     if (!tpr_.do_vector(pgrp->weight.data(), numWeights, data_->prec, data_->vergen))
         return TPR_FAILED;
-    print_vec("pgrp->weight= ", pgrp->weight.data(), numWeights);
+    print_vec_debug("pgrp->weight= ", pgrp->weight.data(), numWeights);
 
 
     if (!tpr_.do_int(&pgrp->pbcatom)) return TPR_FAILED;
     msg("pull pbcatom= %d\n", pgrp->pbcatom);
     if (!tpr_.do_vector(pcrd->vec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
-    print_vec("pcrd->vec= ", pcrd->vec, DIM);
+    print_vec_debug("pcrd->vec= ", pcrd->vec, DIM);
 
     std::vector<float> tmp(DIM); // size=DIM
     pcrd->origin[0] = pcrd->origin[1] = pcrd->origin[2] = 0;
@@ -3107,7 +3119,7 @@ bool TprReader::do_pull_group(t_pull_group* pgrp)
     pgrp->weight.resize(numWeights);
     if (!tpr_.do_vector(pgrp->weight.data(), numWeights, data_->prec, data_->vergen))
         return TPR_FAILED;
-    print_vec("pgrp->weight", pgrp->weight.data(), numWeights);
+    print_vec_debug("pgrp->weight", pgrp->weight.data(), numWeights);
 
     if (!tpr_.do_int(&pgrp->pbcatom)) return TPR_FAILED;
     msg("pull pbcatom= %d\n", pgrp->pbcatom);
@@ -3146,7 +3158,7 @@ bool TprReader::do_pull_coord(t_pull_coord*     pcrd,
         {
             if (!tpr_.do_vector(pcrd->group.data(), pcrd->ngroup, data_->prec, data_->vergen))
                 return TPR_FAILED;
-            print_vec("pcrd->ngroup= ", pcrd->group.data(), pcrd->ngroup);
+            print_vec_debug("pcrd->ngroup= ", pcrd->group.data(), pcrd->ngroup);
         }
         else
         {
@@ -3158,12 +3170,12 @@ bool TprReader::do_pull_coord(t_pull_coord*     pcrd,
             std::vector<int> temp(pcrd->ngroup);
             if (!tpr_.do_vector(temp.data(), pcrd->ngroup, data_->prec, data_->vergen))
                 return TPR_FAILED;
-            print_vec("pcrd->group_unused= ", temp.data(), pcrd->ngroup);
+            print_vec_debug("pcrd->group_unused= ", temp.data(), pcrd->ngroup);
 
             pcrd->ngroup = 0;
         }
         if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
-        print_vec("pcrd->dim= ", pcrd->dim, DIM);
+        print_vec_debug("pcrd->dim= ", pcrd->dim, DIM);
         if (data_->filever >= tpxv_TransformationPullCoord)
         {
             char temp[MAX_LEN];
@@ -3192,7 +3204,7 @@ bool TprReader::do_pull_coord(t_pull_coord*     pcrd,
                 if (!tpr_.do_int(&pcrd->group[3])) return TPR_FAILED;
             }
             if (!tpr_.do_vector(pcrd->dim, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
-            print_vec("pcrd->dim= ", pcrd->dim, DIM);
+            print_vec_debug("pcrd->dim= ", pcrd->dim, DIM);
         }
         else
         {
@@ -3250,7 +3262,7 @@ bool TprReader::do_rot()
         msg("grp.nat= %d\n", grp.nat);
         grp.ind.resize(grp.nat);
         if (!tpr_.do_vector(grp.ind.data(), grp.nat, data_->prec, data_->vergen)) return TPR_FAILED;
-        print_vec("grp.ind= ", grp.ind.data(), grp.nat);
+        print_vec_debug("grp.ind= ", grp.ind.data(), grp.nat);
 
         grp.x_ref_original.resize(grp.nat);
         for (auto& x : grp.x_ref_original)
@@ -3259,9 +3271,9 @@ bool TprReader::do_rot()
         }
 
         if (!tpr_.do_vector(grp.inputVec, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
-        print_vec("grp.inputVec= ", grp.inputVec, DIM);
+        print_vec_debug("grp.inputVec= ", grp.inputVec, DIM);
         if (!tpr_.do_vector(grp.pivot, DIM, data_->prec, data_->vergen)) return TPR_FAILED;
-        print_vec("grp.pivot= ", grp.pivot, DIM);
+        print_vec_debug("grp.pivot= ", grp.pivot, DIM);
         if (!tpr_.do_real(&grp.rate, data_->prec)) return TPR_FAILED;
         if (!tpr_.do_real(&grp.k, data_->prec)) return TPR_FAILED;
         if (!tpr_.do_real(&grp.slab_dist, data_->prec)) return TPR_FAILED;
@@ -4305,6 +4317,14 @@ const std::vector<Bonded>& TprReader::get_bonded(const char* type) const
                 THROW_TPR_EXCEPTION("Can not get dihedrals information from tpr");
             }
             return data_->impropers;
+        }
+        case BondedType::cmaps:
+        {
+            if (data_->cmaps.empty())
+            {
+                THROW_TPR_EXCEPTION("Can not get cmaps information from tpr");
+            }
+            return data_->cmaps;
         }
         default: THROW_TPR_EXCEPTION(std::string("Unknown keyword: ") + type); break;
     }

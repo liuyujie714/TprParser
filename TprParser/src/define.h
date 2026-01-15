@@ -455,6 +455,7 @@ typedef union t_iparams
     } tab;
     struct
     {
+        // Which CMAP type is this
         int cmapA, cmapB;
     } cmap;
     struct

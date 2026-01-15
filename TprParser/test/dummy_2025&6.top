@@ -17,6 +17,7 @@ TA          1   1  1  1   1
 TS          1   1  1  1   1
 
 [ cmaptypes ]
+;ai  aj  ak  al  am  func  nx  ny  params
 TS TA TA TA TA 1 24 24\
 0.53048936 3.2162408 4.06375184 5.23405848 8.87430584 11.27767912 8.63761696 7.38388136 3.16256008 -2.98515848\
 4.08412792 -10.35757568 -22.8264396 -21.3235468 -22.1996764 -16.63403592 -12.92261872 -11.6490928 -11.20107008 -11.07111504\
@@ -239,8 +240,8 @@ TEST 	    	1
 ; i  j  k  l  funct
   3  4  5  6  2     1 10                            ; improper dihedrals (2 params)
   4  5  6  7  2     2 20 200 2000                   ; improper dihedrals (4 params)
-  6  7  8  9  4     3 30 300 3000 30000 30000       ; periodic improper dihedral
-  5  8  7  4  4     4 40 400 4000 40000 40000       ; periodic improper dihedral, different atom order
+  6  7  8  9  4     3 30 300 3000 30000 300         ; periodic improper dihedral
+  5  8  7  4  4     4 40 400 4000 40000 400         ; periodic improper dihedral, different atom order
 
 [ cmap ]
 ;  ai    aj    ak    al    am funct

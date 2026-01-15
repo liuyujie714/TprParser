@@ -54,15 +54,22 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
             ffparam.push_back(param->fene.kb);
             return std::make_pair(7, ffparam);
         case F_TABBONDS:
+            /* source code:
+            newparam->tab.table = round_check(old[0], 0, ftype, "table index");
+            newparam->tab.kA    = old[1];
+            newparam->tab.kB    = old[3];
+            */
             //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
             ffparam.push_back(param->tab.kA);
+            ffparam.push_back(static_cast<float>(param->tab.table)); // use same table number with A state
             ffparam.push_back(param->tab.kB);
             return std::make_pair(8, ffparam);
         case F_TABBONDSNC:
             //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
             ffparam.push_back(param->tab.kA);
+            ffparam.push_back(static_cast<float>(param->tab.table)); // use same table number with A state
             ffparam.push_back(param->tab.kB);
             return std::make_pair(9, ffparam);
         case F_RESTRBONDS:
@@ -149,6 +156,7 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
             //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
             ffparam.push_back(param->tab.kA);
+            ffparam.push_back(static_cast<float>(param->tab.table)); // use same table number with A state
             ffparam.push_back(param->tab.kB);
             return std::make_pair(8, ffparam);
         case F_LINEAR_ANGLES: // the order is different from tpr
@@ -180,6 +188,7 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
             ffparam.push_back(static_cast<float>(param->pdihs.mult));
             ffparam.push_back(param->pdihs.phiB);
             ffparam.push_back(param->pdihs.cpB);
+            ffparam.push_back(static_cast<float>(param->pdihs.mult)); // use same mult with A state
             // return 1;
             return std::make_pair(9, ffparam);
         case F_RBDIHS: // functype=3, Ryckaert-Bellemans
@@ -216,6 +225,7 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
             //! different order
             ffparam.push_back(static_cast<float>(param->tab.table)); // int to float
             ffparam.push_back(param->tab.kA);
+            ffparam.push_back(static_cast<float>(param->tab.table)); // use same table number with A state
             ffparam.push_back(param->tab.kB);
             return std::make_pair(8, ffparam);
         case F_RESTRDIHS:
@@ -252,6 +262,7 @@ std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams*
             ffparam.push_back((float)param->pdihs.mult);
             ffparam.push_back(param->pdihs.phiB);
             ffparam.push_back(param->pdihs.cpB);
+            ffparam.push_back((float)param->pdihs.mult); // use same mult with A state
             return std::make_pair(4, ffparam);
         default: break;
     }
