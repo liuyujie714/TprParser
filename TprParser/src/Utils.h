@@ -129,7 +129,7 @@ static inline void print_vec_release(const char* name, const std::vector<T>& vec
 // clang-format off
 // ÌØÊâ´¦Àí×Ö·û´®
 template<>
-static inline void print_vec_release(const char* name, const std::vector<unsigned char>& vec, const int Ncol, FILE* fp)
+inline void print_vec_release(const char* name, const std::vector<unsigned char>& vec, const int Ncol, FILE* fp)
 {
     if (vec.empty())
     {
