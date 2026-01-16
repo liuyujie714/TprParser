@@ -83,7 +83,7 @@ struct Bonded
     // const version
     const int& operator[](size_t idx) const
     {
-        assert(idx >= 0 && idx < 4);
+        assert(idx >= 0 && idx < 5);
         switch (idx)
         {
             case 0: return a;
@@ -105,8 +105,8 @@ struct Bonded
     int                a     = 0; // atom1
     int                b     = 0; // atom2
     int                c     = 0; // atom3
-    int                d     = 0; // atom4
-    int                e     = 0; // atom5, for cmap
+    int                d     = 0; // atom4 
+    int                e     = 0; // atom5, only for cmap
     int                ifunc = 0; // the function type id, 1,2,,,
     std::vector<float> ff{};      // ff parameters
 };
