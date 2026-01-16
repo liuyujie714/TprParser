@@ -894,25 +894,19 @@ bool TprReader::dump_nonbonded()
     // Add tempLJ check, make sure is Not empty << 2024.09.03
     for (int i = 0; i < atnr && !tempLJ.empty(); i++)
     {
-        for (int j = 0; j < atnr; j++)
+        int idx                     = i * atnr + i;
+        data_->atomtypesLJ[i].ifunc = tempLJ[idx].ifunc;
+        // convert C6 and C12 to sigma and epsion
+        float sigma = 0, epsion = 0;
+        auto  C6  = tempLJ[idx].ff[0];
+        auto  C12 = tempLJ[idx].ff[1];
+        if (C6 * C12 != 0)
         {
-            if (i == j)
-            {
-                int idx                     = i * atnr + j;
-                data_->atomtypesLJ[i].ifunc = tempLJ[idx].ifunc;
-                // convert C6 and C12 to sigma and epsion
-                float sigma = 0, epsion = 0;
-                auto  C6  = tempLJ[idx].ff[0];
-                auto  C12 = tempLJ[idx].ff[1];
-                if (C6 * C12 != 0)
-                {
-                    // linux gcc without std::powf
-                    sigma  = static_cast<float>(std::pow(C12 / C6, 1.0 / 6));
-                    epsion = C6 * C6 / (4 * C12);
-                }
-                data_->atomtypesLJ[i].ff = {sigma, epsion};
-            }
+            // linux gcc without std::powf
+            sigma  = static_cast<float>(std::pow(C12 / C6, 1.0 / 6));
+            epsion = C6 * C6 / (4 * C12);
         }
+        data_->atomtypesLJ[i].ff = {sigma, epsion};
     }
 
     int          aoffset = 0;

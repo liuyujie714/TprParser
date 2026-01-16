@@ -18,7 +18,7 @@ using vecF2D = std::vector<std::vector<float>>;
 using vecU2D = std::vector<std::vector<unsigned short>>;
 
 
-//< code can reach
+//< code can not reach
 static inline void unreachable()
 {
 #if HAS_BUILTIN_UNREACHABLE
@@ -105,7 +105,7 @@ struct Bonded
     int                a     = 0; // atom1
     int                b     = 0; // atom2
     int                c     = 0; // atom3
-    int                d     = 0; // atom4 
+    int                d     = 0; // atom4
     int                e     = 0; // atom5, only for cmap
     int                ifunc = 0; // the function type id, 1,2,,,
     std::vector<float> ff{};      // ff parameters
@@ -169,6 +169,7 @@ struct VirtualSites
 };
 
 
+//< cmap grid data
 struct CmapData
 {
     int    grid_space; // the grid space
