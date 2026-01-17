@@ -122,6 +122,11 @@ int main(int argc, char* argv[])
             {
                 msg("%-30s= %10g\n", c_mdp_float[i], reader.get_mdp_float(c_mdp_float[i]));
             }
+            // std::vector<float> ef = { 888, 77, 9999, 0.888,
+            //                           0,  0, 0, 0,
+            //                           0,  0, 0, 0 };
+            // auto ret = reader.set_xvf("ef", ef);
+            // printf("ret = %d\n", ret ? 1 : 0);
         }
     }
     catch (const std::exception& e)

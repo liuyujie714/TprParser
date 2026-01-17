@@ -4546,6 +4546,20 @@ bool TprReader::write_ef(std::vector<float>& vec, int64_t pos, int prec) const
     // 低版本电场
     if (data_->filever < tpxv_GenericParamsForElectricField)
     {
+        // check if elec_old_gmx exists
+        bool has_elec = false;
+        for (int i = 0; i < DIM; i++)
+        {
+            has_elec |= data_->ir.elec_old_gmx[i].n > 0;
+            has_elec |= data_->ir.elec_old_gmx[i].nt > 0;
+        }
+        if (!has_elec)
+        {
+            THROW_TPR_EXCEPTION(
+                "No electric field in old tpr, the modify must be matched to old tpr "
+                "electric-field dimension");
+        }
+
         FileSerializer newtpr(fout_, "wb");
         // write ef before
         if (newtpr.fwrite_(buffer, pos * sizeof(char), 1) != 1)
@@ -4632,7 +4646,7 @@ bool TprReader::write_ef(std::vector<float>& vec, int64_t pos, int prec) const
         }
 
         // write ef after
-        int64_t currpos = newtpr.ftell_(); // 理论上应该当前位置就处于文件结尾了
+        int64_t currpos = newtpr.ftell_();
         if (currpos < fsize)
         {
             if (newtpr.fwrite_(&buffer[currpos], (fsize - currpos) * sizeof(char), 1) != 1)
