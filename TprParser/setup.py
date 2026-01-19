@@ -15,7 +15,6 @@ with open(finit, 'r+') as f:
     f.write(context)
     f.truncate()
 
-
 # Description
 long_doc = ""
 try:
