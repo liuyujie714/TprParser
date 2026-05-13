@@ -390,7 +390,7 @@ class SimSettings():
     
     # output.tpr 
     """  
-    def __init__(self, fin, fout, bGRO=False, bMol2=False, bCharge=False) -> None:
+    def __init__(self, fin, fout) -> None:
         self.tempname = '_temp_.tpr'
         self.newname = 'new.tpr'
         self.fout = fout

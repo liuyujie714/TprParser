@@ -3,6 +3,10 @@
 #    include "EdrReader.h"
 #    include "Python.h"
 
+#    ifdef _WIN32
+#        include <windows.h> // 包含 MultiByteToWideChar 和 WideCharToMultiByte
+#    endif
+
 //===========================EdrParser========================================
 
 #    define MODULE_NAME "EdrParser_"
@@ -15,14 +19,36 @@ static void destory_edr(PyObject* obj)
 
 static PyObject* new_edr(PyObject* self, PyObject* args)
 {
-    const char* fname = NULL;
+    PyObject* py_fname = NULL;
 
-    if (!PyArg_ParseTuple(args, "s", &fname)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "U", &py_fname)) { return NULL; }
 
     EdrReader* reader = NULL;
     try
     {
-        reader = new EdrReader(fname);
+        // 然后获取 UTF-8 字符串
+        const char* fname_utf8 = PyUnicode_AsUTF8(py_fname);
+
+        // 在 Windows 上，将 UTF-8 转换为 ANSI
+#    ifdef _WIN32
+        int      wlen  = MultiByteToWideChar(CP_UTF8, 0, fname_utf8, -1, NULL, 0);
+        wchar_t* wpath = new wchar_t[wlen];
+        MultiByteToWideChar(CP_UTF8, 0, fname_utf8, -1, wpath, wlen);
+
+        // 再转换为 ANSI
+        int   alen      = WideCharToMultiByte(CP_ACP, 0, wpath, -1, NULL, 0, NULL, NULL);
+        char* ansi_path = new char[alen];
+        WideCharToMultiByte(CP_ACP, 0, wpath, -1, ansi_path, alen, NULL, NULL);
+
+        // 使用 ansi_path
+        reader = new EdrReader(ansi_path);
+
+        delete[] wpath;
+        delete[] ansi_path;
+#    else
+        // Linux/Mac 直接使用 UTF-8
+        reader = new EdrReader(fname_utf8);
+#    endif
     }
     catch (const std::exception& e)
     {

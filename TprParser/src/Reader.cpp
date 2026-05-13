@@ -1337,7 +1337,7 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
             tpr_.do_int(&iparams->cmap.cmapA);
             tpr_.do_int(&iparams->cmap.cmapB);
             break;
-        default: msg("Unknown function type %d", ftype); return TPR_FAILED;
+        default: msg("Unknown function type %d\n", ftype); return TPR_FAILED;
     }
 
     return TPR_SUCCESS;
