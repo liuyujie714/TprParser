@@ -127,7 +127,7 @@ bool TprReader::do_body()
     }
 
     // check again
-    constexpr bool TopOnlyOK = true; // can topology only
+    constexpr bool TopOnlyOK = false; // can topology only
     if ((data_->filever <= tpx_incompatible_version) || ((data_->filever > tpx_version) && !TopOnlyOK)
         || (data_->vergen > tpx_generation) || tpx_version == 80) /*80 was used by both 5.0-dev and 4.6-dev*/
     {
@@ -1815,7 +1815,7 @@ bool TprReader::do_ir()
     }
 
     // nstcalcenergy
-    if (data_->filever >= 67)
+    if (data_->filever >= 67 && data_->filever < tpxv_OutputControlInKeyValueTree)
     {
         INSERT_MAP_POS(int_params, nstcalcenergy);
         if (!tpr_.do_int(&ir->nstcalcenergy)) return TPR_FAILED;
@@ -1903,29 +1903,32 @@ bool TprReader::do_ir()
     if (!tpr_.do_int(&ir->nbfgscorr)) return TPR_FAILED;
     msg("nbfgscorr= %d\n", ir->nbfgscorr);
 
-    INSERT_MAP_POS(int_params, nstlog);
-    if (!tpr_.do_int(&ir->nstlog)) return TPR_FAILED;
-    msg("nstlog= %d\n", ir->nstlog);
+    if (data_->filever < tpxv_OutputControlInKeyValueTree)
+    {
+        INSERT_MAP_POS(int_params, nstlog);
+        if (!tpr_.do_int(&ir->nstlog)) return TPR_FAILED;
+        msg("nstlog= %d\n", ir->nstlog);
 
-    INSERT_MAP_POS(int_params, nstxout);
-    if (!tpr_.do_int(&ir->nstxout)) return TPR_FAILED;
-    msg("nstxout= %d\n", ir->nstxout);
+        INSERT_MAP_POS(int_params, nstxout);
+        if (!tpr_.do_int(&ir->nstxout)) return TPR_FAILED;
+        msg("nstxout= %d\n", ir->nstxout);
 
-    INSERT_MAP_POS(int_params, nstvout);
-    if (!tpr_.do_int(&ir->nstvout)) return TPR_FAILED;
-    msg("nstvout= %d\n", ir->nstvout);
+        INSERT_MAP_POS(int_params, nstvout);
+        if (!tpr_.do_int(&ir->nstvout)) return TPR_FAILED;
+        msg("nstvout= %d\n", ir->nstvout);
 
-    INSERT_MAP_POS(int_params, nstfout);
-    if (!tpr_.do_int(&ir->nstfout)) return TPR_FAILED;
-    msg("nstfout= %d\n", ir->nstfout);
+        INSERT_MAP_POS(int_params, nstfout);
+        if (!tpr_.do_int(&ir->nstfout)) return TPR_FAILED;
+        msg("nstfout= %d\n", ir->nstfout);
 
-    INSERT_MAP_POS(int_params, nstenergy);
-    if (!tpr_.do_int(&ir->nstenergy)) return TPR_FAILED;
-    msg("nstenergy= %d\n", ir->nstenergy);
+        INSERT_MAP_POS(int_params, nstenergy);
+        if (!tpr_.do_int(&ir->nstenergy)) return TPR_FAILED;
+        msg("nstenergy= %d\n", ir->nstenergy);
 
-    INSERT_MAP_POS(int_params, nstxout_compressed);
-    if (!tpr_.do_int(&ir->nstxout_compressed)) return TPR_FAILED;
-    msg("nstxout_compressed= %d\n", ir->nstxout_compressed);
+        INSERT_MAP_POS(int_params, nstxout_compressed);
+        if (!tpr_.do_int(&ir->nstxout_compressed)) return TPR_FAILED;
+        msg("nstxout_compressed= %d\n", ir->nstxout_compressed);
+    }
 
     if (data_->filever >= 59)
     {
@@ -1948,9 +1951,12 @@ bool TprReader::do_ir()
     msg("init_t= %g\n", ir->init_t);
     msg("delta_t= %g (ps)\n", ir->dt);
 
-    INSERT_MAP_POS(float_params, x_compression_precision);
-    if (!tpr_.do_real(&ir->x_compression_precision, data_->prec)) return TPR_FAILED;
-    msg("xtc prec= %g\n", ir->x_compression_precision);
+    if (data_->filever < tpxv_OutputControlInKeyValueTree)
+    {
+        INSERT_MAP_POS(float_params, x_compression_precision);
+        if (!tpr_.do_real(&ir->x_compression_precision, data_->prec)) return TPR_FAILED;
+        msg("xtc prec= %g\n", ir->x_compression_precision);
+    }
 
     if (data_->filever >= 81)
     {
@@ -2768,8 +2774,10 @@ bool TprReader::do_ir()
             //! Use AppliedForces class
             AppliedForces app(tpr_, data_);
             app.deserialize();
+
+            const auto& realarr = data_->prec == sizeof(double) ? app.m_double : app.m_float;
             const std::vector<std::string> c_order = {"E0", "omega", "t0", "sigma"};
-            for (const auto& it : app.m_efield)
+            for (const auto& it : realarr)
             {
                 //! keep order
                 auto pos = std::find(c_order.begin(), c_order.end(), it.first);
@@ -2780,6 +2788,40 @@ bool TprReader::do_ir()
                     ir->elec_field[idx]     = it.second[0];
                     ir->elec_field[idx + 4] = it.second[1];
                     ir->elec_field[idx + 8] = it.second[2];
+                }
+            }
+
+            // output control
+            if (data_->filever >= tpxv_OutputControlInKeyValueTree)
+            {
+                // int
+                for (const auto& [key, valarr] : app.m_int)
+                {
+                    myassert(valarr.size() == 1, "output control parameters is wrong");
+                    const auto val = valarr[0];
+                    if (key == "nstlog")
+                        ir->nstlog = val;
+                    else if (key == "nstxout")
+                        ir->nstxout = val;
+                    else if (key == "nstvout")
+                        ir->nstvout = val;
+                    else if (key == "nstfout")
+                        ir->nstfout = val;
+                    else if (key == "nstenergy")
+                        ir->nstenergy = val;
+                    else if (key == "nstxout-compressed")
+                        ir->nstxout_compressed = val;
+                    else if (key == "nstcalcenergy")
+                        ir->nstcalcenergy = val;
+                }
+                // float: x-compression-precision
+                for (const auto& [key, valarr] : realarr)
+                {
+                    if (key == "x-compression-precision")
+                    {
+                        myassert(valarr.size() == 1, "output control parameters is wrong");
+                        ir->x_compression_precision = valarr[0];
+                    }
                 }
             }
         }

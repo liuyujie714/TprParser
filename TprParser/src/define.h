@@ -213,8 +213,9 @@ enum tpxv
     tpxv_RefScaleMultipleCOMs, /**< Add multiple COM groups for refcoord-scale */
     tpxv_InputHistogramCounts, /**< Provide input histogram counts for current expanded ensemble state */
     tpxv_NNPotIFuncType,       /**< Add interaction function type for neural network potential */
-    tpxv_AwhHistogramTolerance, /**< Add AWH histogram tolerance in gmx2026 */
-    tpxv_Count                  /**< the total number of tpxv versions */
+    tpxv_AwhHistogramTolerance,       /**< Add AWH histogram tolerance in gmx2026 */
+    tpxv_OutputControlInKeyValueTree, /**< Move output control parameters to key-value tree in gmx2027 */
+    tpxv_Count                        /**< the total number of tpxv versions */
 };
 static constexpr int tpx_version = tpxv_Count - 1;
 

@@ -29,7 +29,7 @@ jobs:
         working-directory: ./TprParser
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
@@ -39,7 +39,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wheel-${{ matrix.buildplat[0] }}-${{ matrix.python }}
           path: wheelhouse/*.whl
@@ -62,7 +62,7 @@ jobs:
         OUTPUT_TAR: TprParser_Python_Whl.tar.gz
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install github-release
         run: |
@@ -99,7 +99,7 @@ jobs:
           github-release ${{env.RELEASE_COMMAND}} --tag ${{ env.RELEASE_TAG }} --name "Latest Bleed Release" --description "$DESCRIPTION" --pre-release
       
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: wheel-*
           merge-multiple: true
@@ -151,7 +151,7 @@ jobs:
         
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: wheel-*
           merge-multiple: true

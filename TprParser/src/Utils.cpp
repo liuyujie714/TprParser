@@ -585,6 +585,9 @@ void Deserializer<int>::deserialize(AppliedForces* obj)
     int val;
     obj->tpr_.do_int(&val);
     msg("valint= %d\n", val);
+
+    //! add int value
+    obj->m_int[obj->m_name].push_back(val);
 }
 
 void Deserializer<int64_t>::deserialize(AppliedForces* obj)
@@ -601,7 +604,7 @@ void Deserializer<float>::deserialize(AppliedForces* obj)
     msg("valfloat= %f\n", val);
 
     //! add float value
-    obj->m_efield[obj->m_name].push_back(val);
+    obj->m_float[obj->m_name].push_back(val);
 }
 
 void Deserializer<double>::deserialize(AppliedForces* obj)
@@ -609,4 +612,7 @@ void Deserializer<double>::deserialize(AppliedForces* obj)
     double val;
     obj->tpr_.do_double(&val);
     msg("valdouble= %f\n", val);
+
+    //! add double value
+    obj->m_double[obj->m_name].push_back(static_cast<float>(val));
 }

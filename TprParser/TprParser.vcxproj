@@ -143,14 +143,14 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/D_CRT_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>C:\Users\liuyujie714\AppData\Local\Programs\Python\Python38\Lib\site-packages\numpy\core\include;C:\Users\liuyujie714\AppData\Local\Programs\Python\Python38\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\liuyujie714\AppData\Local\Programs\Python\Python310\Lib\site-packages\numpy\_core\include;C:\Users\liuyujie714\AppData\Local\Programs\Python\Python310\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>C:\Users\liuyujie714\AppData\Local\Programs\Python\Python38\libs\python38.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\liuyujie714\AppData\Local\Programs\Python\Python310\libs\python310.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -64,11 +64,15 @@ public:
     //! 解序列化字典
     std::map<unsigned char, std::function<void(AppliedForces*)>> s_deserializers;
     //! 字符串 -> 浮点数组
-    std::map<std::string, std::vector<float>> m_efield;
-    std::string                               m_name;    //! current string name
-    unsigned char                             m_typeTag; //! current typeTag
-    const FileSerializer&                     tpr_;      //! tpr reference
-    std::unique_ptr<TprData>&                 data_;     //! TprData reference
+    std::map<std::string, std::vector<float>> m_float;
+    //! 字符串 -> Double数组 (强转为了float)
+    std::map<std::string, std::vector<float>> m_double;
+    //! 字符串 -> Int数组
+    std::map<std::string, std::vector<int>> m_int;
+    std::string                             m_name;    //! current string name
+    unsigned char                           m_typeTag; //! current typeTag
+    const FileSerializer&                   tpr_;      //! tpr reference
+    std::unique_ptr<TprData>&               data_;     //! TprData reference
 };
 
 // clang-format off
