@@ -5,7 +5,7 @@ from TprParser.TprReader import TprReader, SimSettings
 import MDAnalysis as mda
 from copy import deepcopy
 import numpy as np
-import sys
+import sys, os
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -31,6 +31,8 @@ tprlist = {
     'two_water_tip4p_excls_gmx_2019.6.tpr'   : [8, 4], 
     'gmx_3.3.1_water.tpr'       : [864, 4], 
     'CO2_vsites_gmx_2019.6.tpr' : [5000, 4], 
+    # gmx 2027 pre
+    'md_water_gmx2027.0-dev.tpr': [6495, 4],
 
     'lzm_gmx_3.2.tpr' :         [23207, 4], 
     'lzm_gmx_3.3.3.tpr' :       [23207, 4], 
@@ -105,9 +107,9 @@ tprlist = {
     'swapcoords_gmx_2025.tpr'     : [32681, 4],
     'swapcoords_gmx_2026-rc.tpr'  : [32681, 4],
     # with cmap items
-    'cmap_gmx_2023.5.tpr'          : [1007, 4]
+    'cmap_gmx_2023.5.tpr'         : [1007, 4],
 }
-NoDihedrals = [k for k in list(tprlist.keys())[0:14]]
+NoDihedrals = [k for k in list(tprlist.keys())[0:15]]
 
 
 rand_int = lambda : np.random.randint(0, 100000)
@@ -159,6 +161,12 @@ mdp_float_data = {
     'userreal4': rand_float(),
 }
 tau_p = mdp_float_data["tau_p"]
+
+def remove_file(fname):
+    try:
+        os.remove(fname)
+    except:
+        pass
 
 def test_get_xvf(handle, ftype):
     try:
@@ -389,7 +397,7 @@ def do_reader():
 
         # test tpr precision
         test_precision(reader, fname, tprlist[name][1])
-        assert 31 <= reader.get_filever() <= 138, "The tpx file version out of reange for file: {fname}"
+        assert 31 <= reader.get_filever() <= 139, "The tpx file version out of reange for file: {fname}"
         assert 4 <= reader.get_genver() <= 29, "The tpx generation version out of reange for file: {fname}"
 
         # test coords/velocity
@@ -567,3 +575,9 @@ if __name__ == '__main__':
 
     do_writer()
     print('<'*10+'Passed All SimSettings Tests'+'>'*10, flush=True)
+    
+    remove_file('md.top')
+    remove_file('_temp_.tpr')
+    remove_file('output.tpr')
+
+

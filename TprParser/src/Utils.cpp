@@ -5,6 +5,7 @@
 #include <string>
 
 #include "define.h"
+#include "Enum.h"
 #include "TprException.h"
 
 std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* param)
@@ -497,7 +498,7 @@ bool AppliedForces::deserialize()
         //! 'applied-forces' item
         if (!tpr_.do_string(tempstr, data_->vergen)) return TPR_FAILED;
         if (!tpr_.do_uchar(&typeTag, data_->vergen)) return TPR_FAILED;
-        msg("name= '%s'\n", tempstr);    ///< 项目名称，比如'applied-forces'字符串
+        msg("name= '%s'\n", tempstr); ///< 项目名称，比如'applied-forces', 'fast-multipole-method'字符串
         msg("typeTag= '%c'\n", typeTag); // 解序列化类型，比如'O'表示obj
         auto it = s_deserializers.find(typeTag);
         if (it == s_deserializers.end())
@@ -541,10 +542,26 @@ void Deserializer<KeyValueTreeObj>::deserialize(AppliedForces* obj)
         {
             THROW_TPR_EXCEPTION("Unknown type tag for deserializization: " + typeTag);
         }
+
+        // output control positions started gmx 2027
+        if (obj->data_->filever >= tpxv_OutputControlInKeyValueTree)
+        {
+            auto o = check_string<ParamsInteger>(obj->m_name.c_str(), c_mdp_integer);
+            if (o != ParamsInteger::Count)
+            {
+                obj->data_->property.int_params[o] = obj->tpr_.ftell_();
+            }
+
+            auto p = check_string<ParamsFloat>(obj->m_name.c_str(), c_mdp_float);
+            if (p != ParamsFloat::Count)
+            {
+                obj->data_->property.float_params[p] = obj->tpr_.ftell_();
+            }
+        }
+
         it->second(obj);
     }
 }
-
 
 void Deserializer<KeyValueTreeArray>::deserialize(AppliedForces* obj)
 {

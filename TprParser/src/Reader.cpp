@@ -3756,6 +3756,8 @@ bool TprReader::set_nsteps(int64_t nsteps)
 
         return TPR_SUCCESS;
     }
+    else { THROW_TPR_EXCEPTION("set_nsteps: fsize or nsteps is 0"); }
+
     return TPR_FAILED;
 }
 
@@ -3798,6 +3800,8 @@ bool TprReader::set_dt(double dt)
 
         return TPR_SUCCESS;
     }
+    else { THROW_TPR_EXCEPTION("set_dt: fsize or dt is 0"); }
+
     return TPR_FAILED;
 }
 
@@ -3947,6 +3951,7 @@ bool TprReader::set_pressure(const char*         method,
 
         return TPR_SUCCESS;
     }
+    else { THROW_TPR_EXCEPTION("No pressure parameters in tpr file"); }
 
     return TPR_FAILED;
 }
@@ -4038,6 +4043,7 @@ bool TprReader::set_temperature(const char* method, std::vector<float>& tau_t, s
 
         return TPR_SUCCESS;
     }
+    else { THROW_TPR_EXCEPTION("No temperature parameters in tpr file"); }
 
     return TPR_FAILED;
 }
@@ -4114,6 +4120,7 @@ bool TprReader::set_mdp_integer(const char* prop, int val)
 
         return TPR_SUCCESS;
     }
+    else { THROW_TPR_EXCEPTION(std::string("No mdp property: ") + prop); }
 
     return TPR_FAILED;
 }
@@ -4168,6 +4175,7 @@ bool TprReader::set_mdp_float(const char* prop, float val)
 
         return TPR_SUCCESS;
     }
+    else { THROW_TPR_EXCEPTION(std::string("No mdp property: ") + prop); }
 
     return TPR_FAILED;
 }

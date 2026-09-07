@@ -8,6 +8,7 @@
 #    include <strings.h>
 #    define mystricmp strcasecmp
 #endif
+#include <algorithm>
 #include <string>
 
 #define STATIC_ASSERT_ENUM_STR(enum_type, arrstr)                                           \
@@ -255,15 +256,20 @@ static inline std::string arr_to_string(const char* (&arr)[N])
     return ret;
 }
 
-//< check key words in a c_string array ignore case, return enum value if find, else return ENUM::Count
+/* \brief check key words in a c_string array ignore case, return enum value if find, else return ENUM::Count
+ * ALL '-' characters in the input string will be replaced with '_' before matching,
+ * so that "nstxout-compressed" can match "nstxout_compressed"
+ */
 template<typename ENUM, const int count = static_cast<int>(ENUM::Count), int N>
 static inline ENUM check_string(const char* str, const char* (&arr)[N])
 {
     //! check length must be equal
     static_assert(N == count, "c_string length is not equal to enum length");
+    std::string normalized(str);
+    std::replace(normalized.begin(), normalized.end(), '-', '_');
     for (int i = 0; i < count; i++)
     {
-        if (!mystricmp(str, arr[i])) return static_cast<ENUM>(i);
+        if (!mystricmp(normalized.c_str(), arr[i])) return static_cast<ENUM>(i);
     }
     return ENUM::Count;
 }
