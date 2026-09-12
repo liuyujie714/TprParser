@@ -399,6 +399,7 @@ def do_reader():
         test_precision(reader, fname, tprlist[name][1])
         assert 31 <= reader.get_filever() <= 139, "The tpx file version out of reange for file: {fname}"
         assert 4 <= reader.get_genver() <= 29, "The tpx generation version out of reange for file: {fname}"
+        title_name = reader.get_title()
 
         # test coords/velocity
         test_get_xvf(reader, 'x')

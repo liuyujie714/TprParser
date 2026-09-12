@@ -409,6 +409,19 @@ static PyObject* get_genver(PyObject* self, PyObject* args)
     return Py_BuildValue("i", genver);
 }
 
+// get title name in [ system ]
+static PyObject* get_title(PyObject* self, PyObject* args)
+{
+    PyObject* capsule = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &capsule)) { return NULL; }
+
+    std::string ret;
+    TRY_THROW_EXCEPTION_FROM_OBJ(get_title, ret);
+
+    return PyUnicode_FromString(ret.c_str());
+}
+
 // get resname or atomname
 static PyObject* get_name(PyObject* self, PyObject* args)
 {
@@ -784,6 +797,7 @@ static PyMethodDef methods[] = {
      METH_VARARGS,
      "Get global atom exclusion index (0-based) for each atom"},
     {"get_vsites", get_vsites, METH_VARARGS, "Get vsites information from tpr"},
+    {"get_title", get_title, METH_VARARGS, "Get title name in [ system ] from tpr"},
 
     {NULL, NULL, 0, NULL}};
 

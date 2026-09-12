@@ -163,6 +163,10 @@ class TprReader:
     def get_genver(self):
         """ @brief get generation version """
         return TprParser_.get_genver(self.tprCapsule)
+
+    def get_title(self):
+        """ @brief get title name in [ system ] """
+        return TprParser_.get_title(self.tprCapsule)
     
     def get_exclusions(self):
         """ @brief get global atom exclusions index (0-based) for each atom

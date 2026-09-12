@@ -66,18 +66,19 @@ bool TprReader::do_header()
 }
 
 
-static void print_grps_debug(const vecI2D& gid, const std::vector<int>& gpos, const std::vector<char>& symtab)
+static void print_grps_debug(const vecI2D&                   gid,
+                             const std::vector<int>&         gpos,
+                             const std::vector<std::string>& symtab)
 {
 #ifdef _DEBUG
     // 输出每种类型组数目和组名称
     for (int i = 0; i < egcNR; i++)
     {
-        msg("grp[%-12s] nr= %zu, name= [", c_groups[i], gid[i].size());
+        fprintf(stdout, "grp[%-12s] nr= %zu, name= [", c_groups[i], gid[i].size());
         for (const auto& id : gid[i])
         {
-            const char* gpname = &symtab[SAVELEN * gpos[id]];
 
-            fprintf(stdout, " %s", gpname);
+            fprintf(stdout, " %s", symtab[gpos[id]].c_str());
         }
         fprintf(stdout, "]\n");
     }
@@ -240,29 +241,24 @@ bool TprReader::do_mtop()
     int symtablen;
     if (!tpr_.do_int(&symtablen)) return TPR_FAILED;
     msg("symtablen= %d\n", symtablen);
-    data_->symtab.resize(symtablen * SAVELEN, '\0'); // clear zero
+    data_->symtab.resize(symtablen); // clear zero
+    char tmpstr[SAVELEN];
 
     // 原子类型名称和组名
     for (int i = 0; i < symtablen; i++)
     {
-        if (!tpr_.do_string(&data_->symtab[SAVELEN * i], data_->vergen)) return TPR_FAILED;
+        if (!tpr_.do_string(tmpstr, data_->vergen)) return TPR_FAILED;
+        data_->symtab[i] = tmpstr;
 
         // print symb
-        if constexpr (0)
-        {
-            const char* start = &data_->symtab[SAVELEN * i];
-            while (*start)
-            {
-                printf("%c", *start++);
-            }
-            printf("\n");
-        }
+        if constexpr (0) { printf("%s\n", tmpstr); }
     }
 
-    // temp int
+    // title index
     int tempint;
     if (!tpr_.do_int(&tempint)) return TPR_FAILED;
-    msg("tempint= %d\n", tempint);
+    msg("title tempint= %d\n", tempint);
+    data_->title = data_->symtab[tempint];
 
     if (data_->filever >= 57)
     {
@@ -324,10 +320,10 @@ bool TprReader::do_mtop()
             for (int k = 0; k < data_->molbnatoms[i]; k++)
             {
                 // local resid for each moltype
-                const int resind           = data_->resids[m][k];
-                data_->atoms.atomname[idx] = &data_->symtab[SAVELEN * data_->atomnameids[m][k]];
-                data_->atoms.resname[idx]  = &data_->symtab[SAVELEN * data_->resnameids[m][resind]];
-                data_->atoms.atomtypename[idx] = &data_->symtab[SAVELEN * data_->atomtypeids[m][k]];
+                const int resind               = data_->resids[m][k];
+                data_->atoms.atomname[idx]     = data_->symtab[data_->atomnameids[m][k]];
+                data_->atoms.resname[idx]      = data_->symtab[data_->resnameids[m][resind]];
+                data_->atoms.atomtypename[idx] = data_->symtab[data_->atomtypeids[m][k]];
 
                 // 特殊处理残基编号，参考write_hconf_mtop in groio.cpp
                 // https://github.com/gromacs/gromacs/blob/5ede0e331914576d9940e2d632ab5fc73ccc77a0/src/gromacs/topology/mtop_atomloops.cpp#L76

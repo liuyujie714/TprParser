@@ -188,21 +188,22 @@ struct TprData
 
     int prec; //< the precision of tpr, 4 or 8
     //< the version of file format, fver
-    int                filever;
-    int                vergen;    //< the verions of generation code, fgen
-    int                natoms;    //< the total natoms
-    int                ngtc;      //< The number of temperature coupling groups.
-    int                fep_state; //< fep state
-    float              lambda;    //< lambda
-    bool               bIr;       //< if has ir
-    bool               bTop;      //< if has top
-    bool               bX;        //< if has coordinates
-    bool               bV;        //< if has velocity, maybe is ALL zero
-    bool               bF;        //< if has force
-    bool               bBox;      //< if has box
-    bool               bInter;    //< if has inter-molecular bonds
-    std::vector<float> box = {};  //< box size
-    std::vector<char>  symtab;    //< symb name, truncate to SAVELEN characters
+    int                      filever;
+    int                      vergen;     //< the verions of generation code, fgen
+    int                      natoms;     //< the total natoms
+    int                      ngtc;       //< The number of temperature coupling groups.
+    int                      fep_state;  //< fep state
+    float                    lambda;     //< lambda
+    bool                     bIr;        //< if has ir
+    bool                     bTop;       //< if has top
+    bool                     bX;         //< if has coordinates
+    bool                     bV;         //< if has velocity, maybe is ALL zero
+    bool                     bF;         //< if has force
+    bool                     bBox;       //< if has box
+    bool                     bInter;     //< if has inter-molecular bonds
+    std::vector<float>       box = {};   //< box size
+    std::vector<std::string> symtab;     //< symb name, truncate to SAVELEN characters
+    std::string              title = ""; //< the [ system ] title
     /* such as below nmoltypes=2, nmolblock=3
     Protein_chain_A     1
     SOL                500

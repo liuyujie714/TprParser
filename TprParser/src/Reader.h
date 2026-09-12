@@ -103,6 +103,9 @@ public:
     //< get resname, atomname
     const std::vector<std::string>& get_name(const char* type) const;
 
+    //< get title name in [ system ]
+    std::string get_title() const { return data_->title; }
+
     //< get bonds/angles/dihedrals/impropers info in struct
     const std::vector<Bonded>& get_bonded(const char* type) const;
 
