@@ -38,20 +38,17 @@ public:
     bool do_xvf();
 
     //< dump charges and mass
-    bool dump_chargemass();
+    bool write_chargemass();
 
     //< dump a gro/mol2 file
-    bool dump_gro_mol2();
+    bool write_gro_mol2();
 
     //< dump bonds of tpr, can store angle and harmonic force constant
     bool dump_bonds();
 
-    //< dump angles of tpr, can store angle and harmonic force constant
-    bool dump_angles();
-
-    /*  \brief dump ALL dihedrals of tpr, can store dihedrals parameters
+    /*  \brief dump ALL angles/dihedrals of tpr, can store dihedrals parameters
      */
-    bool dump_dihedrals();
+    bool dump_angles_dihedrals();
 
     /* \brief dump all virtual sites parameters */
     bool dump_vsites();

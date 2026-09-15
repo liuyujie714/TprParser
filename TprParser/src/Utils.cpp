@@ -104,11 +104,12 @@ std::pair<int, std::vector<float>> get_bond_type(int ftype, const t_iparams* par
 }
 
 static constexpr double            c_deg2Rad = 3.1415926535897932384626 / 180.0;
-std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* param)
+std::pair<int, std::vector<float>> get_angle_dihedral_type(int ftype, const t_iparams* param)
 {
     std::vector<float> ffparam;
     switch (ftype)
     {
+        // angles
         case F_ANGLES:
             ffparam.push_back(param->harmonic.rA);
             ffparam.push_back(param->harmonic.krA);
@@ -172,17 +173,8 @@ std::pair<int, std::vector<float>> get_angle_type(int ftype, const t_iparams* pa
             ffparam.push_back(param->harmonic.rB);
             ffparam.push_back(param->harmonic.krB);
             return std::make_pair(10, ffparam);
-        default: break;
-    }
 
-    return std::make_pair(-1, ffparam);
-}
-
-std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams* param)
-{
-    std::vector<float> ffparam;
-    switch (ftype)
-    {
+        // proper dihedrals
         case F_PDIHS: // 周期性二面角多重
             ffparam.push_back(param->pdihs.phiA);
             ffparam.push_back(param->pdihs.cpA);
@@ -241,16 +233,8 @@ std::pair<int, std::vector<float>> get_dihedral_type(int ftype, const t_iparams*
             for (int i = 0; i < NR_CBTDIHS; i++)
                 ffparam.push_back(param->cbtdihs.cbtcB[i]);
             return std::make_pair(11, ffparam);
-        default: break;
-    }
-    return std::make_pair(-1, ffparam);
-}
 
-std::pair<int, std::vector<float>> get_improper_type(int ftype, const t_iparams* param)
-{
-    std::vector<float> ffparam;
-    switch (ftype)
-    {
+        // improper dihedrals
         case F_IDIHS:
             ffparam.push_back(param->harmonic.rA);
             ffparam.push_back(param->harmonic.krA);

@@ -25,16 +25,18 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
     if (do_ir() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_ir()"); }
 
     //! convert all information in readable format
-    if (dump_chargemass() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_chargemass()"); }
     if (dump_bonds() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_bonds()"); }
-    if (dump_angles() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_angles()"); }
-    if (dump_dihedrals() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_dihedrals()"); }
+    if (dump_angles_dihedrals() != TPR_SUCCESS)
+    {
+        THROW_TPR_EXCEPTION("error for dump_angles_dihedrals()");
+    }
     if (dump_vsites() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_vsites()"); }
     if (dump_nonbonded() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_nonbonded()"); }
     if (dump_cmap() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_cmap()"); }
 
     //! put it last
-    if (dump_gro_mol2() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for dump_gro_mol2()"); }
+    if (write_chargemass() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for write_chargemass()"); }
+    if (write_gro_mol2() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for write_gro_mol2()"); }
 }
 
 bool TprReader::do_header()
@@ -396,7 +398,7 @@ bool TprReader::do_xvf()
     return TPR_SUCCESS;
 }
 
-bool TprReader::dump_chargemass()
+bool TprReader::write_chargemass()
 {
     if (bCharge_)
     {
@@ -414,13 +416,13 @@ bool TprReader::dump_chargemass()
     return TPR_SUCCESS;
 }
 
-bool TprReader::dump_gro_mol2()
+bool TprReader::write_gro_mol2()
 {
     // write a gro
     if (bGRO_ && data_->bX)
     {
         FILE* fp = fopen("dump.gro", "w");
-        fprintf(fp, "MOL\n%d\n", data_->natoms);
+        fprintf(fp, "%s\n%d\n", data_->title.empty() ? "MOL" : data_->title.c_str(), data_->natoms);
 
         // first check if velocity is all zero
         bool hasVel = false;
@@ -607,10 +609,60 @@ bool TprReader::dump_bonds()
     return TPR_SUCCESS;
 }
 
-bool TprReader::dump_angles()
+bool TprReader::dump_angles_dihedrals()
 {
-    // angles type, drop F_SETTLE because angle from bonds
-    const int interactions[] = {
+    auto dump_func =
+        [this](const std::vector<int>& interactions, std::vector<Bonded>& out, int nspace, bool needSorted = true)
+    {
+        int aoffset = 0;
+        for (int i = 0; i < data_->nmolblock; i++)
+        {
+            int mtype = data_->molbtype[i];
+            for (int j = 0; j < data_->molbnmol[i]; j++)
+            {
+                for (size_t k = 0; k < interactions.size(); k++)
+                {
+                    int ftype = interactions[k];
+                    for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
+                    {
+                        int itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
+                        const int* idx = &data_->ilist.interactionlist[ftype][mtype][nspace * m + 1];
+                        auto param = get_angle_dihedral_type(ftype, &iparams_[itype]);
+                        // angle
+                        if (nspace == 4)
+                        {
+                            out.emplace_back(1 + idx[0] + aoffset,
+                                             1 + idx[1] + aoffset,
+                                             1 + idx[2] + aoffset,
+                                             param.first,
+                                             param.second);
+                        }
+                        // dihedral
+                        else if (nspace == 5)
+                        {
+                            out.emplace_back(1 + idx[0] + aoffset,
+                                             1 + idx[1] + aoffset,
+                                             1 + idx[2] + aoffset,
+                                             1 + idx[3] + aoffset,
+                                             param.first,
+                                             param.second,
+                                             needSorted);
+                        }
+                        else
+                        {
+                            THROW_TPR_EXCEPTION("dump_angles_dihedrals: unsupported nspace: "
+                                                + std::to_string(nspace));
+                        }
+                    }
+                }
+                aoffset += data_->atomsinmol[mtype];
+            }
+        }
+    };
+
+    // angle type, drop F_SETTLE because angle from bonds
+    bool                   needSorted         = true;
+    const std::vector<int> interactions_angle = {
         F_ANGLES,
         F_G96ANGLES,
         F_CROSS_BOND_BONDS,
@@ -621,38 +673,16 @@ bool TprReader::dump_angles()
         F_RESTRANGLES,
         F_TABANGLES //, F_SETTLE
     };
-    constexpr int nAngles = asize(interactions);
+    dump_func(interactions_angle, data_->angles, 4, needSorted);
 
-    int aoffset = 0;
-    for (int i = 0; i < data_->nmolblock; i++)
-    {
-        int mtype = data_->molbtype[i];
-        for (int j = 0; j < data_->molbnmol[i]; j++)
-        {
-            for (int k = 0; k < nAngles; k++)
-            {
-                int ftype = interactions[k];
+    // proper dihedral type
+    const std::vector<int> interactions_propers = {
+        F_PDIHS, F_RBDIHS, F_RESTRDIHS, F_CBTDIHS, F_FOURDIHS, F_TABDIHS};
+    dump_func(interactions_propers, data_->dihedrals, 5, needSorted);
 
-                // force parametersm, note F_SETTLE no angle information
-                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 4; m++)
-                {
-                    int itype = data_->ilist.interactionlist[ftype][mtype][4 * m];
-                    int a     = 4 * m + 1;
-                    int b     = 4 * m + 2;
-                    int c     = 4 * m + 3;
-
-                    auto param = get_angle_type(ftype, &iparams_[itype]);
-                    data_->angles.emplace_back(
-                        1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                        param.first,
-                        param.second);
-                }
-            }
-            aoffset += data_->atomsinmol[mtype];
-        }
-    }
+    // improper dihedral type, Not sorted
+    const std::vector<int> interactions_imp = {F_IDIHS, F_PIDIHS};
+    dump_func(interactions_imp, data_->impropers, 5, !needSorted);
 
     // 角度排序
     std::sort(data_->angles.begin(),
@@ -660,113 +690,38 @@ bool TprReader::dump_angles()
               [](const Bonded& lhs, const Bonded& rhs)
     { return std::tie(lhs.a, lhs.b, lhs.c) < std::tie(rhs.a, rhs.b, rhs.c); });
 
-    // TODO
-    // 1. inter-molecular angles, dihedrals, imp...
-
-    return TPR_SUCCESS;
-}
-
-
-bool TprReader::dump_dihedrals()
-{
-    // proper dihedral type
-    const int interactions[] = {F_PDIHS, F_RBDIHS, F_RESTRDIHS, F_CBTDIHS, F_FOURDIHS, F_TABDIHS};
-    constexpr int nDihedrals = asize(interactions);
-
-    int aoffset = 0;
-    for (int i = 0; i < data_->nmolblock; i++)
-    {
-        int mtype = data_->molbtype[i];
-        for (int j = 0; j < data_->molbnmol[i]; j++)
-        {
-            for (int k = 0; k < nDihedrals; k++)
-            {
-                int ftype = interactions[k];
-                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 5; m++)
-                {
-                    int  itype = data_->ilist.interactionlist[ftype][mtype][5 * m];
-                    int  a     = 5 * m + 1;
-                    int  b     = 5 * m + 2;
-                    int  c     = 5 * m + 3;
-                    int  d     = 5 * m + 4;
-                    auto param = get_dihedral_type(ftype, &iparams_[itype]);
-                    data_->dihedrals.emplace_back(
-                        1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
-                        param.first,
-                        param.second,
-                        true);
-                }
-            }
-            aoffset += data_->atomsinmol[mtype];
-        }
-    }
-
-    // improper dihedral type
-    const int     interactions_imp[] = {F_IDIHS, F_PIDIHS};
-    constexpr int nImproper          = asize(interactions_imp);
-    aoffset                          = 0;
-    for (int i = 0; i < data_->nmolblock; i++)
-    {
-        int mtype = data_->molbtype[i];
-        for (int j = 0; j < data_->molbnmol[i]; j++)
-        {
-            for (int k = 0; k < nImproper; k++)
-            {
-                int ftype = interactions_imp[k];
-                for (int m = 0; m < data_->ilist.nr[ftype][mtype] / 5; m++)
-                {
-                    int  itype = data_->ilist.interactionlist[ftype][mtype][5 * m];
-                    int  a     = 5 * m + 1;
-                    int  b     = 5 * m + 2;
-                    int  c     = 5 * m + 3;
-                    int  d     = 5 * m + 4;
-                    auto param = get_improper_type(ftype, &iparams_[itype]);
-                    data_->impropers.emplace_back(
-                        1 + data_->ilist.interactionlist[ftype][mtype][a] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][b] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][c] + aoffset,
-                        1 + data_->ilist.interactionlist[ftype][mtype][d] + aoffset,
-                        param.first,
-                        param.second,
-                        false);
-                }
-            }
-            aoffset += data_->atomsinmol[mtype];
-        }
-    }
-
     // 二面角排序
     auto dihfunc = [](const Bonded& lhs, const Bonded& rhs)
     { return std::tie(lhs.a, lhs.b, lhs.c, lhs.d) < std::tie(rhs.a, rhs.b, rhs.c, rhs.d); };
     std::sort(data_->dihedrals.begin(), data_->dihedrals.end(), dihfunc);
     std::sort(data_->impropers.begin(), data_->impropers.end(), dihfunc);
 
+    // TODO
+    // 1. inter-molecular angles, dihedrals, imp...
+
     return TPR_SUCCESS;
 }
 
 bool TprReader::dump_vsites()
 {
-    const int vsiteTypes[] = {
-        F_VSITE1, F_VSITE2, F_VSITE2FD, F_VSITE3, F_VSITE3FD, F_VSITE3FAD, F_VSITE3OUT, F_VSITE4FD, F_VSITE4FDN, F_VSITEN};
-    const std::string vsiteNames[] = {"virtual_sites1",
-                                      "virtual_sites2",
-                                      "virtual_sites2",
-                                      "virtual_sites3",
-                                      "virtual_sites3",
-                                      "virtual_sites3",
-                                      "virtual_sites3",
-                                      "virtual_sites4",
-                                      "virtual_sites4",
-                                      "virtual_sitesn"};
-    // how many atoms for each vsite type
-    const int nvisiteAtoms[] = {2, 3, 3, 4, 4, 4, 4, 5, 5, 2};
-    static_assert(asize(vsiteTypes) == asize(nvisiteAtoms) && asize(vsiteTypes) == asize(vsiteNames),
-                  "The number of vsiteTypes must equal to nvisiteAtoms");
-    constexpr int nvsites     = asize(vsiteTypes);
-    int           vsiteoffset = 0;
+    struct VSiteSpec
+    {
+        int         ftype;
+        const char* name;
+        int         natoms; // how many atoms for each vsite type
+    };
+    const VSiteSpec vsiteSpecs[] = {{F_VSITE1, "virtual_sites1", 2},
+                                    {F_VSITE2, "virtual_sites2", 3},
+                                    {F_VSITE2FD, "virtual_sites2", 3},
+                                    {F_VSITE3, "virtual_sites3", 4},
+                                    {F_VSITE3FD, "virtual_sites3", 4},
+                                    {F_VSITE3FAD, "virtual_sites3", 4},
+                                    {F_VSITE3OUT, "virtual_sites3", 4},
+                                    {F_VSITE4FD, "virtual_sites4", 5},
+                                    {F_VSITE4FDN, "virtual_sites4", 5},
+                                    {F_VSITEN, "virtual_sitesn", 2}};
+    constexpr int   nvsites      = asize(vsiteSpecs);
+    int             vsiteoffset  = 0;
     for (int i = 0; i < data_->nmolblock; i++)
     {
         int mtype = data_->molbtype[i];
@@ -774,8 +729,9 @@ bool TprReader::dump_vsites()
         {
             for (int k = 0; k < nvsites; k++)
             {
-                int ftype  = vsiteTypes[k];
-                int nspace = nvisiteAtoms[k] + 1; // the array interval of each interaction
+                const auto& spec   = vsiteSpecs[k];
+                int         ftype  = spec.ftype;
+                int         nspace = spec.natoms + 1; // the array interval of each interaction
                 /*
                  F_VSITEN虚拟位点特殊，会被分割成每对原子+力场参数，比如：
                  [ virtual_sitesn ]
@@ -791,8 +747,8 @@ bool TprReader::dump_vsites()
                 for (int m = 0; m < data_->ilist.nr[ftype][mtype] / nspace; m++)
                 {
                     int              itype = data_->ilist.interactionlist[ftype][mtype][nspace * m];
-                    std::vector<int> iatoms(nvisiteAtoms[k]); // atom index (1-based)
-                    for (int n = 0; n < nvisiteAtoms[k]; n++)
+                    std::vector<int> iatoms(spec.natoms); // atom index (1-based)
+                    for (int n = 0; n < spec.natoms; n++)
                     {
                         int idx = nspace * m + n + 1;
                         iatoms[n] = 1 + data_->ilist.interactionlist[ftype][mtype][idx] + vsiteoffset;
@@ -803,7 +759,7 @@ bool TprReader::dump_vsites()
                     // print_vec_debug("ivsite:     ", iatoms.data(), nvisiteAtoms[k]);
                     // print_vec_debug("vsite ff parameters ", param.second.data(), (int)param.second.size());
 
-                    data_->vsites.emplace_back(vsiteNames[ftype - F_VSITE1],
+                    data_->vsites.emplace_back(spec.name,
                                                iatoms,      // involved atoms index (1-based)
                                                param.first, // ifunc or vsiten.n
                                                param.second);
