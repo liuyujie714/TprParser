@@ -272,7 +272,7 @@ def make_top_from_tpr(fname:str = 'md.tpr', topfile:str='md.top'):
             context.append(s)
 
     # add tail
-    context.append('\n[ system ]\n System\n')
+    context.append(f'\n[ system ]\n {rd.get_title()}\n')
     context.append('\n[ molecules ]\nMOL      1\n')
     with open(topfile, 'w') as w:
         w.writelines(context)

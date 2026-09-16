@@ -21,7 +21,6 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
     if (do_header() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_header()"); }
     if (do_body() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_body()"); }
     if (do_mtop() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_mtop()"); }
-    if (do_xvf() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_xvf()"); }
     if (do_ir() != TPR_SUCCESS) { THROW_TPR_EXCEPTION("error for do_ir()"); }
 
     //! convert all information in readable format
@@ -41,7 +40,7 @@ TprReader::TprReader(const char* fname, bool bGRO, bool bMol2, bool bCharge)
 
 bool TprReader::do_header()
 {
-    // read the first unused int at the first of tpr
+    // read the first unused int at the first of tpr, = len(version)
     int tempint;
     if (!tpr_.do_int(&tempint)) return TPR_FAILED;
     msg("First int: %d\n", tempint);
@@ -357,23 +356,7 @@ bool TprReader::do_mtop()
         }
     }
 
-#ifdef _DEBUG
-    // for (int i = 0; i < data_->atoms.excls.size(); i++)
-    //{
-    //     fprintf(stdout, "INFO) %d -> ", i);
-    //     for (const auto& v : data_->atoms.excls[i])
-    //     {
-    //         fprintf(stdout, "%d ", v);
-    //     }
-    //     fprintf(stdout, "\n");
-    // }
-#endif // DEBUG
-
-    return TPR_SUCCESS;
-}
-
-bool TprReader::do_xvf()
-{
+    // read coodinates, velocity and force of atoms
     if (data_->bX)
     {
         INSERT_POS(x);
@@ -395,10 +378,23 @@ bool TprReader::do_xvf()
         if (!tpr_.do_vector(data_->atoms.f.data(), data_->natoms * DIM, data_->prec))
             return TPR_FAILED;
     }
+
+#ifdef _DEBUG
+    // for (int i = 0; i < data_->atoms.excls.size(); i++)
+    //{
+    //     fprintf(stdout, "INFO) %d -> ", i);
+    //     for (const auto& v : data_->atoms.excls[i])
+    //     {
+    //         fprintf(stdout, "%d ", v);
+    //     }
+    //     fprintf(stdout, "\n");
+    // }
+#endif // DEBUG
+
     return TPR_SUCCESS;
 }
 
-bool TprReader::write_chargemass()
+bool TprReader::write_chargemass() const
 {
     if (bCharge_)
     {
@@ -416,7 +412,7 @@ bool TprReader::write_chargemass()
     return TPR_SUCCESS;
 }
 
-bool TprReader::write_gro_mol2()
+bool TprReader::write_gro_mol2() const
 {
     // write a gro
     if (bGRO_ && data_->bX)

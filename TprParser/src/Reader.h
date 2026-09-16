@@ -34,14 +34,8 @@ public:
     // read mtop
     bool do_mtop();
 
-    //< read coodinates, velocity and force of atoms
-    bool do_xvf();
-
-    //< dump charges and mass
-    bool write_chargemass();
-
-    //< dump a gro/mol2 file
-    bool write_gro_mol2();
+    //< do all mdp parameters
+    bool do_ir();
 
     //< dump bonds of tpr, can store angle and harmonic force constant
     bool dump_bonds();
@@ -59,8 +53,11 @@ public:
     //< dump non-bonded parameters, includes LJ and paris
     bool dump_nonbonded();
 
-    //< do all mdp parameters
-    bool do_ir();
+    //< dump charges and mass
+    bool write_chargemass() const;
+
+    //< dump a gro/mol2 file
+    bool write_gro_mol2() const;
 
 public:
     //< change tpr file nsteps
