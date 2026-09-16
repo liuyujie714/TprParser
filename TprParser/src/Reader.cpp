@@ -1050,7 +1050,7 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
             break;
         case F_QUARTIC_ANGLES:
             tpr_.do_real(&iparams->qangle.theta, prec);
-            tpr_.do_vector(iparams->qangle.c, 5, data_->prec);
+            tpr_.do_vector(iparams->qangle.c, 5, prec);
             break;
         case F_BHAM:
             tpr_.do_real(&iparams->bham.a, prec);
@@ -1202,26 +1202,26 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
             }
             break;
         case F_POSRES:
-            tpr_.do_vector(iparams->posres.pos0A, DIM, data_->prec);
-            tpr_.do_vector(iparams->posres.fcA, DIM, data_->prec);
-            tpr_.do_vector(iparams->posres.pos0B, DIM, data_->prec);
-            tpr_.do_vector(iparams->posres.fcB, DIM, data_->prec);
+            tpr_.do_vector(iparams->posres.pos0A, DIM, prec);
+            tpr_.do_vector(iparams->posres.fcA, DIM, prec);
+            tpr_.do_vector(iparams->posres.pos0B, DIM, prec);
+            tpr_.do_vector(iparams->posres.fcB, DIM, prec);
             break;
         case F_FBPOSRES:
             tpr_.do_int(&iparams->fbposres.geom);
-            tpr_.do_vector(iparams->fbposres.pos0, DIM, data_->prec);
+            tpr_.do_vector(iparams->fbposres.pos0, DIM, prec);
             tpr_.do_real(&iparams->fbposres.r, prec);
             tpr_.do_real(&iparams->fbposres.k, prec);
             break;
         case F_CBTDIHS:
-            tpr_.do_vector(iparams->cbtdihs.cbtcA, NR_CBTDIHS, data_->prec);
+            tpr_.do_vector(iparams->cbtdihs.cbtcA, NR_CBTDIHS, prec);
             if (filever < tpxv_HandleMartiniBondedBStateParametersProperly)
             {
                 std::copy(std::begin(iparams->cbtdihs.cbtcA),
                           std::end(iparams->cbtdihs.cbtcA),
                           std::begin(iparams->cbtdihs.cbtcB));
             }
-            else { tpr_.do_vector(iparams->cbtdihs.cbtcB, NR_CBTDIHS, data_->prec); }
+            else { tpr_.do_vector(iparams->cbtdihs.cbtcB, NR_CBTDIHS, prec); }
             break;
         case F_RBDIHS:
             // Fall-through intended
@@ -1229,8 +1229,8 @@ bool TprReader::do_iparams(int ftype, t_iparams* iparams, int filever, int prec)
             /* Fourier dihedrals are internally represented
              * as Ryckaert-Bellemans since those are faster to compute.
              */
-            tpr_.do_vector(iparams->rbdihs.rbcA, NR_RBDIHS, data_->prec);
-            tpr_.do_vector(iparams->rbdihs.rbcB, NR_RBDIHS, data_->prec);
+            tpr_.do_vector(iparams->rbdihs.rbcA, NR_RBDIHS, prec);
+            tpr_.do_vector(iparams->rbdihs.rbcB, NR_RBDIHS, prec);
             break;
         case F_CONSTR:
         case F_CONSTRNC:
@@ -1568,7 +1568,7 @@ bool TprReader::do_atoms()
         if (data_->filever >= 54)
         {
             float fudgeQQ;
-            if (!tpr_.do_real(&fudgeQQ, data_->vergen)) return TPR_FAILED;
+            if (!tpr_.do_real(&fudgeQQ, data_->prec)) return TPR_FAILED;
         }
 
         for (int i = 0; i < n; i++)
